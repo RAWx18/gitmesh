@@ -8,18 +8,11 @@ import { Issue } from './contribution-data';
 
 interface IssueTrackerProps {
   issues: Issue[];
-  issuesBreakdown?: {
-    open: any[];
-    closed: any[];
-    total_open: number;
-    total_closed: number;
-    total: number;
-  };
   branch: string;
   searchQuery: string;
 }
 
-const IssueTracker = ({ issues, issuesBreakdown, branch, searchQuery }: IssueTrackerProps) => {
+const IssueTracker = ({ issues, branch, searchQuery }: IssueTrackerProps) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
 
@@ -46,17 +39,6 @@ const IssueTracker = ({ issues, issuesBreakdown, branch, searchQuery }: IssueTra
   }, [issues, selectedStatus, selectedType, searchQuery]);
 
   const statusCounts = useMemo(() => {
-    // Use breakdown data if available, otherwise calculate from issues
-    if (issuesBreakdown) {
-      return {
-        all: issuesBreakdown.total,
-        open: issuesBreakdown.total_open,
-        in_progress: issues.filter(issue => issue.status === 'in_progress').length,
-        resolved: issues.filter(issue => issue.status === 'resolved').length,
-        closed: issuesBreakdown.total_closed,
-      };
-    }
-    
     return {
       all: issues.length,
       open: issues.filter(issue => issue.status === 'open').length,
@@ -64,7 +46,7 @@ const IssueTracker = ({ issues, issuesBreakdown, branch, searchQuery }: IssueTra
       resolved: issues.filter(issue => issue.status === 'resolved').length,
       closed: issues.filter(issue => issue.status === 'closed').length,
     };
-  }, [issues, issuesBreakdown]);
+  }, [issues]);
 
   const typeCounts = useMemo(() => {
     return {
@@ -97,35 +79,7 @@ const IssueTracker = ({ issues, issuesBreakdown, branch, searchQuery }: IssueTra
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 p-4 pb-12">
-      {/* Issue Summary */}
-      {issuesBreakdown && (
-        <div className="bg-card border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-3">Issue Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{issuesBreakdown.total_open}</div>
-              <div className="text-sm text-muted-foreground">Open Issues</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">{issuesBreakdown.total_closed}</div>
-              <div className="text-sm text-muted-foreground">Closed Issues</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{issuesBreakdown.total}</div>
-              <div className="text-sm text-muted-foreground">Total Issues</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {issuesBreakdown.total_closed > 0 ? Math.round((issuesBreakdown.total_closed / issuesBreakdown.total) * 100) : 0}%
-              </div>
-              <div className="text-sm text-muted-foreground">Resolved</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Issue Table */}
+    <div className="w-full max-w-6xl mx-auto">
       <BranchIssueTable 
         issues={issues}
         branch={branch}

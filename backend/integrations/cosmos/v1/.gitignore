@@ -1,0 +1,26 @@
+.DS_Store
+.vscode/
+cosmos.code-workspace
+*.pyc
+.cosmos*
+__pycache__
+gitmesh.dev.egg-info/
+build
+dist/
+Gemfile.lock
+_site
+.jekyll-cache/
+.jekyll-metadata
+cosmos/__version__.py
+cosmos/_version.py
+.venv/
+.#*
+.gitattributes
+tmp.benchmarks/
+.docker_bash_history
+# .env
+venv/
+.env
+.kiro
+.pytest_cache
+.redis_repos/

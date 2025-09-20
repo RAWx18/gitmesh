@@ -8,7 +8,7 @@ requests
 httpx
 websockets
 
-# Database
+# Databaseue
 sqlalchemy
 alembic
 aiosqlite
@@ -42,10 +42,8 @@ openai
 litellm
 mcp
 
-# Memory & Knowledge (Supabase + Qdrant hybrid architecture)
-supabase
-psycopg2-binary
-qdrant-client
+# AI Integration (Cosmos)
+# cosmos-ai # Will be installed from local integration
 
 # Free embeddings (sentence-transformers instead of OpenAI)
 sentence-transformers
@@ -61,3 +59,7 @@ unstructured
 markdown
 docx
 psycopg2-binary
+
+# Key Management
+hvac
+redis

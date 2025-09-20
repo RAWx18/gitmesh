@@ -9,18 +9,11 @@ import { PullRequest, Issue } from './contribution-data';
 interface PRIssuesCombinedProps {
   pullRequests: PullRequest[];
   issues: Issue[];
-  issuesBreakdown?: {
-    open: any[];
-    closed: any[];
-    total_open: number;
-    total_closed: number;
-    total: number;
-  };
   branch: string;
   searchQuery: string;
 }
 
-const PRIssuesCombined = ({ pullRequests, issues, issuesBreakdown, branch, searchQuery }: PRIssuesCombinedProps) => {
+const PRIssuesCombined = ({ pullRequests, issues, branch, searchQuery }: PRIssuesCombinedProps) => {
   const [activeTab, setActiveTab] = useState('pull-requests');
 
   return (
@@ -33,7 +26,7 @@ const PRIssuesCombined = ({ pullRequests, issues, issuesBreakdown, branch, searc
           </TabsTrigger>
           <TabsTrigger value="issues" className="flex items-center gap-2">
             <Bug size={16} />
-            Issues ({issuesBreakdown?.total || issues.length})
+            Issues ({issues.length})
           </TabsTrigger>
         </TabsList>
 
@@ -48,7 +41,6 @@ const PRIssuesCombined = ({ pullRequests, issues, issuesBreakdown, branch, searc
         <TabsContent value="issues" className="mt-6">
           <IssueTracker 
             issues={issues}
-            issuesBreakdown={issuesBreakdown}
             branch={branch}
             searchQuery={searchQuery}
           />

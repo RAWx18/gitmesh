@@ -1,1 +1,0 @@
-# GitMesh AI Embeddings Module

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GitPullRequest, Clock, User, Tag, Link, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { GitPullRequest, Clock, User, Tag, Link, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -42,19 +42,18 @@ const BranchPullRequestTable = ({ pullRequests, branch }: BranchPullRequestTable
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="overflow-x-auto">
-        <Table className="w-full text-base mb-8">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <TableHead className="w-2/5">Pull Request</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Updated</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+    <div className="p-4 w-full max-w-6xl mx-auto">
+      <Table className="w-full text-base">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12"></TableHead>
+            <TableHead className="w-2/5">Pull Request</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Author</TableHead>
+            <TableHead>Updated</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {pullRequests.map((pr) => {
             const isOpen = expanded === pr.id;
             const status = pr.status || getStatus(pr);
@@ -75,22 +74,8 @@ const BranchPullRequestTable = ({ pullRequests, branch }: BranchPullRequestTable
                     <div className="flex items-start gap-2">
                       <GitPullRequest size={20} className="text-blue-500 mt-1" />
                       <div>
-                        {pr.githubUrl ? (
-                          <a 
-                            href={pr.githubUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="font-semibold text-lg leading-tight break-words max-w-xl text-blue-600 hover:text-blue-800 hover:underline cursor-pointer flex items-center gap-1"
-                          >
-                            {pr.title}
-                            <ExternalLink size={14} className="text-blue-500" />
-                          </a>
-                        ) : (
-                          <div className="font-semibold text-lg leading-tight break-words max-w-xl">{pr.title}</div>
-                        )}
-                        <div className="text-xs text-muted-foreground">
-                          {pr.number ? `#${pr.number}` : `#${pr.id}`} • {pr.sourceBranch} → {pr.targetBranch}
-                        </div>
+                        <div className="font-semibold text-lg leading-tight break-words max-w-xl">{pr.title}</div>
+                        <div className="text-xs text-muted-foreground">#{pr.id} • {pr.sourceBranch} → {pr.targetBranch}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -102,19 +87,7 @@ const BranchPullRequestTable = ({ pullRequests, branch }: BranchPullRequestTable
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-base">{pr.author ? pr.author.slice(0, 2).toUpperCase() : ''}</AvatarFallback>
                       </Avatar>
-                      {pr.author ? (
-                        <a 
-                          href={`https://github.com/${pr.author}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-base font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          {pr.author}
-                          <ExternalLink size={12} className="text-blue-500" />
-                        </a>
-                      ) : (
-                        <span className="text-base font-medium">Unknown</span>
-                      )}
+                      <span className="text-base font-medium">{pr.author}</span>
                     </div>
                   </TableCell>
                   <TableCell className="align-top">
@@ -130,21 +103,11 @@ const BranchPullRequestTable = ({ pullRequests, branch }: BranchPullRequestTable
                       <div className="flex flex-wrap gap-8">
                         <div>
                           <div className="font-semibold mb-1">Reviewers</div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex -space-x-2">
                             {pr.reviewers.map((reviewer, idx) => (
-                              <a 
-                                key={idx}
-                                href={`https://github.com/${reviewer}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                              >
-                                <Avatar className="h-6 w-6 border-2 border-background">
-                                  <AvatarFallback className="text-xs">{reviewer.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                {reviewer}
-                                <ExternalLink size={10} className="text-blue-500" />
-                              </a>
+                              <Avatar key={idx} className="h-7 w-7 border-2 border-background">
+                                <AvatarFallback className="text-xs">{reviewer.slice(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
                             ))}
                           </div>
                         </div>
@@ -176,9 +139,8 @@ const BranchPullRequestTable = ({ pullRequests, branch }: BranchPullRequestTable
               </React.Fragment>
             );
           })}
-          </TableBody>
-        </Table>
-      </div>
+        </TableBody>
+      </Table>
     </div>
   );
 };

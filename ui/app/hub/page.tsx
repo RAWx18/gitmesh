@@ -2,14 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HubPage() {
   const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    // Redirect to hub overview as the default hub view
-    router.replace('/hub/overview');
-  }, [router]);
+    if (!loading) {
+      if (!isAuthenticated) {
+        // Redirect to landing page if not authenticated
+        router.push('/');
+      } else {
+        // Redirect to hub overview as the default hub view
+        router.replace('/hub/overview');
+      }
+    }
+  }, [router, isAuthenticated, loading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

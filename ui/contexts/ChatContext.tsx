@@ -342,7 +342,7 @@ interface ChatContextType {
   // Message management
   addMessage: (sessionId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   sendMessage: (sessionId: string, message: string) => Promise<ChatMessage>;
-  sendMessageWithRetry: (sessionId: string, message: string, maxRetries?: number) => Promise<ChatMessage>;
+  sendMessageWithRetry: (sessionId: string, message: string, maxRetries?: number, options? : { model?: string; context?: any }) => Promise<ChatMessage>;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   setMessageStatus: (messageId: string, status: MessageStatus) => void;
   updateMessageStatus: (messageId: string, updates: Partial<MessageStatus>) => void;
@@ -599,7 +599,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [state.messageStatuses]);
 
   // Enhanced sendMessage with retry logic
-  const sendMessageWithRetry = useCallback(async (sessionId: string, message: string, maxRetries: number = 3): Promise<ChatMessage> => {
+  const sendMessageWithRetry = useCallback(async (sessionId: string, message: string, maxRetries: number = 3, options?: { model?: string; context?: any }): Promise<ChatMessage> => {
     if (!chatAPI) {
       throw new Error('No authentication token available');
     }
@@ -647,6 +647,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const response = await chatAPI.sendMessage(sessionId, {
           message,
+          model: options?.model || 'gpt-4o-mini', // Use model from options or default
           context: {
             files: filesWithRepo
           },

@@ -51,6 +51,18 @@ GitMesh is ready to revolutionize the open source world with improved collaborat
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### 🧠 **AI-Powered Code Intelligence**
+```
+┌─────────────────────────────────────────────────────────────┐
+│     Cosmos AI Integration                                   │
+│     Intelligent Code Analysis                               │
+│     Multi-Model AI Support (GPT-4, Claude, Gemini)         │
+│     Real-time Code Review                                   │
+│     Automated Documentation                                 │
+│     Smart Code Generation                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### 👾 **Easy Workflow Management**
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -139,7 +151,39 @@ cp ui/.env.example ui/.env
 
 ### 👾 Installation
 
-1. **Setup Python Backend**
+1. **Setup HashiCorp Vault (Required for Key Management)**
+   
+   **Install Vault:**
+   ```bash
+   # On Linux/macOS via Homebrew
+   brew install vault
+   
+   # Or download from https://www.vaultproject.io/downloads
+   ```
+   
+   **Start Vault Server:**
+   ```bash
+   vault server -dev
+   
+   # In another terminal, set environment variables
+   export VAULT_ADDR='http://127.0.0.1:8200'
+   export VAULT_TOKEN=your-root-token  # Copy from vault server output
+   
+   # Enable Transit secrets engine
+   vault secrets enable transit
+   ```
+   
+   **For Production:**
+   ```bash
+   # Create vault config file (vault.hcl)
+   vault server -config=vault.hcl
+   
+   # Initialize and unseal vault
+   vault operator init
+   vault operator unseal
+   ```
+
+2. **Setup Python Backend**
    ```bash
    cd backend
    python -m venv venv
@@ -148,7 +192,7 @@ cp ui/.env.example ui/.env
    pip install -r requirements.txt
    ```
 
-2. **Setup Frontend**
+3. **Setup Frontend**
    ```bash
    cd ui
    npm install
@@ -156,22 +200,37 @@ cp ui/.env.example ui/.env
 
 ### 👾 Running the Application
 
-1. **Start Python Backend** (in first terminal)
+1. **Start HashiCorp Vault** (in first terminal)
+   ```bash
+   vault server -dev
+   # Note the Root Token from the output
+   ```
+
+2. **Configure Vault Environment** (in second terminal)
+   ```bash
+   export VAULT_ADDR='http://127.0.0.1:8200'
+   export VAULT_TOKEN=your-root-token  # From step 1
+   vault secrets enable transit
+   ```
+
+3. **Start Python Backend** (in third terminal)
    ```bash
    cd backend
    source venv/bin/activate  # On Linux/Mac
    .\venv\Scripts\activate # On Windows
+   # Make sure VAULT_TOKEN is set in your .env file
    uvicorn app:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-2. **Start Frontend** (in second terminal)
+4. **Start Frontend** (in fourth terminal)
    ```bash
    cd ui
    npm run dev
    ```
 
-3. **Access the Application**
+5. **Access the Application**
    - Frontend: http://localhost:3000
+   - Vault UI: http://127.0.0.1:8200
   
 ### 👾 Static Demo
 

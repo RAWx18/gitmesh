@@ -19,7 +19,7 @@ const ManagePage = () => {
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full overflow-hidden">
       <Toaster position="top-right" />
       <AnimatedTransition show={showContent} animation="slide-up">
         <div className="flex h-full">
@@ -31,8 +31,8 @@ const ManagePage = () => {
             />
           </TooltipProvider>
           
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-hidden">
               <TooltipProvider>
                 <BranchContributionManager selectedSection={selectedCategory} />
               </TooltipProvider>

@@ -5,9 +5,8 @@ Main entry point for the system.
 import sys
 import os
 
-# Add the parent directory to the sys.path to allow for absolute imports
+# Add the parent directory to allow for absolute imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 
 from dotenv import load_dotenv
 
@@ -119,21 +118,21 @@ app.include_router(file_upload_router, prefix="/api/v1", tags=["file_upload"])
 app.include_router(static_router, tags=["static_files"])
 app.include_router(hub_router, prefix="/api/v1/hub", tags=["hub"])
 
-# Include AI import routes (TARS v1 integration)
+# Include AI import routes (Cosmos integration)
 try:
     from api.v1.routes.ai_import import router as ai_import_router
     app.include_router(ai_import_router, prefix="/api/ai", tags=["ai_import"])
-    logger.info("✅ AI Import routes (TARS v1) loaded successfully")
+    logger.info("✅ AI Import routes (Cosmos) loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠️ AI Import routes not available: {e}")
 except Exception as e:
     logger.error(f"❌ Error loading AI Import routes: {e}")
 
-# Include Chat routes (bridges to TARS v1)
+# Include Chat routes (Cosmos AI integration)
 try:
     from api.v1.routes.chat import router as chat_router
     app.include_router(chat_router, prefix="/api/v1/chat", tags=["chat"])
-    logger.info("✅ Chat routes (TARS v1 bridge) loaded successfully")
+    logger.info("✅ Chat routes (Cosmos AI) loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠️ Chat routes not available: {e}")
 except Exception as e:

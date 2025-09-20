@@ -400,6 +400,13 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   files?: string[]; // Files referenced in this message
+  model?: string; // AI model used for this message
+  metadata?: {
+    confidence?: number;
+    knowledge_used?: number;
+    sources_count?: number;
+    cosmos_available?: boolean;
+  };
   codeSnippets?: CodeSnippet[];
 }
 
@@ -878,12 +885,24 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message, onCopy, mes
           isUser ? "bg-primary text-primary-foreground" : "bg-muted"
         )}>
           <div className="flex items-start justify-between gap-2 mb-2">
-            <span className="text-sm font-medium">
-              {isUser ? 'You' : 'TARS'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {isUser ? 'You' : 'TARS'}
+              </span>
+              {message.model && (
+                <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                  {message.model === 'fallback' ? 'Assistant' : message.model}
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2 text-xs opacity-70">
               <ClockIcon size={12} />
               {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {message.metadata?.cosmos_available === false && (
+                <Badge variant="outline" className="text-xs px-1 py-0 h-4 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                  Limited
+                </Badge>
+              )}
               {messageStatus && <MessageStatusIndicator {...messageStatus} />}
               <button
                 onClick={() => onCopy(message.content)}
@@ -1080,8 +1099,6 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
   });
   const [selectedBranchFiles, setSelectedBranchFiles] = useState<string[]>([]);
   const [branchFilesLoading, setBranchFilesLoading] = useState(false);
-  const [branchSearchQuery, setBranchSearchQuery] = useState('');
-  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
 
   const [branchFileStructures, setBranchFileStructures] = useState<Record<string, any[]>>({});
   const [loadingBranches, setLoadingBranches] = useState(false);
@@ -1120,6 +1137,21 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
   
   // Auto-import state
   const [autoImportEnabled, setAutoImportEnabled] = useState(true);
+  
+  // Model selection state
+  const [availableModels, setAvailableModels] = useState<Array<{
+    name: string;
+    display_name: string;
+    provider: string;
+    available: boolean;
+    context_length?: number;
+    supports_streaming?: boolean;
+    is_alias?: boolean;
+    target_model?: string;
+    error?: string;
+  }>>([]);
+  const [selectedModel, setSelectedModel] = useState<string>('gemini');
+  const [modelsLoading, setModelsLoading] = useState(false);
   const [showImportSuccess, setShowImportSuccess] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   
@@ -1143,6 +1175,46 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
   
+  // Load available models from the backend
+  const loadAvailableModels = useCallback(async () => {
+    if (!token) return;
+    
+    setModelsLoading(true);
+    try {
+      const response = await fetch('/api/v1/chat/models', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.models)) {
+          setAvailableModels(data.models);
+          
+          // Set default model - prefer the one marked as default, otherwise first available
+          const defaultModel = data.models.find((m: any) => m.available && m.is_default);
+          const firstAvailable = data.models.find((m: any) => m.available);
+          const modelToSelect = defaultModel || firstAvailable;
+          
+          if (modelToSelect && (!selectedModel || selectedModel === 'gemini')) {
+            setSelectedModel(modelToSelect.name);
+          }
+        }
+      } else {
+        const errorText = `Failed to load models: ${response.statusText}`;
+        console.error(errorText);
+        setAvailableModels([]);
+      }
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setAvailableModels([]);
+    } finally {
+      setModelsLoading(false);
+    }
+  }, [token, selectedModel]);
+  
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -1154,20 +1226,42 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     }
   }, [activeSession, repository]); // Removed createSession from dependencies
   
-  // Close branch dropdown when clicking outside
+  // Load available models on component mount
   useEffect(() => {
-    const handleClickOutside = () => {
-      if (showBranchDropdown) {
-        setShowBranchDropdown(false);
-        setBranchSearchQuery('');
+    loadAvailableModels();
+  }, [loadAvailableModels]);
+  
+  // Cleanup cosmos session when component unmounts or user leaves
+  useEffect(() => {
+    const cleanup = async () => {
+      if (activeSession && token) {
+        try {
+          await fetch(`/api/v1/chat/sessions/${activeSession.id}/cleanup`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (error) {
+          console.error('Error cleaning up session:', error);
+        }
       }
     };
     
-    if (showBranchDropdown) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [showBranchDropdown]);
+    // Cleanup on beforeunload (when user leaves page)
+    const handleBeforeUnload = () => {
+      cleanup();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Cleanup function for component unmount
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      cleanup();
+    };
+  }, [activeSession, token]);
 
   // Track processed imports to prevent infinite loops
   const [processedImports, setProcessedImports] = useState<Set<string>>(new Set());
@@ -1525,50 +1619,6 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     return filterItems(structure);
   };
 
-  // Helper functions for branch selection
-  const getFilteredAndSortedBranches = (): string[] => {
-    const allBranches = branchList.length > 0 ? branchList : selectedBranches;
-    
-    let filtered = allBranches;
-    
-    // Filter by search query
-    if (branchSearchQuery.trim()) {
-      filtered = allBranches.filter(branch => 
-        branch.toLowerCase().includes(branchSearchQuery.toLowerCase())
-      );
-    }
-    
-    // Sort branches: default branch first, then main/master, then alphabetical
-    return filtered.sort((a, b) => {
-      const defaultBranch = repository?.default_branch;
-      
-      // Default branch always comes first
-      if (a === defaultBranch && b !== defaultBranch) return -1;
-      if (b === defaultBranch && a !== defaultBranch) return 1;
-      
-      // Main/master branches come next
-      const isMainLike = (branch: string) => ['main', 'master'].includes(branch.toLowerCase());
-      if (isMainLike(a) && !isMainLike(b) && a !== defaultBranch && b !== defaultBranch) return -1;
-      if (isMainLike(b) && !isMainLike(a) && a !== defaultBranch && b !== defaultBranch) return 1;
-      
-      // Both are default/main or neither is, sort alphabetically
-      return a.localeCompare(b);
-    });
-  };
-
-  const getBranchDisplayInfo = (branch: string) => {
-    const defaultBranch = repository?.default_branch;
-    const isDefault = branch === defaultBranch;
-    const isMainLike = ['main', 'master'].includes(branch.toLowerCase());
-    
-    return {
-      isDefault,
-      isMainLike,
-      label: isDefault ? 'Default' : isMainLike ? 'Main' : null,
-      color: isDefault ? 'bg-blue-100 text-blue-700' : isMainLike ? 'bg-green-100 text-green-700' : null
-    };
-  };
-
   // Helper function to convert GitHub tree to file structure
   const convertTreeToFileStructure = (treeData: Array<{ path: string; type: string; size?: number }>): FileSystemItem[] => {
     const structure: FileSystemItem[] = [];
@@ -1817,7 +1867,8 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     const userMessage = {
       type: 'user' as const,
       content: inputMessage,
-      files: selectedFiles.map(f => f.path)
+      files: selectedFiles.map(f => f.path),
+      model: selectedModel
     };
     
     // Add user message immediately for better UX
@@ -1826,8 +1877,16 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     setInputMessage('');
     
     try {
-      // Use the enhanced sendMessage with retry logic from context
-      await sendMessageWithRetry(activeSession.id, messageToSend, 3);
+      // Use the enhanced sendMessage with retry logic from context, including model
+      const context = {
+        files: selectedFiles,
+        repository: repository,
+        branch: selectedBranch,
+        model: selectedModel
+      };
+      
+      // Send message with model information
+      await sendMessageWithRetry(activeSession.id, messageToSend, 3, { model: selectedModel, context });
       toast.success('Message sent successfully!');
     } catch (error) {
       console.error('Chat error:', error);
@@ -1924,9 +1983,6 @@ export const FileChatInterface: React.FC<FileChatInterfaceProps> = ({ importedDa
     try {
       const sourceType = activeImportType;
       let importedFiles: any[] = [];
-
-      // Close the dialog immediately when import starts
-      setShowImportDialog(false);
 
       switch (sourceType) {
         case 'csv':
@@ -2200,7 +2256,7 @@ console.log('File: ${filePath}');`;
         toast.success(`Successfully imported ${importedFiles.length} item(s) from ${sourceType}`);
       }
 
-      // Clean up form data after successful import
+      setShowImportDialog(false);
       setActiveImportType('');
       setImportFormData({});
       setSelectedBranchFiles([]);
@@ -2208,11 +2264,6 @@ console.log('File: ${filePath}');`;
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Failed to import. Please try again.');
-      // Reset state on error and close dialog if it's still open
-      setShowImportDialog(false);
-      setActiveImportType('');
-      setImportFormData({});
-      setSelectedBranchFiles([]);
     }
   };
 
@@ -2660,6 +2711,43 @@ console.log('File: ${filePath}');`;
         
         {/* Input Area */}
         <div className="border-t border-border p-3">
+          {/* Model Selection */}
+          <div className="mb-3 flex items-center gap-3">
+            <Label htmlFor="model-select" className="text-xs font-medium">AI Model:</Label>
+            <Select value={selectedModel} onValueChange={setSelectedModel} disabled={modelsLoading}>
+              <SelectTrigger className="w-48 h-8 text-xs">
+                <SelectValue placeholder="Select model..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels.map((model) => (
+                  <SelectItem key={model.name} value={model.name} disabled={!model.available}>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          model.available ? "bg-green-500" : "bg-red-500"
+                        )} />
+                        <span className="font-medium">{model.display_name}</span>
+                      </div>
+                      {model.is_alias && (
+                        <Badge variant="outline" className="text-xs">alias</Badge>
+                      )}
+                      {!model.available && model.error && (
+                        <span className="text-xs text-muted-foreground">({model.error})</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {modelsLoading && (
+              <Loader2 size={14} className="animate-spin text-muted-foreground" />
+            )}
+            <div className="text-xs text-muted-foreground">
+              {availableModels.find(m => m.name === selectedModel)?.provider || 'Unknown'}
+            </div>
+          </div>
+          
           {/* Enhanced Status Bar */}
           <div className="mb-3 p-2 bg-muted/30 rounded-lg">
             {selectedFiles.length > 0 ? (
@@ -3228,158 +3316,24 @@ console.log('File: ${filePath}');`;
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="branch-select">Branch</Label>
-                  
-                  {/* Enhanced Branch Selector */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm border border-border rounded-md bg-card hover:bg-muted/50 transition-colors"
-                      onClick={() => setShowBranchDropdown(!showBranchDropdown)}
-                    >
-                      <span className="truncate">
-                        {importFormData.selectedBranch ? (
-                          <div className="flex items-center gap-2">
-                            <GitBranch size={14} />
-                            <span>{importFormData.selectedBranch}</span>
-                            {getBranchDisplayInfo(importFormData.selectedBranch).label && (
-                              <span className={cn(
-                                "text-xs px-2 py-0.5 rounded-full",
-                                getBranchDisplayInfo(importFormData.selectedBranch).color
-                              )}>
-                                {getBranchDisplayInfo(importFormData.selectedBranch).label}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          "Select branch"
-                        )}
-                      </span>
-                      <ChevronDown size={14} className={cn(
-                        "transition-transform duration-200",
-                        showBranchDropdown && "rotate-180"
-                      )} />
-                    </button>
-                    
-                    {showBranchDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-80 overflow-hidden">
-                        {/* Search Bar */}
-                        <div className="p-2 border-b border-border">
-                          <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                            <input
-                              type="text"
-                              placeholder="Search branches..."
-                              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                              value={branchSearchQuery}
-                              onChange={(e) => setBranchSearchQuery(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            {branchSearchQuery && (
-                              <button
-                                type="button"
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setBranchSearchQuery('');
-                                }}
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Branch List */}
-                        <div className="max-h-60 overflow-y-auto">
-                          {(() => {
-                            const filteredBranches = getFilteredAndSortedBranches();
-                            
-                            if (filteredBranches.length === 0) {
-                              return (
-                                <div className="p-4 text-center text-muted-foreground">
-                                  {branchSearchQuery ? (
-                                    <>
-                                      <Search size={20} className="mx-auto mb-2 opacity-50" />
-                                      <p className="text-sm">No branches found matching "{branchSearchQuery}"</p>
-                                      <button
-                                        type="button"
-                                        className="mt-2 text-xs text-primary hover:underline"
-                                        onClick={() => setBranchSearchQuery('')}
-                                      >
-                                        Clear search
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <GitBranch size={20} className="mx-auto mb-2 opacity-50" />
-                                      <p className="text-sm">No branches available</p>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            }
-                            
-                            return (
-                              <div className="py-1">
-                                {filteredBranches.map((branch) => {
-                                  const displayInfo = getBranchDisplayInfo(branch);
-                                  const isSelected = importFormData.selectedBranch === branch;
-                                  
-                                  return (
-                                    <button
-                                      key={branch}
-                                      type="button"
-                                      className={cn(
-                                        "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors text-left",
-                                        isSelected && "bg-primary/10 text-primary"
-                                      )}
-                                      onClick={() => {
-                                        handleBranchSelectForImport(branch);
-                                        setShowBranchDropdown(false);
-                                        setBranchSearchQuery('');
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <GitBranch size={14} className={cn(
-                                          "flex-shrink-0",
-                                          isSelected ? "text-primary" : "text-muted-foreground"
-                                        )} />
-                                        <span className="truncate">{branch}</span>
-                                        {displayInfo.label && (
-                                          <span className={cn(
-                                            "text-xs px-2 py-0.5 rounded-full flex-shrink-0",
-                                            displayInfo.color
-                                          )}>
-                                            {displayInfo.label}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {isSelected && (
-                                        <Check size={14} className="text-primary flex-shrink-0" />
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                        
-                        {/* Branch Count Footer */}
-                        <div className="px-3 py-2 border-t border-border bg-muted/50 text-xs text-muted-foreground">
-                          {(() => {
-                            const filteredBranches = getFilteredAndSortedBranches();
-                            const totalBranches = branchList.length > 0 ? branchList.length : selectedBranches.length;
-                            
-                            if (branchSearchQuery) {
-                              return `${filteredBranches.length} of ${totalBranches} branches shown`;
-                            }
-                            return `${totalBranches} branch${totalBranches !== 1 ? 'es' : ''} available`;
-                          })()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <Select onValueChange={handleBranchSelectForImport}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {/* Use selectedBranches (from our local state) if branchList is empty */}
+                      {(branchList.length > 0 ? branchList : selectedBranches).map((branch) => (
+                        <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                      ))}
+                      {/* Fallback for demo mode */}
+                      {branchList.length === 0 && selectedBranches.length === 0 && (
+                        <>
+                          <SelectItem value="main">main</SelectItem>
+                          <SelectItem value="development">development</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 {importFormData.selectedBranch && (

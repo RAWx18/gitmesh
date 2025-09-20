@@ -15,19 +15,6 @@ export type PullRequest = {
   additions: number;
   deletions: number;
   draft?: boolean;
-  githubUrl?: string;
-  number?: number;
-};
-
-export type IssueComment = {
-  id: string;
-  body: string;
-  user: {
-    login: string;
-    avatar_url?: string;
-  };
-  created_at: string;
-  updated_at: string;
 };
 
 export type Issue = {
@@ -44,9 +31,6 @@ export type Issue = {
   description: string;
   type: 'bug' | 'feature' | 'documentation' | 'enhancement';
   reporter: string;
-  githubUrl?: string;
-  number?: number;
-  comments?: IssueComment[];
 };
 
 export type ActivityItem = {
@@ -95,8 +79,6 @@ export const transformGitHubData = (
     additions: pr.additions || 0,
     deletions: pr.deletions || 0,
     draft: pr.draft || false,
-    githubUrl: pr.html_url,
-    number: pr.number,
   }));
 
   // Transform issues
@@ -115,9 +97,7 @@ export const transformGitHubData = (
     type: issue.labels?.some((l: any) => l.name === 'bug') ? 'bug' : 
           issue.labels?.some((l: any) => l.name === 'documentation') ? 'documentation' : 
           issue.labels?.some((l: any) => l.name === 'enhancement') ? 'enhancement' : 'feature',
-    reporter: issue.user?.login || user?.login || 'Unknown',
-    githubUrl: issue.html_url,
-    number: issue.number,
+    reporter: issue.user?.login || user?.login || 'Unknown'
   }));
 
   // Transform activity from GitHub events

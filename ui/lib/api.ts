@@ -91,39 +91,13 @@ class ApiService {
     return this.request(`/github/repositories/${owner}/${repo}`);
   }
 
-  async getRepositoryBranches(owner: string, repo: string, refresh = false): Promise<ApiResponse<{ branches: any[]; total: number }>> {
-    console.log('Fetching branches for', owner, repo, refresh ? '(forcing refresh)' : '');
-    const params = refresh ? '?refresh=true' : '';
-    return this.request<{ branches: any[]; total: number }>(`/github/repositories/${owner}/${repo}/branches${params}`);
-  }
-
-  async clearRepositoryCache(owner: string, repo: string): Promise<ApiResponse<{ message: string }>> {
-    return this.request(`/github/cache?owner=${owner}&repo=${repo}`, { method: 'DELETE' });
+  async getRepositoryBranches(owner: string, repo: string): Promise<ApiResponse<{ branches: any[]; total: number }>> {
+    console.log('Fetching branches for', owner, repo);
+    return this.request<{ branches: any[]; total: number }>(`/github/test-branches/${owner}/${repo}`);
   }
 
   async getRepositoryIssues(owner: string, repo: string, state = 'open', page = 1): Promise<ApiResponse<{ issues: any[]; pagination: any }>> {
     return this.request(`/github/repositories/${owner}/${repo}/issues?state=${state}&page=${page}`);
-  }
-
-  async getAllRepositoryIssues(owner: string, repo: string): Promise<ApiResponse<{ 
-    issues: any[]; 
-    issues_breakdown: {
-      open: any[];
-      closed: any[];
-      total_open: number;
-      total_closed: number;
-      total: number;
-    };
-    pagination: any 
-  }>> {
-    return this.request(`/github/repositories/${owner}/${repo}/issues/all`);
-  }
-
-  async getIssueComments(owner: string, repo: string, issueNumber: number): Promise<ApiResponse<{ 
-    comments: any[]; 
-    total: number 
-  }>> {
-    return this.request(`/github/repositories/${owner}/${repo}/issues/${issueNumber}/comments`);
   }
 
   async getRepositoryPullRequests(owner: string, repo: string, state = 'open', page = 1): Promise<ApiResponse<{ pullRequests: any[]; pagination: any }>> {

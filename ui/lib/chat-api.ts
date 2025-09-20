@@ -6,6 +6,13 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   files?: string[];
+  model?: string;
+  metadata?: {
+    confidence?: number;
+    knowledge_used?: number;
+    sources_count?: number;
+    cosmos_available?: boolean;
+  };
   codeSnippets?: Array<{
     language: string;
     code: string;
@@ -129,6 +136,7 @@ class ChatAPI {
   // Chat Messages
   async sendMessage(sessionId: string, data: {
     message: string;
+    model?: string;
     context?: {
       files?: Array<{
         path: string;

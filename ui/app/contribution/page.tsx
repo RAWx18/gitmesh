@@ -68,8 +68,18 @@ export default function ContributionPage() {
   // Redirect to landing page if not authenticated and no auth params
   useEffect(() => {
     const authToken = searchParams.get('auth_token');
-    if (!isAuthenticated && !authToken && authProcessed) {
+    const authUser = searchParams.get('auth_user');
+    
+    // If no auth params and not authenticated, redirect to home
+    if (!authToken && !authUser && !isAuthenticated) {
       console.log('Not authenticated, redirecting to landing page');
+      router.push('/');
+      return;
+    }
+    
+    // If auth processing is complete and still not authenticated, redirect
+    if (authProcessed && !isAuthenticated && !authToken) {
+      console.log('Authentication processing complete but not authenticated, redirecting to landing page');
       router.push('/');
     }
   }, [isAuthenticated, searchParams, authProcessed, router]);

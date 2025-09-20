@@ -52,7 +52,7 @@ const PullRequestTracker = ({ pullRequests, branch, searchQuery }: PullRequestTr
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 pb-12">
+    <div className="w-full max-w-7xl mx-auto p-4">
       <BranchPullRequestTable 
         pullRequests={filteredPRs}
         branch={branch}

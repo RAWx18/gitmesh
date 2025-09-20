@@ -47,21 +47,12 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
   const [selectedBranch, setSelectedBranch] = useState<BranchType>('');
   const [branchInfoMap, setBranchInfoMap] = useState<Record<string, BranchInfo>>({});
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
-  
   useEffect(() => {
-    // Immediately clear stale branch data when repository changes
-    setBranchList([]);
-    setSelectedBranch('');
-    setBranchInfoMap({});
-    
     if (repository?.full_name) {
       const fetchBranches = async () => {
         setIsLoadingBranches(true);
         try {
-          // Clear backend cache for this repository to ensure fresh data
-          await apiService.clearRepositoryCache(repository.owner.login, repository.name);
-          
-          const response = await apiService.getRepositoryBranches(repository.owner.login, repository.name, true);
+          const response = await apiService.getRepositoryBranches(repository.owner.login, repository.name);
 
           if (response.error) {
             console.error('API error:', response.error);
@@ -72,7 +63,7 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
             return;
           }
 
-          const fetchedBranches = response.data?.branches || [];
+          const fetchedBranches = response.data || [];
           const branchNames = fetchedBranches.map((b: any) => b.name);
           
           setBranchList(branchNames);

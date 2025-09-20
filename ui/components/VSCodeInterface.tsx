@@ -99,6 +99,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import FileChatInterface from './FileChatInterface';
+import CosmosFeaturesPanelRN from './CosmosFeaturesPanelRN';
 import { ChatSessionManager } from './ChatSessionManager';
 
 // Tab interface for chat sessions
@@ -107,7 +108,7 @@ interface ChatTab {
   title: string;
   isActive: boolean;
   hasUnsavedChanges?: boolean;
-  type: 'chat' | 'import' | 'settings';
+  type: 'chat' | 'import' | 'settings' | 'cosmos';
 }
 
 // Stats interface for metrics display
@@ -290,6 +291,13 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
       icon: <MessageSquare size={16} />,
       description: 'Chat with your repository files',
       route: '/contribution/chat'
+    },
+    {
+      id: 'cosmos',
+      name: 'Cosmos AI',
+      icon: <Brain size={16} />,
+      description: 'Cosmos AI features and capabilities',
+      route: '/contribution/chat?tab=cosmos'
     },
   ];
 
@@ -591,6 +599,35 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </Button>
 
+          {/* Cosmos AI Button (only show on chat page) */}
+          {pathname === '/contribution/chat' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const newTab = {
+                      id: 'cosmos-' + Date.now(),
+                      title: 'Cosmos AI',
+                      isActive: true,
+                      type: 'cosmos' as const
+                    };
+                    setTabs(prev => [...prev.map(t => ({ ...t, isActive: false })), newTab]);
+                    setActiveTab(newTab.id);
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 h-7 hover:bg-muted/50 text-xs"
+                >
+                  <Brain size={12} />
+                  <span className="hidden sm:inline">Cosmos AI</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Open Cosmos AI Features</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           {/* User menu */}
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
@@ -660,6 +697,20 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
             <>
               {tabs.find(tab => tab.id === activeTab)?.type === 'chat' && (
                 <FileChatInterface />
+              )}
+              
+              {tabs.find(tab => tab.id === activeTab)?.type === 'cosmos' && (
+                <div className="flex-1 p-6 overflow-auto">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="mb-6">
+                      <h2 className="text-2xl font-bold mb-2">Cosmos AI Features</h2>
+                      <p className="text-muted-foreground">
+                        Explore and configure advanced AI capabilities for your codebase.
+                      </p>
+                    </div>
+                    <CosmosFeaturesPanelRN />
+                  </div>
+                </div>
               )}
               
               {tabs.find(tab => tab.id === activeTab)?.type === 'settings' && (

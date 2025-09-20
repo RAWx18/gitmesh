@@ -224,35 +224,25 @@ const BranchCard: React.FC<BranchCardProps> = ({
   return (
     <div
       className={cn(
-        "p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 cursor-pointer transition-all duration-200",
+        "p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors",
         isContextBranch && "border-primary/40 bg-primary/5",
-        isSelected && "ring-2 ring-primary bg-primary/10 border-primary"
+        isSelected && "ring-2 ring-primary bg-primary/5"
       )}
       onClick={() => onSelect(branch)}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 text-primary`}>
-            <GitBranch size={16} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="font-medium truncate">{branch}</h4>
-              {branchInfo.description && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                  Default
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isContextBranch && "Current Branch"}
-              {isSelected && (isContextBranch ? " • " : "") + "Selected"}
-              {!isContextBranch && !isSelected && branchInfo.description}
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${branchInfo.color}`}>
+          <GitBranch size={20} />
+        </div>
+        <div>
+          <h4 className="font-medium capitalize">{branchInfo.name}</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isContextBranch ? "Current Branch" : ""}
+            {isSelected && (isContextBranch ? " • " : "") + "Selected"}
+          </p>
         </div>
         {isSelected && (
-          <div className="flex-shrink-0 ml-2">
+          <div className="ml-auto">
             <Check size={16} className="text-primary" />
           </div>
         )}
@@ -925,9 +915,6 @@ export const ImportPanel: React.FC = () => {
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [branchError, setBranchError] = useState<string | null>(null);
   
-  // Branch search functionality
-  const [branchSearchQuery, setBranchSearchQuery] = useState('');
-  
   // Code content states
   const [fileContents, setFileContents] = useState<Record<string, string>>({});
   const [loadingFileContent, setLoadingFileContent] = useState<Record<string, boolean>>({});
@@ -1305,30 +1292,6 @@ export const ImportPanel: React.FC = () => {
       case 'release': return 'text-orange-600';
       default: return 'text-gray-600';
     }
-  };
-
-  // Function to filter and sort branches
-  const getFilteredAndSortedBranches = (): string[] => {
-    let filtered = branchList;
-    
-    // Filter by search query
-    if (branchSearchQuery.trim()) {
-      filtered = branchList.filter(branch => 
-        branch.toLowerCase().includes(branchSearchQuery.toLowerCase())
-      );
-    }
-    
-    // Sort branches: default branch first, then alphabetical
-    return filtered.sort((a, b) => {
-      const defaultBranch = repository?.default_branch;
-      
-      // Default branch always comes first
-      if (a === defaultBranch && b !== defaultBranch) return -1;
-      if (b === defaultBranch && a !== defaultBranch) return 1;
-      
-      // Both are default or neither is default, sort alphabetically
-      return a.localeCompare(b);
-    });
   };
 
 
@@ -1905,126 +1868,23 @@ export const ImportPanel: React.FC = () => {
             {/* Branch selection */}
             <div>
               <label className="block text-sm font-medium mb-2">Select Branches to Import</label>
-              
-              {/* Search bar for branches */}
-              <div className="relative mb-4">
-                <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="text" 
-                  className="w-full pl-10 pr-3 py-2 rounded-lg border border-border bg-card text-sm"
-                  placeholder="Search branches..."
-                  value={branchSearchQuery}
-                  onChange={(e) => setBranchSearchQuery(e.target.value)}
-                />
-                {branchSearchQuery && (
-                  <button 
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setBranchSearchQuery('')}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-              
-              {/* Scrollable branch list with improved layout */}
-              <div className="border border-border rounded-lg max-h-[400px] overflow-y-auto bg-card/30">
-                <div className="p-3">
-                  {(() => {
-                    // Loading state
-                    if (loadingBranches && branchList.length === 0) {
-                      return (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Loader2 size={24} className="mx-auto mb-2 animate-spin" />
-                          <p>Loading branches...</p>
-                        </div>
-                      );
-                    }
-                    
-                    // Error state
-                    if (branchError) {
-                      return (
-                        <div className="text-center py-8 text-red-500">
-                          <AlertCircle size={24} className="mx-auto mb-2" />
-                          <p>{branchError}</p>
-                          <button 
-                            className="mt-2 text-sm text-primary hover:underline"
-                            onClick={() => {
-                              setBranchError(null);
-                              // Trigger refetch logic here if needed
-                            }}
-                          >
-                            Try again
-                          </button>
-                        </div>
-                      );
-                    }
-                    
-                    const filteredBranches = getFilteredAndSortedBranches();
-                    
-                    if (filteredBranches.length === 0) {
-                      return (
-                        <div className="text-center py-8 text-muted-foreground">
-                          {branchSearchQuery ? (
-                            <>
-                              <Search size={24} className="mx-auto mb-2 opacity-50" />
-                              <p>No branches found matching "{branchSearchQuery}"</p>
-                              <button 
-                                className="mt-2 text-sm text-primary hover:underline"
-                                onClick={() => setBranchSearchQuery('')}
-                              >
-                                Clear search
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <GitBranch size={24} className="mx-auto mb-2 opacity-50" />
-                              <p>No branches available</p>
-                            </>
-                          )}
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <div className="space-y-2">
-                        {filteredBranches.map(branch => (
-                          <BranchCard
-                            key={branch}
-                            branch={branch}
-                            isContextBranch={selectedBranch === branch}
-                            isSelected={selectedBranches.includes(branch)}
-                            onSelect={handleBranchSelect}
-                            branchInfo={{
-                              name: branch,
-                              color: getBranchColorClass(branch),
-                              description: branch === repository?.default_branch ? 'Default branch' : '',
-                              maintainer: '',
-                              githubUrl: repository ? `${repository.html_url}/tree/${branch}` : ''
-                            }}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-              
-              {/* Branch stats */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                <span>
-                  {(() => {
-                    const filteredBranches = getFilteredAndSortedBranches();
-                    const totalBranches = branchList.length;
-                    
-                    if (branchSearchQuery) {
-                      return `${filteredBranches.length} of ${totalBranches} branches shown`;
-                    }
-                    return `${totalBranches} branch${totalBranches !== 1 ? 'es' : ''} available`;
-                  })()}
-                </span>
-                <span>
-                  {selectedBranches.length} selected
-                </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {branchList.map(branch => (
+                  <BranchCard
+                    key={branch}
+                    branch={branch}
+                    isContextBranch={selectedBranch === branch}
+                    isSelected={selectedBranches.includes(branch)}
+                    onSelect={handleBranchSelect}
+                    branchInfo={{
+                      name: branch,
+                      color: getBranchColorClass(branch),
+                      description: branch === repository?.default_branch ? 'Default branch' : '',
+                      maintainer: '',
+                      githubUrl: repository ? `${repository.html_url}/tree/${branch}` : ''
+                    }}
+                  />
+                ))}
               </div>
             </div>
             
