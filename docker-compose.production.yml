@@ -1,0 +1,198 @@
+# Docker Compose configuration for Cosmos Web Chat Integration Production Deployment
+
+version: '3.8'
+
+services:
+  # ========================
+  # Cosmos Web Chat Application
+  # ========================
+  cosmos-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: gitmesh-cosmos-chat:1.0.0
+    container_name: cosmos-chat-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEPLOYMENT_ENVIRONMENT=production
+      - DEPLOYMENT_TYPE=docker
+      - COSMOS_CHAT_ENABLED=true
+      - MONITORING_ENABLED=true
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    env_file:
+      - backend/.env.production
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./cache:/app/cache
+    networks:
+      - cosmos-network
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/cosmos/health/liveness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ========================
+  # Redis Cache
+  # ========================
+  redis:
+    image: redis:7-alpine
+    container_name: cosmos-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - cosmos-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+
+  # ========================
+  # PostgreSQL Database
+  # ========================
+  postgres:
+    image: postgres:15-alpine
+    container_name: cosmos-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: gitmesh
+      POSTGRES_USER: gitmesh_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cosmos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gitmesh_user -d gitmesh"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+
+  # ========================
+  # Nginx Load Balancer
+  # ========================
+  nginx:
+    image: nginx:alpine
+    container_name: cosmos-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    networks:
+      - cosmos-network
+    depends_on:
+      - cosmos-chat
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================
+  # Monitoring (Prometheus)
+  # ========================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cosmos-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - cosmos-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  # ========================
+  # Grafana Dashboard
+  # ========================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cosmos-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin_change_me}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - cosmos-network
+    depends_on:
+      - prometheus
+
+# ========================
+# Networks
+# ========================
+networks:
+  cosmos-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ========================
+# Volumes
+# ========================
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

@@ -1,0 +1,50 @@
+# Kubernetes Service for Cosmos Web Chat Integration
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cosmos-chat-service
+  namespace: cosmos-chat
+  labels:
+    app: gitmesh-cosmos-chat
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/api/v1/cosmos/health/liveness"
+spec:
+  type: LoadBalancer
+  selector:
+    app: gitmesh-cosmos-chat
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8000
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+# Internal Service for cluster communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: cosmos-chat-internal
+  namespace: cosmos-chat
+  labels:
+    app: gitmesh-cosmos-chat
+    type: internal
+spec:
+  type: ClusterIP
+  selector:
+    app: gitmesh-cosmos-chat
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
