@@ -992,9 +992,11 @@ class ChatAnalyticsService:
                 if not self.redis_client.exists(rule_key):
                     rule_data["created_at"] = datetime.now().isoformat()
                     rule_data["updated_at"] = datetime.now().isoformat()
-                    rule_data["enabled"] = True
+                    rule_data["enabled"] = "true"  # Convert boolean to string for Redis
                     
-                    self.redis_client.hset(rule_key, mapping=rule_data)
+                    # Convert all values to strings for Redis
+                    redis_data = {k: str(v) for k, v in rule_data.items()}
+                    self.redis_client.hset(rule_key, mapping=redis_data)
                     logger.info("Initialized default alert rule", rule_id=rule_data["rule_id"])
             
         except Exception as e:

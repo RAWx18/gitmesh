@@ -19,6 +19,12 @@ import json
 logger = logging.getLogger(__name__)
 
 
+def get_settings():
+    """Get application settings - placeholder for compatibility."""
+    from config.settings import get_settings as _get_settings
+    return _get_settings()
+
+
 class ErrorCategory(str, Enum):
     """Error category enumeration for classification."""
     AUTHENTICATION = "authentication"

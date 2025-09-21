@@ -245,11 +245,24 @@ class GitHubAPI {
           errorData = { message: errorText };
         }
 
-        // Enhanced error handling for rate limits
-        if (response.status === 403 && this.isRateLimitError(errorData)) {
-          throw new Error(
-            `GitHub API rate limit exceeded. ${errorData.message || 'Please try again later or use demo mode.'}`
-          );
+        // Enhanced error handling for rate limits with proper 429 handling
+        if (response.status === 429 || (response.status === 403 && this.isRateLimitError(errorData))) {
+          const retryAfter = this.extractRetryAfter(errorData, response.headers);
+          
+          // Store rate limit info in localStorage for persistence
+          this.storeRateLimitInfo(errorData, retryAfter);
+          
+          // If we have retries left and it's a rate limit, wait and retry
+          if (retries > 0) {
+            const waitTime = Math.min(retryAfter * 1000, 60000); // Max 1 minute wait
+            console.log(`Rate limit hit, waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            return this.request(endpoint, options, retries - 1, backoff * 2);
+          }
+          
+          // If no retries left, redirect to landing page
+          this.handleRateLimitExceeded(errorData, retryAfter);
+          throw new Error(`GitHub API rate limit exceeded: ${errorData.message || 'Too many requests'}`);
         }
 
         throw new Error(`GitHub API error: ${response.status} ${response.statusText} - ${errorData.message || errorText}`);
@@ -257,11 +270,15 @@ class GitHubAPI {
 
       const data = await response.json();
       console.log('API Response data:', data);
+      
+      // Clear any stored rate limit info on successful request
+      this.clearRateLimitInfo();
+      
       return data;
     } catch (error) {
       console.error('Request failed:', error);
 
-      if (retries > 0) {
+      if (retries > 0 && !this.isRateLimitError(error)) {
         console.log(`Retrying request... ${retries} attempts left.`);
         await new Promise(resolve => setTimeout(resolve, backoff));
         return this.request(endpoint, options, retries - 1, backoff * 2);
@@ -294,7 +311,100 @@ class GitHubAPI {
     const message = errorData.message || errorData.error || '';
     return message.includes('rate limit') || 
            message.includes('API rate limit exceeded') || 
-           message.includes('Too many requests');
+           message.includes('Too many requests') ||
+           message.includes('RATE_LIMIT_EXCEEDED');
+  }
+
+  private extractRetryAfter(errorData: any, headers: Headers): number {
+    // Try to get retry_after from error data first
+    if (errorData?.error?.retry_after) {
+      return parseInt(errorData.error.retry_after);
+    }
+    
+    // Try to get from headers
+    const retryAfterHeader = headers.get('retry-after');
+    if (retryAfterHeader) {
+      return parseInt(retryAfterHeader);
+    }
+    
+    // Default to 60 seconds
+    return 60;
+  }
+
+  private storeRateLimitInfo(errorData: any, retryAfter: number) {
+    const rateLimitInfo = {
+      timestamp: Date.now(),
+      retryAfter: retryAfter,
+      resetTime: Date.now() + (retryAfter * 1000),
+      errorData: errorData
+    };
+    
+    try {
+      localStorage.setItem('github_rate_limit', JSON.stringify(rateLimitInfo));
+    } catch (e) {
+      console.warn('Failed to store rate limit info:', e);
+    }
+  }
+
+  private clearRateLimitInfo() {
+    try {
+      localStorage.removeItem('github_rate_limit');
+    } catch (e) {
+      console.warn('Failed to clear rate limit info:', e);
+    }
+  }
+
+  private handleRateLimitExceeded(errorData: any, retryAfter: number) {
+    // Show user-friendly notification
+    const resetTime = new Date(Date.now() + (retryAfter * 1000));
+    const message = `GitHub API rate limit exceeded. Service will be available again at ${resetTime.toLocaleTimeString()}`;
+    
+    // Try to show notification if available
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Rate Limit Exceeded', {
+        body: message,
+        icon: '/favicon.ico'
+      });
+    }
+    
+    // Store the rate limit state for the app to handle
+    window.dispatchEvent(new CustomEvent('github-rate-limit-exceeded', {
+      detail: { errorData, retryAfter, resetTime }
+    }));
+    
+    // After a delay, redirect to landing page to prevent dead end
+    setTimeout(() => {
+      if (window.location.pathname !== '/') {
+        console.log('Redirecting to landing page due to rate limit...');
+        window.location.href = '/';
+      }
+    }, 5000); // 5 second delay to show error message
+  }
+
+  // Check if we're currently rate limited
+  public isCurrentlyRateLimited(): boolean {
+    try {
+      const rateLimitInfo = localStorage.getItem('github_rate_limit');
+      if (!rateLimitInfo) return false;
+      
+      const info = JSON.parse(rateLimitInfo);
+      return Date.now() < info.resetTime;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get time until rate limit resets
+  public getTimeUntilReset(): number {
+    try {
+      const rateLimitInfo = localStorage.getItem('github_rate_limit');
+      if (!rateLimitInfo) return 0;
+      
+      const info = JSON.parse(rateLimitInfo);
+      return Math.max(0, info.resetTime - Date.now());
+    } catch (e) {
+      return 0;
+    }
   }
 
   // Get user repositories (current user)

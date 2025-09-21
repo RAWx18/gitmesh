@@ -6,6 +6,7 @@ Provides progressive shell-to-web conversion and smart command interception.
 """
 
 import os
+import re
 import sys
 import json
 import logging
@@ -28,64 +29,87 @@ from services.response_processor import ResponseProcessor
 from services.conversion_tracking_service import conversion_tracking_service
 from models.api.conversion_tracking import ConversionRequest, ConversionUpdateRequest, ConversionType, ConversionStatus, ConversionPriority
 
-# For now, we'll create mock classes for Cosmos components since they have complex dependencies
-# In a real implementation, these would be properly imported once the Cosmos integration is complete
-
-class MockInputOutput:
-    """Mock InputOutput class for testing."""
-    def __init__(self, pretty=True, yes=False, chat_history_file=None):
-        self.pretty = pretty
-        self.yes = yes
-        self.chat_history_file = chat_history_file
-        self.encoding = 'utf-8'
-    
-    def tool_output(self, *args, **kwargs):
-        pass
-    
-    def tool_error(self, *args, **kwargs):
-        pass
-    
-    def tool_warning(self, *args, **kwargs):
-        pass
-    
-    def read_text(self, filename):
-        return None
-    
-    def write_text(self, filename, content):
-        return True
-
-class MockModel:
-    """Mock Model class for testing."""
-    def __init__(self, name):
-        self.name = name
-
-class MockCoder:
-    """Mock Coder class for testing."""
-    def __init__(self, main_model, io, **kwargs):
-        self.main_model = main_model
-        self.io = io
-        self.abs_fnames = set()
-        self.shell_commands = []
-    
-    def run(self, with_message=None, preproc=True):
-        return f"Mock response to: {with_message}"
-
-# Use mock classes
-InputOutput = MockInputOutput
-Model = MockModel
-EditBlockCoder = MockCoder
-
-# Mock run_cmd module
-class MockRunCmd:
-    """Mock run_cmd module for testing."""
-    @staticmethod
-    def run_cmd(command, **kwargs):
-        return 0, f"Mock output for: {command}"
-
-run_cmd = MockRunCmd()
-
-# Configure logging
+# Configure logging first
 logger = logging.getLogger(__name__)
+
+# Import real Cosmos components
+try:
+    # Import from the actual Cosmos installation
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'integrations', 'cosmos', 'v1'))
+    
+    # Initialize Cosmos configuration first
+    from cosmos.config import initialize_configuration
+    initialize_configuration()
+    logger.info("Cosmos configuration initialized")
+    
+    from cosmos.io import InputOutput
+    from cosmos.models import Model
+    from cosmos.coders.editblock_coder import EditBlockCoder
+    from cosmos import run_cmd
+    
+    COSMOS_COMPONENTS_AVAILABLE = True
+    logger.info("Real Cosmos components imported successfully")
+    
+except ImportError as e:
+    logger.warning(f"Could not import real Cosmos components: {e}")
+    logger.info("Using mock components for testing")
+    
+    # Fallback to mock classes for testing
+    class MockInputOutput:
+        """Mock InputOutput class for testing."""
+        def __init__(self, pretty=True, yes=False, chat_history_file=None):
+            self.pretty = pretty
+            self.yes = yes
+            self.chat_history_file = chat_history_file
+            self.encoding = 'utf-8'
+        
+        def tool_output(self, *args, **kwargs):
+            pass
+        
+        def tool_error(self, *args, **kwargs):
+            pass
+        
+        def tool_warning(self, *args, **kwargs):
+            pass
+        
+        def read_text(self, filename):
+            return None
+        
+        def write_text(self, filename, content):
+            return True
+
+    class MockModel:
+        """Mock Model class for testing."""
+        def __init__(self, name):
+            self.name = name
+
+    class MockCoder:
+        """Mock Coder class for testing."""
+        def __init__(self, main_model, io, **kwargs):
+            self.main_model = main_model
+            self.io = io
+            self.abs_fnames = set()
+            self.shell_commands = []
+        
+        def run(self, with_message=None, preproc=True):
+            return f"Mock response to: {with_message}"
+
+    # Mock run_cmd module
+    class MockRunCmd:
+        """Mock run_cmd module for testing."""
+        @staticmethod
+        def run_cmd(command, **kwargs):
+            return 0, f"Mock output for: {command}"
+
+    # Use mock classes
+    InputOutput = MockInputOutput
+    Model = MockModel
+    EditBlockCoder = MockCoder
+    run_cmd = MockRunCmd()
+    
+    COSMOS_COMPONENTS_AVAILABLE = False
+
+
 
 
 @dataclass
@@ -118,6 +142,13 @@ class CosmosResponse:
     conversion_notes: Optional[str]
     error: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    confidence: float = 0.8
+    sources: List[str] = None
+    model_used: Optional[str] = None
+    
+    def __post_init__(self):
+        if self.sources is None:
+            self.sources = self.context_files_used or []
 
 
 class WebSafeInputOutput(InputOutput):
@@ -277,7 +308,28 @@ class CosmosWebWrapper:
         # Initialize Cosmos components
         self._initialize_cosmos_components()
         
+        # Ensure repository data is available
+        self._ensure_repository_data()
+        
         logger.info(f"Initialized CosmosWebWrapper with model: {model}")
+    
+    def _ensure_repository_data(self):
+        """Ensure repository data is fetched and available in Redis."""
+        try:
+            if self.repo_manager:
+                logger.info(f"Ensuring repository data is available for: {self.repo_manager.repo_url}")
+                # This will automatically fetch the repo if not already cached
+                success = self.repo_manager._ensure_repository_data()
+                if success:
+                    logger.info("Repository data is available in Redis")
+                    # Get basic repository info to populate context
+                    repo_info = self.repo_manager.get_repository_info()
+                    file_count = repo_info.get('file_count', 0)
+                    logger.info(f"Repository contains {file_count} files")
+                else:
+                    logger.warning("Failed to ensure repository data availability")
+        except Exception as e:
+            logger.error(f"Error ensuring repository data: {e}")
     
     def _initialize_cosmos_components(self):
         """Initialize Cosmos coder and related components."""
@@ -290,35 +342,45 @@ class CosmosWebWrapper:
             )
             self.io = WebSafeInputOutput(original_io, self)
             
-            # Create model instance
-            canonical_model_name = MODEL_ALIASES[self.model]
-            self.cosmos_model = Model(canonical_model_name)
-            
             # Create temporary directory for virtual filesystem
             self.temp_dir = tempfile.mkdtemp(prefix="cosmos_web_")
             
-            # Initialize coder with web-safe configuration
-            self.coder = EditBlockCoder(
-                main_model=self.cosmos_model,
-                io=self.io,
-                repo=None,  # No git repo in web mode
-                fnames=[],  # Start with no files
-                auto_commits=False,  # Disable git commits
-                dirty_commits=False,  # Disable dirty commits
-                dry_run=False,  # Allow edits but intercept them
-                map_tokens=1024,  # Enable repo mapping
-                verbose=False,  # Reduce verbosity for web
-                stream=False,  # Disable streaming for web
-                use_git=False,  # Disable git operations
-                suggest_shell_commands=False,  # Disable shell command suggestions
-                auto_lint=False,  # Disable auto-linting
-                auto_test=False  # Disable auto-testing
-            )
-            
-            # Override shell command execution
-            self._patch_shell_execution()
-            
-            logger.info("Cosmos components initialized successfully")
+            if COSMOS_COMPONENTS_AVAILABLE:
+                # Create model instance with real Cosmos
+                canonical_model_name = MODEL_ALIASES[self.model]
+                self.cosmos_model = Model(canonical_model_name)
+                
+                # Initialize coder with web-safe configuration
+                self.coder = EditBlockCoder(
+                    main_model=self.cosmos_model,
+                    io=self.io,
+                    repo=None,  # No git repo in web mode
+                    fnames=[],  # Start with no files
+                    auto_commits=False,  # Disable git commits
+                    dirty_commits=False,  # Disable dirty commits
+                    dry_run=False,  # Allow edits but intercept them
+                    map_tokens=1024,  # Enable repo mapping
+                    verbose=False,  # Reduce verbosity for web
+                    stream=False,  # Disable streaming for web
+                    use_git=False,  # Disable git operations
+                    suggest_shell_commands=False,  # Disable shell command suggestions
+                    auto_lint=False,  # Disable auto-linting
+                    auto_test=False  # Disable auto-testing
+                )
+                
+                # Override shell command execution
+                self._patch_shell_execution()
+                
+                logger.info("Real Cosmos components initialized successfully")
+            else:
+                # Use mock components
+                self.cosmos_model = Model(self.model)
+                self.coder = EditBlockCoder(
+                    main_model=self.cosmos_model,
+                    io=self.io
+                )
+                
+                logger.info("Mock Cosmos components initialized")
             
         except Exception as e:
             logger.error(f"Error initializing Cosmos components: {e}")
@@ -631,18 +693,28 @@ class CosmosWebWrapper:
             # Update context files in coder
             self._update_coder_context()
             
+            # Add repository context automatically if no specific files are in context
+            self._add_repository_context_if_needed(message)
+            
             # Process the message through Cosmos
             response_content = ""
             try:
-                # Use the coder's run method with the message
-                response_content = self.coder.run(with_message=message, preproc=True)
-                
-                if not response_content:
-                    response_content = "I understand your request. How can I help you with your code?"
+                if COSMOS_COMPONENTS_AVAILABLE:
+                    # Use the real Cosmos coder's run method with the message
+                    response_content = self.coder.run(with_message=message, preproc=True)
+                    
+                    if not response_content:
+                        response_content = "I understand your request. How can I help you with your code?"
+                else:
+                    # Use mock response when real Cosmos is not available
+                    response_content = f"Mock Cosmos response to: {message}"
                 
             except Exception as e:
                 logger.error(f"Error in Cosmos processing: {e}")
-                response_content = f"I encountered an error while processing your request: {str(e)}"
+                if COSMOS_COMPONENTS_AVAILABLE:
+                    response_content = f"I encountered an error while processing your request: {str(e)}"
+                else:
+                    response_content = "Cosmos AI system is not available. Please ensure Cosmos is properly installed and configured."
             
             # Get captured output from IO
             captured = self.io.get_captured_output()
@@ -667,7 +739,8 @@ class CosmosWebWrapper:
                 context_files_used=list(self._context_files.keys()),
                 shell_commands_converted=self._shell_commands_intercepted.copy(),
                 conversion_notes=processed_response.conversion_notes,
-                metadata=processed_response.metadata
+                metadata=processed_response.metadata,
+                model_used=self.model
             )
             
             logger.info("Message processed successfully")
@@ -680,8 +753,124 @@ class CosmosWebWrapper:
                 context_files_used=[],
                 shell_commands_converted=[],
                 conversion_notes=None,
-                error=str(e)
+                error=str(e),
+                model_used=self.model
             )
+    
+    def _add_repository_context_if_needed(self, message: str):
+        """Add repository context automatically if needed for repository analysis."""
+        try:
+            # Check if user is asking about the repository in general
+            repo_analysis_keywords = [
+                'repo', 'repository', 'project', 'codebase', 'what is this',
+                'about', 'overview', 'structure', 'files', 'code'
+            ]
+            
+            message_lower = message.lower()
+            is_repo_question = any(keyword in message_lower for keyword in repo_analysis_keywords)
+            
+            # If no files in context and user is asking about repo, add key files
+            if is_repo_question and len(self._context_files) == 0 and self.repo_manager:
+                logger.info("Adding repository context for general repository analysis")
+                
+                # Get list of important files to add to context
+                important_files = self._get_important_repository_files()
+                
+                # Add important files to context (limit to avoid overwhelming)
+                files_added = 0
+                max_files = 10  # Limit to prevent context overflow
+                
+                for file_path in important_files:
+                    if files_added >= max_files:
+                        break
+                        
+                    try:
+                        self.add_file_to_context(file_path)
+                        files_added += 1
+                        logger.debug(f"Added {file_path} to context for repository analysis")
+                    except Exception as e:
+                        logger.debug(f"Could not add {file_path} to context: {e}")
+                
+                if files_added > 0:
+                    logger.info(f"Added {files_added} key repository files to context")
+                    # Update coder context after adding files
+                    self._update_coder_context()
+                    
+        except Exception as e:
+            logger.error(f"Error adding repository context: {e}")
+    
+    def _get_important_repository_files(self) -> List[str]:
+        """Get list of important files for repository analysis."""
+        important_files = []
+        
+        try:
+            if not self.repo_manager:
+                return important_files
+                
+            # Get all files in repository
+            all_files = self.repo_manager.list_files()
+            if not all_files:
+                return important_files
+            
+            logger.debug(f"Found {len(all_files)} files in repository")
+            
+            # Priority order for important files - match against full file paths
+            priority_patterns = [
+                # Documentation files (highest priority)
+                r'README\.(md|txt|rst)$',
+                r'readme\.(md|txt|rst)$',
+                r'CHANGELOG\.(md|txt|rst)$',
+                r'CONTRIBUTING\.(md|txt|rst)$',
+                r'LICENSE$',
+                r'LICENSE\.(md|txt)$',
+                
+                # Configuration files
+                r'package\.json$',
+                r'requirements\.txt$',
+                r'Cargo\.toml$',
+                r'pom\.xml$',
+                r'build\.gradle$',
+                r'Makefile$',
+                r'Dockerfile$',
+                r'docker-compose\.ya?ml$',
+                
+                # Main source files
+                r'main\.(py|js|ts|java|cpp|c|go|rs)$',
+                r'index\.(py|js|ts|html)$',
+                r'app\.(py|js|ts)$',
+                r'server\.(py|js|ts)$',
+                r'web\.(py|js|ts)$',
+                
+                # Setup/config files
+                r'setup\.py$',
+                r'config\.(py|js|ts|json|yaml|yml)$',
+            ]
+            
+            # Add files matching priority patterns first
+            for pattern in priority_patterns:
+                for file_path in all_files:
+                    if re.search(pattern, file_path, re.IGNORECASE):
+                        if file_path not in important_files:
+                            important_files.append(file_path)
+                            logger.debug(f"Added priority file: {file_path}")
+            
+            # Add a few more source files if we don't have many yet
+            if len(important_files) < 5:
+                source_extensions = ['.py', '.js', '.ts', '.java', '.cpp', '.c', '.go', '.rs', '.php', '.html']
+                for file_path in all_files[:20]:  # Check first 20 files
+                    if any(file_path.endswith(ext) for ext in source_extensions):
+                        if file_path not in important_files:
+                            important_files.append(file_path)
+                            logger.debug(f"Added source file: {file_path}")
+                            if len(important_files) >= 8:  # Don't add too many
+                                break
+            
+            logger.info(f"Selected {len(important_files)} important files for context")
+            return important_files[:10]  # Return max 10 files
+            
+        except Exception as e:
+            logger.error(f"Error getting important repository files: {e}")
+            return important_files
     
     def _update_coder_context(self):
         """Update the coder with current context files."""

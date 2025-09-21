@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Repository } from "@/lib/github-api";
 
 const Chart = lazy(() => import("@/components/hub/insights/Chart"));
-const ContributorSpotlight = lazy(() => import("@/components/hub/insights/ContributorSpotlight"));
-const PullRequestVelocity = lazy(() => import("@/components/hub/insights/PullRequestVelocity"));
 
 export default function HubInsightsPage() {
   const { user, githubApi } = useAuth();
@@ -19,7 +17,6 @@ export default function HubInsightsPage() {
   const [languages, setLanguages] = useState<any[]>([]);
   const [commitHistory, setCommitHistory] = useState<any[]>([]);
   const [contributors, setContributors] = useState<any[]>([]);
-  const [pullRequestVelocity, setPullRequestVelocity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>("all");
@@ -83,14 +80,6 @@ export default function HubInsightsPage() {
             setContributors(contributorsData);
         }
 
-        // Mock PR velocity data
-        const prVelocityData = [
-          { date: '2023-01-01', opened: 4, closed: 2 },
-          { date: '2023-01-02', opened: 5, closed: 3 },
-          { date: '2023-01-03', opened: 2, closed: 4 },
-        ];
-        setPullRequestVelocity(prVelocityData);
-
         setLoading(false);
       };
 
@@ -104,12 +93,8 @@ export default function HubInsightsPage() {
         <Chart data={languages} title="Language Distribution" />
         <Chart data={commitHistory} title="Commit History" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {selectedRepo !== 'all' && <ContributorSpotlight data={contributors} />}
-        <PullRequestVelocity data={pullRequestVelocity} />
-      </div>
     </Suspense>
-  ), [languages, commitHistory, contributors, pullRequestVelocity, selectedRepo]);
+  ), [languages, commitHistory, contributors, selectedRepo]);
 
   if (loading && !summary) {
     return <HubInsightsSkeleton />;
@@ -133,12 +118,12 @@ export default function HubInsightsPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
           <InsightCard title="Total Commits" value={summary?.totalCommits || 0} icon={<GitCommit className="h-6 w-6 text-orange-500" />} />
           <InsightCard title="Open PRs" value={summary?.openPRs || 0} icon={<GitPullRequest className="h-6 w-6 text-orange-500" />} />
           <InsightCard title="Total Stars" value={summary?.totalStars || 0} icon={<Star className="h-6 w-6 text-orange-500" />} />
           <InsightCard title="Total Collaborators" value={summary?.totalCollaborators || 0} icon={<Users className="h-6 w-6 text-orange-500" />} />
-        </div>
+        </div> */}
         {memoizedCharts}
       </div>
     </div>

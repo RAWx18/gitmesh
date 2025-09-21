@@ -7,7 +7,8 @@ feature flags, and environment management for the Cosmos web chat integration.
 
 import os
 from typing import Dict, Any, List, Optional
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from enum import Enum
 import structlog
 

@@ -185,6 +185,16 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"❌ Error loading Chat routes: {e}")
 
+# Include Simple Chat routes (fallback chat functionality)
+try:
+    from api.v1.routes.simple_chat import router as simple_chat_router
+    app.include_router(simple_chat_router, prefix="/api/v1", tags=["simple_chat"])
+    logger.info("✅ Simple Chat routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Simple Chat routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Simple Chat routes: {e}")
+
 # Include Cosmos Chat API routes (New comprehensive chat API)
 try:
     from api.v1.routes.cosmos_chat import router as cosmos_chat_router

@@ -71,6 +71,13 @@ class RedisRepoManager:
         self.user_tier = user_tier
         self.username = username
         
+        # Initialize Cosmos configuration if not already done
+        try:
+            from integrations.cosmos.v1.cosmos.config import initialize_configuration
+            initialize_configuration()
+        except Exception as e:
+            logger.warning(f"Could not initialize Cosmos configuration: {e}")
+        
         # Initialize services
         self.settings = get_settings()
         self.key_manager = key_manager
@@ -346,8 +353,9 @@ class RedisRepoManager:
             # Normalize file path for matching
             normalized_path = file_path.lstrip('./')
             
-            # Look for file header patterns
+            # Look for file header patterns - GitIngest uses "FILE: path/to/file.py" format
             patterns = [
+                rf"^FILE: .*{re.escape(normalized_path)}\s*$",  # GitIngest format
                 rf"^## {re.escape(normalized_path)}\s*$",
                 rf"^### {re.escape(normalized_path)}\s*$",
                 rf"^# {re.escape(normalized_path)}\s*$",

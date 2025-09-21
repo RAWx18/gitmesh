@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useEffect, useRef, Suspense } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import VSCodeInterface from '@/components/VSCodeInterface';
 import ClientProviders from '@/components/ClientProviders';
 import "./globals.css";
@@ -11,68 +11,20 @@ import { useRepository } from '@/contexts/RepositoryContext';
 import { BranchProvider } from '@/contexts/BranchContext';
 import { toast } from 'sonner';
 
-export default function ContributionLayout({
+export const dynamic = 'force-dynamic'
+
+function ContributionLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const { setRepository, repository, isRepositoryLoaded } = useRepository();
   const repoProcessedRef = useRef(false);
   const router = useRouter();
   const { isAuthenticated, token } = useAuth();
 
-  // Handle repository data from URL parameters
-  useEffect(() => {
-    const repoParam = searchParams.get('repo');
-    if (repoParam && !repoProcessedRef.current) {
-      try {
-        const repoData = JSON.parse(decodeURIComponent(repoParam));
-        
-        // Validate required fields
-        if (!repoData.name || !repoData.full_name || !repoData.owner?.login) {
-          throw new Error('Invalid repository data structure');
-        }
-        
-        // Ensure all required fields are present
-        const validatedRepoData = {
-          name: repoData.name,
-          full_name: repoData.full_name,
-          description: repoData.description || 'No description available',
-          owner: {
-            login: repoData.owner.login,
-            avatar_url: repoData.owner.avatar_url || 'https://github.com/github.png',
-            type: repoData.owner.type || 'User'
-          },
-          language: repoData.language || 'Unknown',
-          stargazers_count: repoData.stargazers_count || 0,
-          forks_count: repoData.forks_count || 0,
-          html_url: repoData.html_url,
-          clone_url: repoData.clone_url || (repoData.html_url ? `${repoData.html_url}.git` : ''),
-          default_branch: repoData.default_branch || '',
-          created_at: repoData.created_at || new Date().toISOString(),
-          updated_at: repoData.updated_at || new Date().toISOString(),
-          private: repoData.private || false,
-          type: repoData.type || 'owned'
-        };
-        
-        setRepository(validatedRepoData);
-        repoProcessedRef.current = true;
-        
-        // Clean up URL parameters
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-        
-        toast.success(`Opened ${validatedRepoData.full_name} in GitMesh`);
-      } catch (error) {
-        console.error('Error parsing repository data:', error);
-        toast.error('Invalid repository data. Please try again.');
-        // Redirect to landing page on error
-        router.push('/');
-      }
-    }
-  }, [searchParams, setRepository, router]);
+  // Repository data will be handled by parent components or context
 
   // Set up demo repository if in demo mode and no repository is set
   useEffect(() => {
@@ -119,5 +71,21 @@ export default function ContributionLayout({
         </BranchProvider>
       </KnowledgeBaseProvider>
     </ClientProviders>
+  );
+}
+
+export default function ContributionLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    }>
+      <ContributionLayoutContent>{children}</ContributionLayoutContent>
+    </Suspense>
   );
 }

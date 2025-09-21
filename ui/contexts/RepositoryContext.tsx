@@ -50,7 +50,7 @@ export const RepositoryProvider: React.FC<RepositoryProviderProps> = ({ children
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const repoName = searchParams.get('repo');
+    const repoParam = searchParams.get('repo');
     const ownerName = searchParams.get('owner');
 
     const fetchRepository = async (owner: string, repo: string) => {
@@ -82,8 +82,29 @@ export const RepositoryProvider: React.FC<RepositoryProviderProps> = ({ children
       }
     };
 
-    if (ownerName && repoName) {
-      fetchRepository(ownerName, repoName);
+    // Handle encoded repository object from projects page
+    if (repoParam && !ownerName) {
+      try {
+        const decodedRepo = JSON.parse(decodeURIComponent(repoParam));
+        console.log('Setting repository from URL parameter:', decodedRepo);
+        handleSetRepository(decodedRepo);
+        setIsRepositoryLoaded(true);
+        
+        // Clean up URL parameter after processing
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('repo');
+          window.history.replaceState({}, document.title, url.toString());
+        }
+        return;
+      } catch (error) {
+        console.error('Error parsing repository from URL parameter:', error);
+      }
+    }
+
+    // Handle separate owner and repo parameters (legacy format)
+    if (ownerName && repoParam) {
+      fetchRepository(ownerName, repoParam);
     } else {
       loadFromSession();
       setIsRepositoryLoaded(true);

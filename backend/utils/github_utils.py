@@ -153,9 +153,10 @@ class GitHubAPIClient:
         token: Optional[str] = None,
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Dict[str, Any]] = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        max_retries: int = 3
     ) -> Tuple[Dict[str, Any], Dict[str, str]]:
-        """Make GitHub API request with rate limiting and caching."""
+        """Make GitHub API request with enhanced rate limiting and caching."""
         url = f"{self.base_url}{endpoint}"
         
         # Check cache first for GET requests
@@ -168,7 +169,7 @@ class GitHubAPIClient:
         # Prepare headers
         headers = {
             'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'GitMesh-AI'
+            'User-Agent': 'GitMesh-AI/1.0'
         }
         
         if token:
@@ -176,37 +177,84 @@ class GitHubAPIClient:
         
         self.rate_limit_manager.statistics['total_requests'] += 1
         
-        try:
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
-                async with session.request(
-                    method, url, headers=headers, params=params, json=data
-                ) as response:
-                    # Update rate limit info
-                    self.rate_limit_manager.update_rate_limit(token or 'public', dict(response.headers))
-                    
-                    if response.status == 403 and 'rate limit' in response.reason.lower():
-                        self.rate_limit_manager.statistics['rate_limit_hits'] += 1
-                        raise Exception(f"GitHub API rate limit exceeded")
-                    
-                    if response.status == 404:
-                        raise Exception(f"Resource not found: {endpoint}")
-                    
-                    if not response.ok:
-                        error_text = await response.text()
-                        raise Exception(f"GitHub API error {response.status}: {error_text}")
-                    
-                    response_data = await response.json()
-                    response_headers = dict(response.headers)
-                    
-                    # Cache successful GET responses
-                    if method.upper() == 'GET' and use_cache:
-                        self.cache_manager.set(url, (response_data, response_headers), params)
-                    
-                    return response_data, response_headers
-                    
-        except aiohttp.ClientError as e:
-            logger.error(f"GitHub API request failed: {e}")
-            raise Exception(f"GitHub API request failed: {e}")
+        for attempt in range(max_retries + 1):
+            try:
+                async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                    async with session.request(
+                        method, url, headers=headers, params=params, json=data
+                    ) as response:
+                        # Update rate limit info
+                        self.rate_limit_manager.update_rate_limit(token or 'public', dict(response.headers))
+                        
+                        # Handle rate limiting with exponential backoff
+                        if response.status == 429 or (response.status == 403 and 'rate limit' in str(response.reason).lower()):
+                            self.rate_limit_manager.statistics['rate_limit_hits'] += 1
+                            
+                            # Get retry after from headers
+                            retry_after = int(response.headers.get('retry-after', 60))
+                            reset_time = int(response.headers.get('x-ratelimit-reset', 0))
+                            
+                            if attempt < max_retries:
+                                # Calculate wait time (exponential backoff with jitter)
+                                base_wait = min(retry_after, 60)  # Cap at 1 minute
+                                jitter = __import__('random').uniform(0.1, 0.3)
+                                wait_time = base_wait * (2 ** attempt) + jitter
+                                
+                                logger.warning(f"Rate limit hit, waiting {wait_time:.1f}s before retry {attempt + 1}/{max_retries}")
+                                await asyncio.sleep(wait_time)
+                                continue
+                            else:
+                                # No more retries, raise detailed error
+                                error_data = {
+                                    "error": {
+                                        "error_code": "RATE_LIMIT_EXCEEDED",
+                                        "message": "Rate limit exceeded for requests_per_minute",
+                                        "category": "rate_limit",
+                                        "retry_after": retry_after,
+                                        "details": {
+                                            "limit_type": "requests_per_minute",
+                                            "max_requests": int(response.headers.get('x-ratelimit-limit', 60)),
+                                            "current_count": int(response.headers.get('x-ratelimit-used', 0)),
+                                            "reset_time": datetime.fromtimestamp(reset_time).isoformat() if reset_time else None
+                                        }
+                                    }
+                                }
+                                raise Exception(f"GitHub API error: 429 Too Many Requests - {error_data}")
+                        
+                        if response.status == 404:
+                            raise Exception(f"Resource not found: {endpoint}")
+                        
+                        if not response.ok:
+                            error_text = await response.text()
+                            raise Exception(f"GitHub API error {response.status}: {error_text}")
+                        
+                        response_data = await response.json()
+                        response_headers = dict(response.headers)
+                        
+                        # Cache successful GET responses
+                        if method.upper() == 'GET' and use_cache:
+                            self.cache_manager.set(url, (response_data, response_headers), params)
+                        
+                        return response_data, response_headers
+                        
+            except aiohttp.ClientError as e:
+                if attempt < max_retries:
+                    wait_time = 2 ** attempt
+                    logger.warning(f"Request failed, retrying in {wait_time}s: {e}")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"GitHub API request failed after {max_retries} retries: {e}")
+                    raise Exception(f"GitHub API request failed: {e}")
+            
+            except Exception as e:
+                if "rate limit" in str(e).lower() and attempt < max_retries:
+                    wait_time = 60 * (2 ** attempt)  # Exponential backoff for rate limits
+                    logger.warning(f"Rate limit error, waiting {wait_time}s before retry: {e}")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    raise
     
     async def get(self, endpoint: str, token: Optional[str] = None, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Make GET request to GitHub API."""

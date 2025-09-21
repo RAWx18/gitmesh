@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useHubNavigation } from '@/lib/hooks/useHubNavigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRepository } from '@/contexts/RepositoryContext';
 import { useBranch } from '@/contexts/BranchContext';
@@ -11,6 +10,7 @@ import { ContributionNavigation } from '../contribution/ContributionNavigation';
 import { HubNavigation } from './HubNavigation';
 import { OverviewDashboard } from './overview/OverviewDashboard';
 import AnimatedTransition from '@/components/AnimatedTransition';
+import { NavigationWrapper } from '@/components/navigation/NavigationWrapper';
 import { Loader2 } from 'lucide-react';
 
 interface HubRouterProps {
@@ -21,22 +21,75 @@ interface HubRouterProps {
   children: React.ReactNode;
 }
 
-export const HubRouter: React.FC<HubRouterProps> = ({
+function HubRouterContent({
   className = '',
   onError,
   onLoading,
   isContribution = false,
   children,
-}) => {
+}: HubRouterProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { isAuthenticated, user } = useAuth();
   const { repository, isRepositoryLoaded } = useRepository();
   const { selectedBranch } = useBranch();
   
-  // Use navigation hook for enhanced routing
-  const { navigationState, navigateToView, updateFilters } = useHubNavigation();
+  return (
+    <NavigationWrapper>
+      {({ navigationState, navigateToView, updateFilters }) => (
+        <HubRouterInner
+          className={className}
+          onError={onError}
+          onLoading={onLoading}
+          isContribution={isContribution}
+          router={router}
+          pathname={pathname}
+          isAuthenticated={isAuthenticated}
+          user={user}
+          repository={repository}
+          isRepositoryLoaded={isRepositoryLoaded}
+          selectedBranch={selectedBranch}
+          navigationState={navigationState}
+          navigateToView={navigateToView}
+          updateFilters={updateFilters}
+        >
+          {children}
+        </HubRouterInner>
+      )}
+    </NavigationWrapper>
+  );
+}
+
+interface HubRouterInnerProps extends HubRouterProps {
+  router: any;
+  pathname: string;
+  isAuthenticated: boolean;
+  user: any;
+  repository: any;
+  isRepositoryLoaded: boolean;
+  selectedBranch: string;
+  navigationState: any;
+  navigateToView: any;
+  updateFilters: any;
+}
+
+function HubRouterInner({
+  className = '',
+  onError,
+  onLoading,
+  isContribution = false,
+  children,
+  router,
+  pathname,
+  isAuthenticated,
+  user,
+  repository,
+  isRepositoryLoaded,
+  selectedBranch,
+  navigationState,
+  navigateToView,
+  updateFilters,
+}: HubRouterInnerProps) {
 
   // Hub state management
   const [hubState, setHubState] = useState<HubState>({
@@ -102,76 +155,17 @@ export const HubRouter: React.FC<HubRouterProps> = ({
     }
   }, [hubState.currentView, navigateToView, onError, onLoading]);
 
-  // Handle URL parameter changes (for deep linking and browser navigation)
+  // Handle navigation state changes
   useEffect(() => {
-    const view = searchParams.get('view') as HubView;
-    const repositoryId = searchParams.get('repository');
-    const branch = searchParams.get('branch');
-
-    if (view && view !== hubState.currentView) {
-      handleViewChange(view);
+    if (navigationState.currentView !== hubState.currentView) {
+      handleViewChange(navigationState.currentView);
     }
+  }, [navigationState.currentView, hubState.currentView, handleViewChange]);
 
-    // Update filters from URL parameters
-    const projectStatus = searchParams.get('project_status');
-    const activityType = searchParams.get('activity_type');
-    const insightsRange = searchParams.get('insights_range');
-
-    if (projectStatus || activityType || insightsRange) {
-      setHubState(prev => ({
-        ...prev,
-        filters: {
-          projects: {
-            ...prev.filters.projects,
-            ...(projectStatus && { status: [projectStatus as any] })
-          },
-          activity: {
-            ...prev.filters.activity,
-            ...(activityType && { type: [activityType as any] })
-          },
-          insights: {
-            ...prev.filters.insights,
-            ...(insightsRange && { timeRange: insightsRange as any })
-          }
-        }
-      }));
-    }
-  }, [searchParams, hubState.currentView, handleViewChange]);
-
-  // Update URL when filters change (for shareable URLs)
+  // Update filters using the navigation hook
   const updateUrlWithFilters = useCallback(() => {
-    const params = new URLSearchParams(searchParams);
-    
-    // Add current view
-    params.set('view', hubState.currentView);
-    
-    // Add repository context
-    if (repository) {
-      params.set('repository', repository.full_name);
-    }
-    
-    // Add branch context
-    if (selectedBranch) {
-      params.set('branch', selectedBranch);
-    }
-
-    // Add filters
-    if (hubState.filters.projects.status?.length) {
-      params.set('project_status', hubState.filters.projects.status[0]);
-    }
-    
-    if (hubState.filters.activity.type?.length) {
-      params.set('activity_type', hubState.filters.activity.type[0]);
-    }
-    
-    if (hubState.filters.insights.timeRange) {
-      params.set('insights_range', hubState.filters.insights.timeRange);
-    }
-
-    // Update URL without triggering navigation
-    const newUrl = `${pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newUrl);
-  }, [hubState, repository, selectedBranch, pathname, searchParams]);
+    updateFilters(hubState.filters);
+  }, [hubState.filters, updateFilters]);
 
   // Handle errors from child components
   const handleError = useCallback((error: Error) => {
@@ -297,6 +291,21 @@ export const HubRouter: React.FC<HubRouterProps> = ({
         </div>
       )}
     </div>
+  );
+}
+
+export const HubRouter: React.FC<HubRouterProps> = (props) => {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading navigation...</span>
+        </div>
+      </div>
+    }>
+      <HubRouterContent {...props} />
+    </Suspense>
   );
 };
 

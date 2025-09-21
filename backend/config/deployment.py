@@ -7,7 +7,8 @@ including Docker, Kubernetes, and cloud deployment settings.
 
 import os
 from typing import Dict, Any, List, Optional
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from enum import Enum
 import structlog
 

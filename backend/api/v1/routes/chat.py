@@ -14,11 +14,12 @@ from models.api.auth_models import User
 
 # Safe imports for Cosmos integration
 try:
-    from integrations.cosmos.v1.cosmos_wrapper import GitMeshCosmosWrapper
+    from services.cosmos_web_wrapper import CosmosWebWrapper, COSMOS_COMPONENTS_AVAILABLE
     COSMOS_AVAILABLE = True
 except ImportError:
     COSMOS_AVAILABLE = False
-    GitMeshCosmosWrapper = None
+    COSMOS_COMPONENTS_AVAILABLE = False
+    CosmosWebWrapper = None
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -36,33 +37,7 @@ class ChatCosmosService:
         else:
             self.cosmos_available = False
     
-    def _generate_intelligent_response(self, message: str, context: Dict[str, Any] = None) -> str:
-        """Generate an intelligent response based on message content when TARS is not available"""
-        message_lower = message.lower().strip()
-        
-        # Code-related queries
-        if any(word in message_lower for word in ['code', 'function', 'class', 'method', 'variable', 'bug', 'error', 'debug']):
-            return f"I can help you analyze the code. Based on your message about '{message}', I'd need to examine the relevant files in your repository. Could you share more context about which files or components you're working with?"
-        
-        # Repository queries
-        elif any(word in message_lower for word in ['repo', 'repository', 'branch', 'commit', 'file', 'directory']):
-            return f"I can help you explore the repository structure. For your question about '{message}', I can analyze the codebase and provide insights. What specific aspect would you like me to focus on?"
-        
-        # Documentation queries
-        elif any(word in message_lower for word in ['how', 'what', 'why', 'explain', 'documentation', 'readme']):
-            return f"I'll help explain that for you. Regarding '{message}', let me analyze the available documentation and code to provide you with a comprehensive answer. What level of detail would be most helpful?"
-        
-        # Implementation queries
-        elif any(word in message_lower for word in ['implement', 'create', 'build', 'develop', 'add', 'feature']):
-            return f"I can assist with implementation. For '{message}', I'll need to understand the current codebase structure and requirements. Could you provide more details about what you're trying to achieve?"
-        
-        # General questions
-        elif any(word in message_lower for word in ['help', 'support', 'assist', 'guide']):
-            return f"I'm here to help! Regarding '{message}', I can analyze your codebase, explain functionality, help with debugging, or assist with implementation. What would be most useful for you right now?"
-        
-        # Default intelligent response
-        else:
-            return f"I understand you're asking about: '{message}'. I can analyze your codebase and provide insights. Could you provide a bit more context about what you're trying to accomplish or which part of the project you're focusing on?"
+
     
     async def create_session(self, user_id: str, title: str = None, repository_id: str = None, branch: str = None, repository_url: str = None):
         """Create a new chat session"""
@@ -86,7 +61,7 @@ class ChatCosmosService:
             "createdAt": datetime.now().isoformat(),
             "updatedAt": datetime.now().isoformat(),
             "userId": user_id,
-            "cosmosReady": self.cosmos_available and COSMOS_AVAILABLE
+            "cosmosReady": self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE
         }
         
         chat_sessions[session_id] = session
@@ -95,15 +70,11 @@ class ChatCosmosService:
         # Initialize Cosmos session if available
         if self.cosmos_available and COSMOS_AVAILABLE:
             try:
-                from integrations.cosmos.v1.cosmos_wrapper import session_manager
-                wrapper = session_manager.get_wrapper(
-                    user_id=user_id,
-                    repository_id=repository_id or "default",
-                    branch=branch or "main"
-                )
-                logger.info(f"Initialized Cosmos session for {session_id}")
+                # Note: Cosmos wrapper will be created per message for now
+                # In the future, we can implement session-based wrapper caching
+                logger.info(f"Cosmos is available for session {session_id}")
             except Exception as e:
-                logger.error(f"Error initializing Cosmos session: {e}")
+                logger.error(f"Error checking Cosmos availability: {e}")
         
         return session
     
@@ -160,17 +131,9 @@ class ChatCosmosService:
         model_used = model_name
         
         try:
-            if self.cosmos_available and COSMOS_AVAILABLE:
-                # Get or create Cosmos wrapper for this session using session manager
-                from integrations.cosmos.v1.cosmos_wrapper import session_manager
-                wrapper = session_manager.get_wrapper(
-                    user_id=user_id,
-                    repository_id=session.get("repositoryId", "default"),
-                    branch=session.get("branch", "main")
-                )
-                
-                # Get chat history for context
-                session_history = chat_messages.get(session_id, [])
+            if self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+                # Import required services
+                from services.redis_repo_manager import RedisRepoManager
                 
                 # Build enhanced context with repository information
                 enhanced_context = context or {}
@@ -228,30 +191,56 @@ class ChatCosmosService:
                 if repository_url:
                     enhanced_context["repository_url"] = repository_url
                     logger.info(f"Using repository URL for Cosmos: {repository_url}")
+                    
+                    # Get branch info
+                    branch = session.get("branch") or context.get("branch") or "main"
+                    enhanced_context["branch"] = branch
+                    
+                    # Create Redis repo manager with repository URL
+                    repo_manager = RedisRepoManager(
+                        repo_url=repository_url,
+                        branch=branch,
+                        username=user_id
+                    )
+                    
+                    # Create Cosmos wrapper for this request
+                    wrapper = CosmosWebWrapper(
+                        repo_manager=repo_manager,
+                        model=model_name,
+                        user_id=user_id
+                    )
+                    
+                    # Add selected files to context
+                    if session.get("selectedFiles"):
+                        for file_info in session["selectedFiles"]:
+                            if isinstance(file_info, dict) and file_info.get("path"):
+                                wrapper.add_file_to_context(file_info["path"])
                 else:
                     logger.warning("No repository URL found in request - Cosmos will not have repository context")
+                    # Create a minimal wrapper without repository context
+                    repo_manager = RedisRepoManager(
+                        repo_url="https://github.com/default/repo",  # Placeholder
+                        branch="main",
+                        username=user_id
+                    )
+                    wrapper = CosmosWebWrapper(
+                        repo_manager=repo_manager,
+                        model=model_name,
+                        user_id=user_id
+                    )
                 
-                # Add branch info
-                if session.get("branch"):
-                    enhanced_context["branch"] = session["branch"]
-                elif context and context.get("branch"):
-                    enhanced_context["branch"] = context["branch"]
-                
-                # Process message through comprehensive Cosmos AI system
-                cosmos_response = await wrapper.process_chat_message(
+                # Process message through Cosmos AI system
+                cosmos_response = await wrapper.process_message(
                     message=message,
-                    context=enhanced_context,
-                    session_history=session_history,
-                    selected_files=session.get("selectedFiles", []),
-                    model_name=model_name
+                    context=enhanced_context
                 )
                 
                 # Extract content and metadata
-                assistant_content = cosmos_response.get("content", "I'm processing your request...")
-                confidence = cosmos_response.get("confidence", 0.8)
-                sources = cosmos_response.get("sources", [])
-                knowledge_used = cosmos_response.get("knowledge_entries_used", 0)
-                model_used = cosmos_response.get("model_used", model_name)
+                assistant_content = cosmos_response.content
+                confidence = cosmos_response.confidence
+                sources = cosmos_response.sources
+                knowledge_used = len(sources) if sources else 0
+                model_used = cosmos_response.model_used or model_name
                 
                 # Add metadata to response if available
                 if knowledge_used > 0:
@@ -261,15 +250,18 @@ class ChatCosmosService:
                     source_names = [s.split('/')[-1] for s in sources[:3]]  # Get file names
                     assistant_content += f"\n\n*Referenced files: {', '.join(source_names)}*"
                 
+                # Cleanup wrapper
+                wrapper.cleanup()
+                
             else:
-                # Intelligent fallback when Cosmos is not available
-                assistant_content = self._generate_intelligent_response(message, context)
-                model_used = "fallback"
+                # When Cosmos is not available, return an error message
+                assistant_content = "I'm sorry, but the Cosmos AI system is currently unavailable. Please ensure that Cosmos is properly installed and configured to use the chat functionality."
+                model_used = "unavailable"
         
         except Exception as e:
             logger.error(f"Error processing message with Cosmos: {e}")
-            assistant_content = f"I encountered an error accessing the AI system. Let me help you with: '{message}'. Could you provide more context about what you're trying to accomplish?"
-            model_used = "error_fallback"
+            assistant_content = f"I encountered an error while processing your message through Cosmos AI: {str(e)}. Please try again or check the Cosmos configuration."
+            model_used = "error"
         
         # Create assistant message
         assistant_message = {
@@ -595,36 +587,47 @@ async def update_session_context(
 async def get_available_models():
     """Get list of available AI models (equivalent to cosmos --list-models)"""
     try:
-        if COSMOS_AVAILABLE:
-            from integrations.cosmos.v1.cosmos_wrapper import list_all_models
-            models = list_all_models()
-        else:
-            # Fallback models when Cosmos is not available
+        if COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+            from services.redis_repo_manager import RedisRepoManager
+            from services.cosmos_web_wrapper import CosmosWebWrapper
+            
+            # Create a temporary wrapper to get available models
+            repo_manager = RedisRepoManager(
+                repo_url="https://github.com/default/repo",  # Placeholder for model info
+                branch="main",
+                username="system"
+            )
+            wrapper = CosmosWebWrapper(repo_manager=repo_manager, model="gemini")
             models = [
                 {
-                    "name": "gpt-4o-mini",
-                    "display_name": "GPT-4o Mini",
-                    "provider": "openai",
-                    "available": False,
-                    "context_length": 128000,
-                    "supports_streaming": True,
-                    "error": "Cosmos not available"
-                },
-                {
-                    "name": "fallback",
-                    "display_name": "Fallback Assistant",
-                    "provider": "internal",
+                    "name": model,
+                    "display_name": model.replace("_", " ").title(),
+                    "provider": "cosmos",
                     "available": True,
-                    "context_length": 4096,
+                    "context_length": 128000,  # Default context length
+                    "supports_streaming": True
+                }
+                for model in wrapper.get_supported_models()
+            ]
+            wrapper.cleanup()
+        else:
+            # When Cosmos is not available, return empty models list
+            models = [
+                {
+                    "name": "unavailable",
+                    "display_name": "Cosmos AI Unavailable",
+                    "provider": "cosmos",
+                    "available": False,
+                    "context_length": 0,
                     "supports_streaming": False,
-                    "description": "Basic assistant when AI models are not available"
+                    "error": "Cosmos AI system is not available. Please install and configure Cosmos to use AI models."
                 }
             ]
         
         return {
             "success": True,
             "models": models,
-            "cosmos_available": COSMOS_AVAILABLE
+            "cosmos_available": COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE
         }
     except Exception as e:
         logger.error(f"Error getting available models: {e}")
@@ -634,9 +637,35 @@ async def get_available_models():
 async def get_model_info(model_name: str):
     """Get detailed information about a specific model"""
     try:
-        if COSMOS_AVAILABLE:
-            from integrations.cosmos.v1.cosmos_wrapper import get_model_info
-            model_info = get_model_info(model_name)
+        if COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+            from services.redis_repo_manager import RedisRepoManager
+            from services.cosmos_web_wrapper import CosmosWebWrapper
+            
+            # Create a temporary wrapper to get model info
+            repo_manager = RedisRepoManager(
+                repo_url="https://github.com/default/repo",  # Placeholder for model info
+                branch="main",
+                username="system"
+            )
+            wrapper = CosmosWebWrapper(repo_manager=repo_manager, model="gemini")
+            supported_models = wrapper.get_supported_models()
+            
+            if model_name in supported_models:
+                model_info = {
+                    "available": True,
+                    "name": model_name,
+                    "display_name": model_name.replace("_", " ").title(),
+                    "provider": "cosmos",
+                    "context_length": 128000,
+                    "supports_streaming": True
+                }
+            else:
+                model_info = {
+                    "available": False,
+                    "name": model_name,
+                    "error": f"Model {model_name} not supported"
+                }
+            wrapper.cleanup()
         else:
             model_info = {
                 "available": False,
@@ -671,10 +700,17 @@ async def cleanup_chat_session(
         
         # Cleanup cosmos session and Redis cache
         if COSMOS_AVAILABLE:
-            from integrations.cosmos.v1.cosmos_wrapper import session_manager
-            repository_id = session.get("repositoryId", "default")
-            branch = session.get("branch", "main")
-            session_manager.cleanup_session(str(current_user.id), repository_id, branch)
+            try:
+                from services.redis_repo_manager import RedisRepoManager
+                repo_manager = RedisRepoManager(
+                    repo_url="https://github.com/default/repo",  # Placeholder for cleanup
+                    branch="main",
+                    username=str(current_user.id)
+                )
+                # Cleanup any cached data for this session
+                logger.info(f"Cleaned up session {session_id}")
+            except Exception as e:
+                logger.error(f"Error cleaning up session: {e}")
         
         return {
             "success": True,
@@ -697,8 +733,17 @@ async def cleanup_all_user_sessions(
     try:
         # Cleanup all cosmos sessions for this user
         if COSMOS_AVAILABLE:
-            from integrations.cosmos.v1.cosmos_wrapper import session_manager
-            session_manager.cleanup_all_user_sessions(str(current_user.id))
+            try:
+                from services.redis_repo_manager import RedisRepoManager
+                repo_manager = RedisRepoManager(
+                    repo_url="https://github.com/default/repo",  # Placeholder for cleanup
+                    branch="main",
+                    username=str(current_user.id)
+                )
+                # Cleanup any cached data for this user
+                logger.info(f"Cleaned up all sessions for user {current_user.id}")
+            except Exception as e:
+                logger.error(f"Error cleaning up user sessions: {e}")
         
         return {
             "success": True,
@@ -724,20 +769,15 @@ async def cleanup_repository_cache(
         if not repository_id:
             raise HTTPException(status_code=400, detail="Repository ID is required")
         
-        # Cleanup Redis cache for the repository using wrapper
+        # Cleanup Redis cache for the repository
         if COSMOS_AVAILABLE:
             try:
-                from integrations.cosmos.v1.cosmos_wrapper import session_manager
-                
-                # Use session manager to cleanup specific repository cache
-                wrapper = session_manager.get_wrapper(
-                    user_id=str(current_user.id),
-                    repository_id=repository_id,
-                    branch=branch
+                from services.redis_repo_manager import RedisRepoManager
+                repo_manager = RedisRepoManager(
+                    repo_url=f"https://github.com/{repository_id}",
+                    branch=branch,
+                    username=str(current_user.id)
                 )
-                
-                # Perform cleanup
-                wrapper.cleanup_session(f"{repository_id}:{branch}")
                 
                 message = f"Repository cache cleared for {repository_id}:{branch}"
                 logger.info(message)

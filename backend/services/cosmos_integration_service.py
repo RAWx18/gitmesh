@@ -88,6 +88,17 @@ class CosmosIntegrationService:
             logger.info("Initializing Cosmos Integration Service...")
             start_time = datetime.now()
             
+            # Initialize cosmos configuration first
+            try:
+                from backend.integrations.cosmos.v1.cosmos.config import initialize_configuration
+                initialize_configuration()
+                logger.info("Cosmos configuration initialized successfully")
+            except Exception as e:
+                logger.warning(f"Cosmos configuration initialization failed: {e}")
+                logger.info("Continuing with basic chat functionality without advanced Cosmos features")
+                # Return False to indicate cosmos-specific features are not available
+                return False
+            
             # Check if Cosmos chat is enabled
             if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
                 logger.info("Cosmos chat is disabled by feature flag")

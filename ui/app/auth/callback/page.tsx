@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function AuthCallback() {
-  const searchParams = useSearchParams();
+export const dynamic = 'force-dynamic'
+
+function AuthCallbackContent() {
   const router = useRouter();
   const { setUserFromCallback } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [debug, setDebug] = useState<string>("");
 
   useEffect(() => {
-    const authToken = searchParams.get("auth_token");
-    const authUser = searchParams.get("auth_user");
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get("auth_token");
+    const authUser = urlParams.get("auth_user");
 
     console.log("AuthCallback: Processing callback");
     console.log("Auth token:", authToken ? "Present" : "Missing");
@@ -67,7 +69,7 @@ export default function AuthCallback() {
         router.push("/");
       }, 3000);
     }
-  }, [searchParams, router, setUserFromCallback]);
+  }, [router, setUserFromCallback]);
 
   if (error) {
     return (
@@ -105,5 +107,20 @@ export default function AuthCallback() {
         <p className="mt-2 text-xs text-gray-400">Debug: {debug}</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
+          <h2 className="mt-4 text-xl font-semibold text-gray-900">Loading...</h2>
+        </div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

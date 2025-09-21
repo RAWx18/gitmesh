@@ -31,6 +31,17 @@ Our mascot (Meshy/Mesh Wolf) reflects GitMesh’s core: agile, resilient, and un
 
 [Waitlist website](www.gitmesh.dev)
 
+### 🤖 AI-Powered Chat with Your Codebase
+
+GitMesh includes an integrated AI chat system that lets you interact with your repositories naturally. Just like using `cosmos --model gemini` in the CLI, you can:
+
+- Ask questions about your code and get intelligent explanations
+- Get suggestions for improvements and best practices  
+- Understand complex codebases through natural conversation
+- Receive context-aware responses based on your specific repository
+
+The chat automatically uses the repository you have open, making it seamless to get help with your current project.
+
 ---
 
 <div align="center">

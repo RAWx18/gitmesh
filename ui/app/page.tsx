@@ -1,19 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Github, GitBranch, ArrowRight, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/contexts/AuthContext"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+function HomeContent() {
   const { isAuthenticated, login } = useAuth()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -220,5 +221,13 @@ export default function Home() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }

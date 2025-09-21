@@ -480,8 +480,9 @@ class ProductionConfig:
         logger.debug("Validating GitHub configuration...")
         
         # Check GitHub token
-        if not self.github.token:
+        if not self.github.token or self.github.token == "your_github_personal_access_token_here":
             logger.warning("GitHub token not set - API rate limits will be restrictive")
+            logger.info("To enable full GitHub integration, set GITHUB_TOKEN in your .env file")
         elif len(self.github.token) < 20:
             logger.warning("GitHub token seems too short - verify token format")
     

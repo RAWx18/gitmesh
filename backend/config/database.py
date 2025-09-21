@@ -1,6 +1,6 @@
 """
 Database configuration and connection management.
-This is a minimal implementation to get the server running.
+Uses unified configuration system to eliminate hardcoded values.
 """
 
 import logging
@@ -8,6 +8,7 @@ from typing import Optional, AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from contextlib import asynccontextmanager
+from .simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -21,25 +22,26 @@ _database_manager = None
 
 
 class DatabaseManager:
-    """Simple database manager."""
+    """Database manager with unified configuration."""
     
     def __init__(self):
         self.engine = None
         self.session_factory = None
         self.initialized = False
+        self.config = get_config()
     
     async def initialize(self) -> bool:
         """Initialize database connection."""
         try:
-            # Use PostgreSQL
-            database_url = "postgresql+asyncpg://postgres.rrqdwjnlcfxacrnmnohi:GitMeshlfdt2025@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+            # Get database URL from unified config
+            database_url = self.config.get_database_url()
             
             self.engine = create_async_engine(
                 database_url,
-                echo=False,
+                echo=self.config.db_echo,
                 future=True,
-                pool_size=10,
-                max_overflow=20
+                pool_size=self.config.db_pool_size,
+                max_overflow=self.config.db_max_overflow
             )
             
             self.session_factory = async_sessionmaker(
@@ -102,10 +104,13 @@ async def get_async_db_session() -> AsyncSession:
 
 
 def get_database_settings():
-    """Get database settings."""
+    """Get database settings from unified config."""
+    config = get_config()
     return {
-        "database_url": "postgresql+asyncpg://postgres.rrqdwjnlcfxacrnmnohi:GitMeshlfdt2025@aws-1-ap-south-1.pooler.supabase.com:5432/postgres",
-        "echo": False
+        "database_url": config.get_database_url(),
+        "echo": config.db_echo,
+        "pool_size": config.db_pool_size,
+        "max_overflow": config.db_max_overflow
     }
 
 

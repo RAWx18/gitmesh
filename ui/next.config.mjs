@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  output: 'standalone',
+  experimental: {
+    forceSwcTransforms: true,
+  },
   async rewrites() {
     return [
       {

@@ -36,9 +36,16 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="/cosmos", tags=["cosmos-chat"])
 
-# Initialize services
-cosmos_service = CosmosWebService()
-response_processor = ResponseProcessor()
+# Initialize services with error handling
+try:
+    cosmos_service = CosmosWebService()
+    response_processor = ResponseProcessor()
+    COSMOS_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"Cosmos services not available: {e}")
+    cosmos_service = None
+    response_processor = None
+    COSMOS_AVAILABLE = False
 
 
 async def get_cosmos_wrapper(
@@ -105,6 +112,12 @@ async def send_message(request: CosmosMessageRequest):
     a web-safe formatted response with syntax highlighting, diff visualization,
     and interactive elements.
     """
+    if not COSMOS_AVAILABLE:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Cosmos chat service is not available. Please check configuration."
+        )
+    
     try:
         start_time = datetime.now()
         

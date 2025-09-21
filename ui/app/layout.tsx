@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { RepositoryProvider } from "@/contexts/RepositoryContext"
 import { BranchProvider } from "@/contexts/BranchContext"
+import RateLimitHandler from "@/components/RateLimitHandler"
 import Image from "next/image"
 
 export const metadata: Metadata = {
@@ -30,7 +31,9 @@ export default function RootLayout({
             <AuthProvider>
               <RepositoryProvider>
                 <BranchProvider>
-                  {children}
+                  <RateLimitHandler>
+                    {children}
+                  </RateLimitHandler>
                 </BranchProvider>
               </RepositoryProvider>
             </AuthProvider>

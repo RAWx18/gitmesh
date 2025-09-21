@@ -116,8 +116,11 @@ class GitHubOAuth:
         
         # Add default development origins if not in production
         if os.getenv('NODE_ENV') != 'production':
-            default_origins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3002', 'http://127.0.0.1:3002']
-            for origin in default_origins:
+            # Use unified config for development origins
+            from config.unified_config import get_config
+            config = get_config()
+            yaml_origins = config.get_yaml_config("app.cors_origins", [])
+            for origin in yaml_origins:
                 if origin not in origins:
                     origins.append(origin)
         
@@ -415,3 +418,23 @@ def get_demo_settings() -> Dict[str, Any]:
         },
         'updated_at': datetime.now().isoformat()
     }
+
+
+async def get_current_user(token: str = None) -> Dict[str, Any]:
+    """Get current user from token - placeholder for compatibility."""
+    if not token:
+        return get_demo_user()
+    
+    try:
+        payload = jwt_handler.verify_token(token)
+        # In a real implementation, you'd fetch user from database
+        # For now, return demo user with token data
+        user = get_demo_user()
+        user.update({
+            'session_id': payload.get('session_id'),
+            'github_id': payload.get('github_id'),
+            'login': payload.get('login')
+        })
+        return user
+    except Exception:
+        return get_demo_user()
