@@ -25,76 +25,11 @@
 
 ## </> What is GitMesh?
 
-**GitMesh** revolutionizes Git-based collaboration by introducing **Branch-Level Management** — a paradigm shift that transforms how teams plan, develop, and contribute to open-source projects. Unlike traditional project management tools, GitMesh organizes your codebase at the branch level, providing streamlined contribution tracking and seamless workflow orchestration.
+**GitMesh** is a Git collaboration network designed to solve open source's biggest challenge: contributor dropout. Our AI-powered platform provides real-time branch-level insights, intelligent contributor-task matching, and automated workflows. It transforms complex codebases into clear, guided contribution journeys—fueling engagement with gamified rewards, bounties, and integration with popular open source support programs.
 
-Our friendly mascot here represents the core philosophy of GitMesh: small, efficient, but incredibly powerful when working together in a team!
+Our mascot (Meshy/Mesh Wolf) reflects GitMesh’s core: agile, resilient, and unstoppable together. Like a pack, we thrive on teamwork — efficient, and powerful in unison.
 
-GitMesh is ready to revolutionize the open source world with improved collaboration and branch management.
-
-[Waitlist website](gitmesh.vercel.app)
-
----
-
-## </> Key Features
-
-<div align="center">
-
-### 👾 **Git Collaboration Platform**
-```
-┌─────────────────────────────────────────────────────────────┐
-│     Branch Management                                       │
-│     PR Visualization                                        │
-│     Issue Management                                        │
-│     Code Collaboration Tools                                │
-│     Repository Organization                                 │
-│     Open Source Contribution Management                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 🧠 **AI-Powered Code Intelligence**
-```
-┌─────────────────────────────────────────────────────────────┐
-│     Cosmos AI Integration                                   │
-│     Intelligent Code Analysis                               │
-│     Multi-Model AI Support (GPT-4, Claude, Gemini)         │
-│     Real-time Code Review                                   │
-│     Automated Documentation                                 │
-│     Smart Code Generation                                   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 👾 **Easy Workflow Management**
-```
-┌─────────────────────────────────────────────────────────────┐
-│     Branch-Specific Planning                                │
-│     Help opensource contributors know what's important      │
-│     Automated Status Tracking                               │
-│     Custom Workflow Templates                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 👾 **Analytics & Insights**
-```
-┌─────────────────────────────────────────────────────────────┐
-│     Contribution Heatmaps                                   │
-│     Velocity Tracking                                       │
-│     See who's working on which issue/PR                     │
-│     Team Performance Dashboards                             │
-│     Showcase skills & avoid conflicts                       │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 👾 **Enterprise Integration**
-```
-┌─────────────────────────────────────────────────────────────┐
-│     Multi-Platform Support (GitHub, GitLab, Bitbucket)      │
-│     SSO Authentication                                      │
-│     Team Collaboration Features                             │
-│     Webhook Automation                                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
-</div>
+[Waitlist website](www.gitmesh.dev)
 
 ---
 
@@ -149,92 +84,40 @@ cp ui/.env.example ui/.env
 
 > **Note**: Replace all placeholder values [REDACTED] with your actual configuration values.
 
-### 👾 Installation
-
-1. **Setup HashiCorp Vault (Required for Key Management)**
-   
-   **Install Vault:**
-   ```bash
-   # On Linux/macOS via Homebrew
-   brew install vault
-   
-   # Or download from https://www.vaultproject.io/downloads
-   ```
-   
-   **Start Vault Server:**
-   ```bash
-   vault server -dev
-   
-   # In another terminal, set environment variables
-   export VAULT_ADDR='http://127.0.0.1:8200'
-   export VAULT_TOKEN=your-root-token  # Copy from vault server output
-   
-   # Enable Transit secrets engine
-   vault secrets enable transit
-   ```
-   
-   **For Production:**
-   ```bash
-   # Create vault config file (vault.hcl)
-   vault server -config=vault.hcl
-   
-   # Initialize and unseal vault
-   vault operator init
-   vault operator unseal
-   ```
-
-2. **Setup Python Backend**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Linux/Mac
-   .\venv\Scripts\activate # On Windows
-   pip install -r requirements.txt
-   ```
-
-3. **Setup Frontend**
-   ```bash
-   cd ui
-   npm install
-   ```
-
 ### 👾 Running the Application
 
 1. **Start HashiCorp Vault** (in first terminal)
    ```bash
-   vault server -dev
-   # Note the Root Token from the output
+   brew install vault # On Linux/macOS via Homebrew https://www.vaultproject.io/downloads
+   vault server -dev # Keep this running
    ```
-
-2. **Configure Vault Environment** (in second terminal)
+   
+   **In another terminal:**
    ```bash
-   export VAULT_ADDR='http://127.0.0.1:8200'
-   export VAULT_TOKEN=your-root-token  # From step 1
-   vault secrets enable transit
+   export VAULT_ADDR='http://127.0.0.1:8200' # set environment variables
+   export VAULT_TOKEN=your-root-token  # Copy from vault server output
+   vault secrets enable transit # Enable Transit secrets engine
    ```
 
-3. **Start Python Backend** (in third terminal)
+2. **Start Python Backend** (in second terminal)
    ```bash
    cd backend
    source venv/bin/activate  # On Linux/Mac
    .\venv\Scripts\activate # On Windows
-   # Make sure VAULT_TOKEN is set in your .env file
+   pip install -r requirements.txt
    uvicorn app:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-4. **Start Frontend** (in fourth terminal)
+3. **Start Frontend** (in third terminal)
    ```bash
    cd ui
+   npm install
    npm run dev
    ```
 
-5. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Vault UI: http://127.0.0.1:8200
-  
-### 👾 Static Demo
-
-[Deployed on Vercel](https://GitMesh-demo.vercel.app/)
+> **Access the Application**
+>   - Frontend: http://localhost:3000
+>   - Vault UI: http://127.0.0.1:8200
 
 ## </> Roadmap
 
@@ -248,6 +131,8 @@ cp ui/.env.example ui/.env
 - ⏳ Containerize the application using Docker
 - ⏳ Deploy the complete website to production environment
 - ⏳ Set up and publish project documentation site
+
+[Complete Roadmap](https://github.com/LF-Decentralized-Trust-Mentorships/gitmesh/blob/main/ROADMAP.md)
 
 ---
 

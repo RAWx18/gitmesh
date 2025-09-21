@@ -52,12 +52,6 @@ const navigationItems = [
     icon: BarChart3,
     description: 'Analytics and contribution insights'
   },
-  {
-    name: 'Profile',
-    href: '/hub/profile/me',
-    icon: User,
-    description: 'Your profile and GitHub information'
-  }
 ];
 
 export function HubNavigation() {

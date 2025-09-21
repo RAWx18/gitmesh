@@ -101,6 +101,7 @@ import rehypeHighlight from 'rehype-highlight';
 import FileChatInterface from './FileChatInterface';
 import CosmosFeaturesPanelRN from './CosmosFeaturesPanelRN';
 import { ChatSessionManager } from './ChatSessionManager';
+import { ChatInterface } from './chat';
 
 // Tab interface for chat sessions
 interface ChatTab {
@@ -696,7 +697,7 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
           ) : (
             <>
               {tabs.find(tab => tab.id === activeTab)?.type === 'chat' && (
-                <FileChatInterface />
+                <ChatInterface />
               )}
               
               {tabs.find(tab => tab.id === activeTab)?.type === 'cosmos' && (
