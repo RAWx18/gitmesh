@@ -27,6 +27,16 @@ from pydantic import BaseModel
 from config.settings import get_settings
 from utils.tracing import trace
 
+# Import error handling middleware
+from api.middleware.error_middleware import ErrorMiddleware, RequestLoggingMiddleware
+from services.graceful_degradation import get_graceful_degradation_service
+
+# Import security middleware
+from api.middleware.security_middleware import (
+    SecurityHeadersMiddleware, CORSSecurityMiddleware,
+    InputValidationMiddleware, RateLimitingMiddleware
+)
+
 # Import API routes
 from api.v1.routes import health
 from api.v1.routes.auth import router as auth_router
@@ -62,6 +72,28 @@ async def lifespan(app: FastAPI):
         
         logger.info("✅ Database initialized successfully")
         
+        # Initialize graceful degradation service
+        try:
+            degradation_service = get_graceful_degradation_service()
+            app.state.degradation_service = degradation_service
+            logger.info("✅ Graceful degradation service initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Graceful degradation service initialization failed: {e}")
+        
+        # Initialize Cosmos integration service
+        try:
+            from services.cosmos_integration_service import initialize_cosmos_integration, get_integration_service
+            
+            cosmos_initialized = await initialize_cosmos_integration()
+            if cosmos_initialized:
+                integration_service = await get_integration_service()
+                app.state.cosmos_integration = integration_service
+                logger.info("✅ Cosmos Chat integration initialized successfully")
+            else:
+                logger.warning("⚠️ Cosmos Chat integration initialization failed")
+        except Exception as e:
+            logger.warning(f"⚠️ Cosmos integration initialization error: {e}")
+        
         logger.info("✅ Gitmesh System started successfully")
         trace("app_started", {"status": "success"})
         
@@ -75,6 +107,11 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("🛑 Shutting down Gitmesh System...")
     try:
+        # Shutdown Cosmos integration service
+        if hasattr(app.state, 'cosmos_integration'):
+            await app.state.cosmos_integration.shutdown()
+            logger.info("✅ Cosmos integration service shutdown")
+        
         # Shutdown database connections
         from config.database import close_database
         await close_database()
@@ -94,14 +131,24 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Add security middleware stack (order is important)
+# 1. Security headers (outermost)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. Rate limiting and abuse prevention
+app.add_middleware(RateLimitingMiddleware)
+
+# 3. Input validation and sanitization
+app.add_middleware(InputValidationMiddleware)
+
+# 4. Enhanced CORS with security validation
+app.add_middleware(CORSSecurityMiddleware)
+
+# 5. Error handling middleware (catches security errors)
+app.add_middleware(ErrorMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+
+# Note: Removed basic CORSMiddleware as it's replaced by CORSSecurityMiddleware
 
 # Include API routes
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
@@ -137,6 +184,96 @@ except ImportError as e:
     logger.warning(f"⚠️ Chat routes not available: {e}")
 except Exception as e:
     logger.error(f"❌ Error loading Chat routes: {e}")
+
+# Include Cosmos Chat API routes (New comprehensive chat API)
+try:
+    from api.v1.routes.cosmos_chat import router as cosmos_chat_router
+    app.include_router(cosmos_chat_router, prefix="/api/v1/cosmos/chat", tags=["cosmos_chat"])
+    logger.info("✅ Cosmos Chat API routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Cosmos Chat API routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Cosmos Chat API routes: {e}")
+
+# Include Cosmos Health Check routes
+try:
+    from api.v1.routes.cosmos_health import router as cosmos_health_router
+    app.include_router(cosmos_health_router, prefix="/api/v1", tags=["cosmos_health"])
+    logger.info("✅ Cosmos Health Check routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Cosmos Health Check routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Cosmos Health Check routes: {e}")
+
+# Include Tier-based Chat Integration routes
+try:
+    from api.v1.routes.chat_tier_integration import router as tier_chat_router
+    app.include_router(tier_chat_router, prefix="/api/v1/chat/tier", tags=["tier_chat"])
+    logger.info("✅ Tier-based Chat Integration routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Tier-based Chat Integration routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Tier-based Chat Integration routes: {e}")
+
+# Include Real-time Chat WebSocket routes
+try:
+    from api.v1.routes.chat_websocket import router as chat_websocket_router
+    app.include_router(chat_websocket_router, prefix="/api/v1", tags=["chat_websocket"])
+    logger.info("✅ Real-time Chat WebSocket routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Real-time Chat WebSocket routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Real-time Chat WebSocket routes: {e}")
+
+# Include System Health and Monitoring routes
+try:
+    from api.v1.routes.system_health import router as system_health_router
+    app.include_router(system_health_router, prefix="/api/v1", tags=["system_health"])
+    logger.info("✅ System Health and Monitoring routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ System Health routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading System Health routes: {e}")
+
+# Include Session Persistence and Recovery routes
+try:
+    from api.v1.routes.session_persistence import router as session_persistence_router
+    app.include_router(session_persistence_router, prefix="/api/v1", tags=["session_persistence"])
+    logger.info("✅ Session Persistence and Recovery routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Session Persistence routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Session Persistence routes: {e}")
+
+# Include Performance Optimization and Caching routes
+try:
+    from api.v1.routes.performance_metrics import router as performance_metrics_router
+    app.include_router(performance_metrics_router, prefix="/api/v1", tags=["performance_metrics"])
+    logger.info("✅ Performance Optimization and Caching routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Performance Metrics routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Performance Metrics routes: {e}")
+
+# Include Chat Analytics and Monitoring routes
+try:
+    from api.v1.routes.chat_analytics import router as chat_analytics_router
+    app.include_router(chat_analytics_router, prefix="/api/v1/chat", tags=["chat_analytics"])
+    logger.info("✅ Chat Analytics and Monitoring routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Chat Analytics routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Chat Analytics routes: {e}")
+
+# Include Security Monitoring routes
+try:
+    from api.v1.routes.security_monitoring import router as security_monitoring_router
+    app.include_router(security_monitoring_router, prefix="/api/v1", tags=["security_monitoring"])
+    logger.info("✅ Security Monitoring routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Security Monitoring routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Security Monitoring routes: {e}")
 
 # Add a test endpoint to verify the connection
 @app.get("/test")

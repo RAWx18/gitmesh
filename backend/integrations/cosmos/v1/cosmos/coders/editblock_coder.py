@@ -52,9 +52,6 @@ class EditBlockCoder(Coder):
                 content = self.io.read_text(full_path)
                 new_content = do_replace(full_path, content, original, updated, self.fence)
 
-            # If the edit failed, and
-            # this is not a "create a new file" with an empty original...
-            # https://github.com/Cosmos-AI/cosmos/issues/2258
             if not new_content and original.strip():
                 # try patching any of the other files in the chat
                 for full_path in self.abs_fnames:

@@ -63,3 +63,7 @@ psycopg2-binary
 # Key Management
 hvac
 redis
+
+# Security dependencies
+bleach
+cryptography

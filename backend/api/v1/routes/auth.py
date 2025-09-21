@@ -23,7 +23,6 @@ from utils.auth_utils import (
     github_oauth, jwt_handler, security_utils, rate_limit_manager,
     get_demo_user, get_demo_settings
 )
-from core.session_manager import get_session_manager
 from .dependencies import get_current_user, require_auth
 
 logger = logging.getLogger(__name__)

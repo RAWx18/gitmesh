@@ -9,11 +9,7 @@ import sys
 
 def enable_vault_transit():
     """Enable Vault transit secrets engine using CLI"""
-    
-    # Set environment variables
-    vault_addr = 'http://127.0.0.1:8200'
-    # vault_token =
-    
+
     env = os.environ.copy()
     env['VAULT_ADDR'] = vault_addr
     env['VAULT_TOKEN'] = vault_token

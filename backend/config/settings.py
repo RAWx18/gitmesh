@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     vault_token: Optional[str] = Field(default=None, env="VAULT_TOKEN")
     redis_host: str = Field(default="localhost", env="REDIS_HOST")
     redis_port: int = Field(default=6379, env="REDIS_PORT")
-    redis_db: int = Field(default=0, env="REDIS_DB")
+    redis_db_field: int = Field(default=0, env="REDIS_DB")
     redis_username: str = Field(default="default", env="REDIS_USERNAME")
     redis_password: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
     redis_ssl: bool = Field(default=False, env="REDIS_SSL")
@@ -173,7 +173,7 @@ class Settings(BaseSettings):
     # ========================
     @property
     def redis_db(self) -> int:
-        return self.get_yaml_config("cache.redis_db", 0)
+        return self.get_yaml_config("cache.redis_db", self.redis_db_field)
     
     # ========================
     # RATE LIMITING (from YAML)

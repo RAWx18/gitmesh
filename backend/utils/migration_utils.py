@@ -183,7 +183,6 @@ class DataMigrator:
             # Import current in-memory storage
             from utils.auth_utils import user_data, user_sessions
             from utils.project_utils import ProjectDatabase
-            from core.session_manager import get_session_manager
             
             exported_data = {
                 'users': dict(user_data),
@@ -203,12 +202,8 @@ class DataMigrator:
             
             # Export chat sessions if available
             try:
-                session_manager = get_session_manager()
-                if hasattr(session_manager, 'sessions'):
-                    exported_data['chat_sessions'] = {
-                        session_id: session.to_dict() 
-                        for session_id, session in session_manager.sessions.items()
-                    }
+                # Chat sessions are handled by CosmosWebService now
+                exported_data['chat_sessions'] = {}
             except Exception as e:
                 logger.warning("Could not export chat sessions", error=str(e))
                 exported_data['chat_sessions'] = {}
