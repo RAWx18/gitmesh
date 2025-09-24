@@ -442,6 +442,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }).then(response => {
       if (response.success) {
         const session = response.session;
+        // Ensure messages is always an array
+        if (!session.messages) {
+          session.messages = [];
+        }
         dispatch({ type: 'CREATE_SESSION', payload: { session } });
         dispatch({ type: 'SET_ACTIVE_SESSION', payload: { sessionId: session.id } });
         return session.id;
@@ -737,7 +741,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING_STATE', payload: { type: 'sessions', loading: true } });
       chatAPI.getUserSessions(user.id.toString()).then(response => {
         if (response.success) {
-          dispatch({ type: 'SET_SESSIONS', payload: { sessions: response.sessions } });
+          // Ensure all sessions have messages arrays
+          const sessions = response.sessions.map(session => ({
+            ...session,
+            messages: session.messages || []
+          }));
+          dispatch({ type: 'SET_SESSIONS', payload: { sessions } });
         }
       }).catch(error => {
         dispatch({ type: 'SET_ERROR', payload: { type: 'sessions', error: error instanceof Error ? error.message : 'Failed to load sessions' } });

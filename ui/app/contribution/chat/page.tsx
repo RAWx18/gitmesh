@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { VSCodeInterface } from '@/components/VSCodeInterface';
 import { ChatProvider } from '@/contexts/ChatContext';
+import { RepositoryCacheManager } from '@/components/RepositoryCacheManager';
+import { useRepositoryCache } from '@/hooks/useRepositoryCache';
 import { toast } from 'sonner';
 
 interface ImportedData {
@@ -44,6 +46,10 @@ export default function ChatPage() {
   const { repository } = useRepository();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [importedData, setImportedData] = useState<ImportedData | null>(null);
+  const [showCacheManager, setShowCacheManager] = useState(false);
+  
+  // Initialize repository caching hook
+  useRepositoryCache();
 
   // Demo repository setup for testing
   React.useEffect(() => {
@@ -182,6 +188,13 @@ export default function ChatPage() {
     <ChatProvider>
       <div className="fixed inset-0 bg-background">
         <VSCodeInterface />
+        
+        {/* Repository Cache Manager - Floating */}
+        {repository && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <RepositoryCacheManager />
+          </div>
+        )}
       </div>
     </ChatProvider>
   );

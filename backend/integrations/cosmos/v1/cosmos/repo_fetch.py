@@ -373,10 +373,12 @@ def fetch_and_store_repo(repo_url: str) -> bool:
 
         # 5. Get GitHub token (optional)
         github_token = os.getenv("GITHUB_TOKEN")
-        if github_token:
+        # Validate token format - should be a proper GitHub token
+        if github_token and github_token.strip() and not github_token.startswith("your_github") and len(github_token.strip()) > 10:
             logger.info("GitHub token available for authenticated requests")
         else:
-            logger.info("No GitHub token - will use public API limits")
+            github_token = None
+            logger.info("No valid GitHub token - will use public API limits")
 
         # 6. Extract and validate repository name from URL
         try:
@@ -431,7 +433,7 @@ def fetch_and_store_repo(repo_url: str) -> bool:
                 
                 # Prepare ingest arguments
                 ingest_kwargs = {}
-                if github_token and github_token.strip():
+                if github_token:
                     logger.info("Using GitHub token for authenticated request")
                     print("Found GitHub token. Using it for the request.")
                     ingest_kwargs['token'] = github_token
@@ -439,8 +441,20 @@ def fetch_and_store_repo(repo_url: str) -> bool:
                     logger.info("No GitHub token found, proceeding without authentication")
                     print("No GitHub token found. Proceeding without authentication (for public repos).")
 
-                # Call gitingest with timeout handling
-                summary, tree, content = ingest(repo_url, **ingest_kwargs)
+                # Call gitingest with asyncio fix to handle event loop conflicts
+                import asyncio
+                import concurrent.futures
+                
+                try:
+                    # Check if we're in an event loop
+                    loop = asyncio.get_running_loop()
+                    # If we're in a running loop, use run_in_executor to avoid the error
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(ingest, repo_url, **ingest_kwargs)
+                        summary, tree, content = future.result(timeout=300)  # 5 minute timeout
+                except RuntimeError:
+                    # No running loop, safe to use direct call
+                    summary, tree, content = ingest(repo_url, **ingest_kwargs)
                 
                 _log_operation_metrics("github_fetch", time.time() - attempt_start, True, 
                                      {"attempt": attempt + 1, "repo_name": repo_name})

@@ -12,6 +12,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Initialize Cosmos configuration early
+try:
+    from integrations.cosmos.v1.cosmos.config import initialize_configuration
+    initialize_configuration()
+    print("✅ Cosmos configuration initialized successfully")
+except Exception as e:
+    print(f"⚠️ Cosmos configuration initialization failed: {e}")
+
 import asyncio
 import os
 from contextlib import asynccontextmanager
@@ -284,6 +292,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Security Monitoring routes not available: {e}")
 except Exception as e:
     logger.error(f"❌ Error loading Security Monitoring routes: {e}")
+
+# Include Repository Cache Management routes
+try:
+    from api.v1.routes.repository_cache import router as repository_cache_router
+    app.include_router(repository_cache_router, prefix="/api/v1", tags=["repository_cache"])
+    logger.info("✅ Repository Cache Management routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Repository Cache routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Repository Cache routes: {e}")
 
 # Add a test endpoint to verify the connection
 @app.get("/test")

@@ -1,6 +1,7 @@
 """
 Chat API routes using Cosmos AI Integration
 """
+import os
 import uuid
 import json
 from datetime import datetime
@@ -24,9 +25,118 @@ except ImportError:
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-# In-memory storage for demo (in production, use database)
-chat_sessions: Dict[str, Dict[str, Any]] = {}
-chat_messages: Dict[str, List[Dict[str, Any]]] = {}
+# Redis-based session storage for persistence
+import redis
+import json
+from datetime import timedelta
+
+# Initialize Redis connection for session storage
+try:
+    redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+    session_redis = redis.from_url(redis_url, decode_responses=True)
+    REDIS_AVAILABLE = True
+    logger.info("Redis session storage initialized")
+except Exception as e:
+    logger.warning(f"Redis not available for session storage: {e}")
+    REDIS_AVAILABLE = False
+    # Fallback to in-memory storage
+    chat_sessions: Dict[str, Dict[str, Any]] = {}
+    chat_messages: Dict[str, List[Dict[str, Any]]] = {}
+
+# Session management helper functions
+def get_session_key(session_id: str) -> str:
+    """Get Redis key for session data."""
+    return f"chat_session:{session_id}"
+
+def get_messages_key(session_id: str) -> str:
+    """Get Redis key for session messages."""
+    return f"chat_messages:{session_id}"
+
+def get_user_sessions_key(user_id: str) -> str:
+    """Get Redis key for user's session list."""
+    return f"user_sessions:{user_id}"
+
+def store_session(session_id: str, session_data: Dict[str, Any], ttl_hours: int = 24):
+    """Store session data with TTL."""
+    if REDIS_AVAILABLE:
+        try:
+            session_redis.setex(
+                get_session_key(session_id),
+                timedelta(hours=ttl_hours),
+                json.dumps(session_data)
+            )
+            # Add to user's session list
+            user_id = session_data.get('userId')
+            if user_id:
+                session_redis.sadd(get_user_sessions_key(user_id), session_id)
+                session_redis.expire(get_user_sessions_key(user_id), timedelta(hours=ttl_hours))
+        except Exception as e:
+            logger.error(f"Error storing session {session_id}: {e}")
+    else:
+        chat_sessions[session_id] = session_data
+
+def get_session(session_id: str) -> Optional[Dict[str, Any]]:
+    """Get session data."""
+    if REDIS_AVAILABLE:
+        try:
+            data = session_redis.get(get_session_key(session_id))
+            return json.loads(data) if data else None
+        except Exception as e:
+            logger.error(f"Error getting session {session_id}: {e}")
+            return None
+    else:
+        return chat_sessions.get(session_id)
+
+def store_messages(session_id: str, messages: List[Dict[str, Any]], ttl_hours: int = 24):
+    """Store session messages with TTL."""
+    if REDIS_AVAILABLE:
+        try:
+            session_redis.setex(
+                get_messages_key(session_id),
+                timedelta(hours=ttl_hours),
+                json.dumps(messages)
+            )
+        except Exception as e:
+            logger.error(f"Error storing messages for {session_id}: {e}")
+    else:
+        chat_messages[session_id] = messages
+
+def get_messages(session_id: str) -> List[Dict[str, Any]]:
+    """Get session messages."""
+    if REDIS_AVAILABLE:
+        try:
+            data = session_redis.get(get_messages_key(session_id))
+            return json.loads(data) if data else []
+        except Exception as e:
+            logger.error(f"Error getting messages for {session_id}: {e}")
+            return []
+    else:
+        return chat_messages.get(session_id, [])
+
+def delete_session(session_id: str, user_id: str = None):
+    """Delete session and its messages."""
+    if REDIS_AVAILABLE:
+        try:
+            session_redis.delete(get_session_key(session_id))
+            session_redis.delete(get_messages_key(session_id))
+            if user_id:
+                session_redis.srem(get_user_sessions_key(user_id), session_id)
+        except Exception as e:
+            logger.error(f"Error deleting session {session_id}: {e}")
+    else:
+        chat_sessions.pop(session_id, None)
+        chat_messages.pop(session_id, None)
+
+def get_user_sessions(user_id: str) -> List[str]:
+    """Get all session IDs for a user."""
+    if REDIS_AVAILABLE:
+        try:
+            return list(session_redis.smembers(get_user_sessions_key(user_id)))
+        except Exception as e:
+            logger.error(f"Error getting user sessions for {user_id}: {e}")
+            return []
+    else:
+        return [sid for sid, session in chat_sessions.items() if session.get('userId') == user_id]
 
 class ChatCosmosService:
     """Service to bridge chat interface to Cosmos AI system"""
@@ -64,8 +174,9 @@ class ChatCosmosService:
             "cosmosReady": self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE
         }
         
-        chat_sessions[session_id] = session
-        chat_messages[session_id] = []
+        # Store session with 24-hour TTL
+        store_session(session_id, session, ttl_hours=24)
+        store_messages(session_id, [], ttl_hours=24)
         
         # Initialize Cosmos session if available
         if self.cosmos_available and COSMOS_AVAILABLE:
@@ -80,23 +191,23 @@ class ChatCosmosService:
     
     async def get_session(self, session_id: str, user_id: str):
         """Get a chat session"""
-        if session_id not in chat_sessions:
+        session = get_session(session_id)
+        if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session = chat_sessions[session_id]
         if session.get("userId") != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
         
         # Include messages
-        session["messages"] = chat_messages.get(session_id, [])
+        session["messages"] = get_messages(session_id)
         return session
     
     async def send_message(self, session_id: str, user_id: str, message: str, context: Dict[str, Any] = None, model_name: str = "gpt-4o-mini"):
         """Send a message and get AI response via Cosmos"""
-        if session_id not in chat_sessions:
+        session = get_session(session_id)
+        if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session = chat_sessions[session_id]
         if session.get("userId") != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
         
@@ -120,9 +231,9 @@ class ChatCosmosService:
         }
         
         # Add user message to history
-        if session_id not in chat_messages:
-            chat_messages[session_id] = []
-        chat_messages[session_id].append(user_message)
+        messages = get_messages(session_id)
+        messages.append(user_message)
+        store_messages(session_id, messages, ttl_hours=24)
         
         # Generate AI response via Cosmos with full AI capabilities
         confidence = 0.8
@@ -352,11 +463,14 @@ class ChatCosmosService:
         }
         
         # Add assistant message to history
-        chat_messages[session_id].append(assistant_message)
+        messages = get_messages(session_id)
+        messages.append(assistant_message)
+        store_messages(session_id, messages, ttl_hours=24)
         
         # Update session timestamp
         session["updatedAt"] = datetime.now().isoformat()
-        session["messages"] = chat_messages[session_id]
+        session["messages"] = messages
+        store_session(session_id, session, ttl_hours=24)
         
         return {
             "userMessage": user_message,
@@ -425,10 +539,10 @@ async def update_chat_session(
         raise HTTPException(status_code=401, detail="Authentication required")
     
     try:
-        if session_id not in chat_sessions:
+        session = get_session(session_id)
+        if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session = chat_sessions[session_id]
         if session.get("userId") != str(current_user.id):
             raise HTTPException(status_code=403, detail="Access denied")
         
@@ -439,6 +553,7 @@ async def update_chat_session(
                 session[field] = updates[field]
         
         session["updatedAt"] = datetime.now().isoformat()
+        store_session(session_id, session, ttl_hours=24)
         
         return {
             "success": True,
@@ -460,17 +575,15 @@ async def delete_chat_session(
         raise HTTPException(status_code=401, detail="Authentication required")
     
     try:
-        if session_id not in chat_sessions:
+        session = get_session(session_id)
+        if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session = chat_sessions[session_id]
         if session.get("userId") != str(current_user.id):
             raise HTTPException(status_code=403, detail="Access denied")
         
         # Delete session and messages
-        del chat_sessions[session_id]
-        if session_id in chat_messages:
-            del chat_messages[session_id]
+        delete_session(session_id, str(current_user.id))
         
         return {
             "success": True,
@@ -496,14 +609,17 @@ async def get_user_sessions(
     
     try:
         user_sessions = []
-        for session in chat_sessions.values():
-            if session.get("userId") == user_id:
+        session_ids = get_user_sessions(user_id)
+        
+        for session_id in session_ids:
+            session = get_session(session_id)
+            if session and session.get("userId") == user_id:
                 session_copy = session.copy()
-                session_copy["messages"] = chat_messages.get(session["id"], [])
+                session_copy["messages"] = get_messages(session_id)
                 user_sessions.append(session_copy)
         
         # Sort by updated time (newest first)
-        user_sessions.sort(key=lambda x: x["updatedAt"], reverse=True)
+        user_sessions.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
         
         return {
             "success": True,
@@ -560,7 +676,7 @@ async def get_chat_history(
     
     try:
         session = await chat_service.get_session(session_id, str(current_user.id))
-        messages = chat_messages.get(session_id, [])
+        messages = get_messages(session_id)
         
         return {
             "success": True,
@@ -619,10 +735,10 @@ async def update_session_context(
         raise HTTPException(status_code=401, detail="Authentication required")
     
     try:
-        if session_id not in chat_sessions:
+        session = get_session(session_id)
+        if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session = chat_sessions[session_id]
         if session.get("userId") != str(current_user.id):
             raise HTTPException(status_code=403, detail="Access denied")
         
@@ -644,6 +760,7 @@ async def update_session_context(
             raise HTTPException(status_code=400, detail="Invalid action")
         
         session["updatedAt"] = datetime.now().isoformat()
+        store_session(session_id, session, ttl_hours=24)
         
         return {
             "success": True,
@@ -704,6 +821,115 @@ async def get_available_models():
     except Exception as e:
         logger.error(f"Error getting available models: {e}")
         raise HTTPException(status_code=500, detail="Failed to get models")
+
+@router.post("/sessions/cleanup")
+async def cleanup_user_sessions(
+    request: Dict[str, Any],
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Clean up user sessions when navigating away from chat"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    try:
+        cleanup_type = request.get("type", "all")  # "all", "inactive", or specific session_ids
+        user_id = str(current_user.id)
+        
+        if cleanup_type == "all":
+            # Delete all user sessions
+            session_ids = get_user_sessions(user_id)
+            for session_id in session_ids:
+                delete_session(session_id, user_id)
+            
+            return {
+                "success": True,
+                "message": f"Cleaned up {len(session_ids)} sessions",
+                "cleaned_sessions": len(session_ids)
+            }
+        
+        elif cleanup_type == "inactive":
+            # Delete sessions older than 1 hour
+            session_ids = get_user_sessions(user_id)
+            cleaned_count = 0
+            current_time = datetime.now()
+            
+            for session_id in session_ids:
+                session = get_session(session_id)
+                if session:
+                    updated_at = datetime.fromisoformat(session.get("updatedAt", session.get("createdAt", "")))
+                    if (current_time - updated_at).total_seconds() > 3600:  # 1 hour
+                        delete_session(session_id, user_id)
+                        cleaned_count += 1
+            
+            return {
+                "success": True,
+                "message": f"Cleaned up {cleaned_count} inactive sessions",
+                "cleaned_sessions": cleaned_count
+            }
+        
+        elif cleanup_type == "specific":
+            # Delete specific sessions
+            session_ids_to_delete = request.get("session_ids", [])
+            cleaned_count = 0
+            
+            for session_id in session_ids_to_delete:
+                session = get_session(session_id)
+                if session and session.get("userId") == user_id:
+                    delete_session(session_id, user_id)
+                    cleaned_count += 1
+            
+            return {
+                "success": True,
+                "message": f"Cleaned up {cleaned_count} specific sessions",
+                "cleaned_sessions": cleaned_count
+            }
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid cleanup type")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cleaning up sessions: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cleanup sessions")
+
+@router.post("/sessions/{session_id}/heartbeat")
+async def session_heartbeat(
+    session_id: str,
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Keep session alive with heartbeat"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    try:
+        session = get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        if session.get("userId") != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Update session timestamp and extend TTL
+        session["updatedAt"] = datetime.now().isoformat()
+        store_session(session_id, session, ttl_hours=24)
+        
+        # Also extend messages TTL
+        messages = get_messages(session_id)
+        store_messages(session_id, messages, ttl_hours=24)
+        
+        return {
+            "success": True,
+            "message": "Session heartbeat updated",
+            "session_id": session_id,
+            "updated_at": session["updatedAt"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating session heartbeat: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update heartbeat")
 
 @router.get("/models/{model_name}")
 async def get_model_info(model_name: str):

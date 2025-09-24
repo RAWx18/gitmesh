@@ -23,7 +23,7 @@ function HomeContent() {
     setMounted(true)
   }, [])
 
-  
+
 
   const handleGitHubLogin = () => {
     login()
@@ -40,7 +40,7 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster />
-      
+
       {/* Clean Landing Page */}
       <section className="min-h-screen flex items-center">
         <div className="container mx-auto px-4">
@@ -53,7 +53,7 @@ function HomeContent() {
               className="space-y-8"
             >
               {/* Theme Toggle - Mobile */}
-              <div className="flex justify-end lg:hidden">
+              {/* <div className="flex justify-end lg:hidden">
                 <motion.button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className="p-3 rounded-full bg-muted hover:bg-muted/80 transition-colors"
@@ -62,17 +62,17 @@ function HomeContent() {
                 >
                   {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </motion.button>
-              </div>
+              </div> */}
 
               {/* Brand */}
               <div className="flex items-center space-x-3">
                 <div className="w-60 h-30 rounded-2xl flex items-center overflow-hidden">
-                  <Image 
-                  src={theme === "dark" ? "/dark_logo.png" : "/light_logo.png"}
-                  alt="GitMesh Logo" 
-                  width={240} 
-                  height={120}
-                  className="object-contain"
+                  <Image
+                    src={theme == "dark" ? "/light_logo.png" : "/dark_logo.png"}
+                    alt="GitMesh Logo"
+                    width={240}
+                    height={120}
+                    className="object-contain"
                   />
                 </div>
               </div>
@@ -80,14 +80,14 @@ function HomeContent() {
               {/* Headlines */}
               <div className="space-y-6">
                 <motion.h1
-                  className="text-5xl lg:text-6xl font-bold leading-tight text-foreground"
+                  className="text-5xl lg:text-5xl font-bold leading-tight text-foreground"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                  Branch Smarter.
+                  Code with purpose
                   <br />
-                  Contribute Better.
+                  Integrate with confidence
                 </motion.h1>
 
                 <motion.p
@@ -96,8 +96,7 @@ function HomeContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
                 >
-                  GitMesh is an open-source tool to track, organize, and collaborate across multiple branches. 
-                  With AI-powered assistance and contributor dashboards.
+                  GitMesh is an intelligent Git collaboration network that uses AI to guide contributors toward mergeable contributions while helping enterprises safely adopt and fund quality open source projects.
                 </motion.p>
               </div>
 
@@ -126,7 +125,7 @@ function HomeContent() {
                   </Button>
                 </motion.div>
 
-                
+
               </motion.div>
             </motion.div>
 
@@ -138,7 +137,7 @@ function HomeContent() {
               className="relative"
             >
               {/* Theme Toggle - Desktop */}
-              <div className="absolute top-0 right-0 hidden lg:block z-10">
+              {/* <div className="absolute top-0 right-0 hidden lg:block z-10">
                 <motion.button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className="p-3 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-muted/80 transition-colors shadow-lg"
@@ -147,7 +146,7 @@ function HomeContent() {
                 >
                   {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </motion.button>
-              </div>
+              </div> */}
 
               {/* Branch Visualization */}
               <div className="relative w-full h-96 lg:h-[500px] bg-muted/30 rounded-3xl overflow-hidden">
@@ -160,7 +159,7 @@ function HomeContent() {
                       initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
                       transition={{ duration: 2, delay: 0.5 }}
                     />
-                    
+
                     {/* Feature Branches */}
                     <motion.line
                       x1="120" y1="150" x2="180" y2="100"

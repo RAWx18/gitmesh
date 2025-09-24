@@ -260,10 +260,10 @@ class WebSafeInputOutput(InputOutput):
         subject = kwargs.get('subject', '')
         if subject:
             logger.info(f"Auto-confirming prompt for {subject}: {question} -> {default}")
-            self.conversion_notes.append(f"Auto-confirmed prompt for {subject}: {question}")
+            # self.conversion_notes.append(f"Auto-confirmed prompt for {subject}: {question}")
         else:
             logger.info(f"Auto-confirming prompt: {question} -> {default}")
-            self.conversion_notes.append(f"Auto-confirmed prompt: {question}")
+            # self.conversion_notes.append(f"Auto-confirmed prompt: {question}")
         return default
     
     def get_captured_output(self) -> Dict[str, List[str]]:

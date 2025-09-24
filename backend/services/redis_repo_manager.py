@@ -196,7 +196,7 @@ class RedisRepoManager:
         # be used if available. The actual privacy check would require an API call.
         return True
     
-    def fetch_repository_with_auth(self, repo_url: str) -> bool:
+    async def fetch_repository_with_auth(self, repo_url: str) -> bool:
         """
         Fetch repository with KeyManager token authentication.
         
@@ -233,8 +233,19 @@ class RedisRepoManager:
                 # Set tier plan
                 os.environ["TIER_PLAN"] = self.user_tier
                 
-                # Use existing fetch_and_store_repo function
-                success = fetch_and_store_repo(repo_url)
+                # Use existing fetch_and_store_repo function with asyncio fix
+                import asyncio
+                try:
+                    # Check if we're already in an event loop
+                    loop = asyncio.get_running_loop()
+                    # If we're in a running loop, use run_in_executor to avoid the error
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = loop.run_in_executor(executor, fetch_and_store_repo, repo_url)
+                        success = await asyncio.wait_for(future, timeout=300)  # 5 minute timeout
+                except RuntimeError:
+                    # No running loop, safe to use direct call
+                    success = fetch_and_store_repo(repo_url)
                 
                 if success:
                     logger.info(f"Successfully fetched repository: {repo_url}")
@@ -267,7 +278,19 @@ class RedisRepoManager:
                     del os.environ["GITHUB_TOKEN"]
                 os.environ["TIER_PLAN"] = self.user_tier
                 
-                success = fetch_and_store_repo(repo_url)
+                # Use existing fetch_and_store_repo function with asyncio fix
+                import asyncio
+                try:
+                    # Check if we're already in an event loop
+                    loop = asyncio.get_running_loop()
+                    # If we're in a running loop, use run_in_executor to avoid the error
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = loop.run_in_executor(executor, fetch_and_store_repo, repo_url)
+                        success = await asyncio.wait_for(future, timeout=300)  # 5 minute timeout
+                except RuntimeError:
+                    # No running loop, safe to use direct call
+                    success = fetch_and_store_repo(repo_url)
                 if success:
                     logger.info(f"Successfully fetched repository without authentication: {repo_url}")
                     self._clear_caches()
@@ -287,7 +310,7 @@ class RedisRepoManager:
         self._metadata_cache.clear()
         self._tracked_files = None
     
-    def _ensure_repository_data(self) -> bool:
+    async def _ensure_repository_data(self) -> bool:
         """
         Ensure repository data is available in Redis.
         
@@ -305,13 +328,13 @@ class RedisRepoManager:
             logger.info(f"Repository data not found in Redis, fetching: {self.repo_name}")
             
             # Fetch repository data
-            return self.fetch_repository_with_auth(self.repo_url)
+            return await self.fetch_repository_with_auth(self.repo_url)
             
         except Exception as e:
             logger.error(f"Error ensuring repository data: {e}")
             return False
     
-    def get_file_content(self, file_path: str) -> Optional[str]:
+    async def get_file_content(self, file_path: str) -> Optional[str]:
         """
         Get file content from Redis storage.
         
@@ -327,7 +350,7 @@ class RedisRepoManager:
                 return self._file_cache[file_path]
             
             # Ensure repository data is available
-            if not self._ensure_repository_data():
+            if not await self._ensure_repository_data():
                 logger.error(f"Repository data not available for file: {file_path}")
                 return None
             
@@ -441,7 +464,7 @@ class RedisRepoManager:
             logger.error(f"Error extracting file content for {file_path}: {e}")
             return None
     
-    def get_repo_map(self) -> Optional[str]:
+    async def get_repo_map(self) -> Optional[str]:
         """
         Get repository map from Redis storage.
         
@@ -454,7 +477,7 @@ class RedisRepoManager:
                 return self._repo_map_cache
             
             # Ensure repository data is available
-            if not self._ensure_repository_data():
+            if not await self._ensure_repository_data():
                 logger.error("Repository data not available for repo map")
                 return None
             
@@ -479,7 +502,7 @@ class RedisRepoManager:
             logger.error(f"Error getting repository map: {e}")
             return None
     
-    def list_files(self, pattern: Optional[str] = None) -> List[str]:
+    async def list_files(self, pattern: Optional[str] = None) -> List[str]:
         """
         List files in the repository.
         
@@ -495,7 +518,7 @@ class RedisRepoManager:
                 files = self._file_list_cache
             else:
                 # Get repository map
-                repo_map = self.get_repo_map()
+                repo_map = await self.get_repo_map()
                 if not repo_map:
                     logger.error("No repository map available")
                     return []
@@ -553,7 +576,7 @@ class RedisRepoManager:
             logger.error(f"Error extracting files from tree: {e}")
             return []
     
-    def get_file_metadata(self, file_path: str) -> Optional[FileMetadata]:
+    async def get_file_metadata(self, file_path: str) -> Optional[FileMetadata]:
         """
         Get file metadata.
         
@@ -569,7 +592,7 @@ class RedisRepoManager:
                 return self._metadata_cache[file_path]
             
             # Check if file exists
-            content = self.get_file_content(file_path)
+            content = await self.get_file_content(file_path)
             if content is None:
                 return None
             
@@ -582,7 +605,7 @@ class RedisRepoManager:
                 name=os.path.basename(file_path),
                 size=len(content.encode('utf-8')),
                 language=language,
-                is_tracked=self.is_file_tracked(file_path)
+                is_tracked=await self.is_file_tracked(file_path)
             )
             
             # Cache and return
@@ -665,7 +688,7 @@ class RedisRepoManager:
         
         return extension_map.get(ext, 'text')
     
-    def is_file_tracked(self, file_path: str) -> bool:
+    async def is_file_tracked(self, file_path: str) -> bool:
         """
         Check if file is tracked in the repository.
         
@@ -676,14 +699,14 @@ class RedisRepoManager:
             True if file is tracked, False otherwise
         """
         try:
-            tracked_files = self.get_tracked_files()
+            tracked_files = await self.get_tracked_files()
             return file_path in tracked_files
             
         except Exception as e:
             logger.error(f"Error checking if file is tracked: {e}")
             return False
     
-    def get_tracked_files(self) -> List[str]:
+    async def get_tracked_files(self) -> List[str]:
         """
         Get list of tracked files.
         
@@ -695,7 +718,7 @@ class RedisRepoManager:
                 return self._tracked_files
             
             # For Redis-based repositories, all files in the content are considered tracked
-            files = self.list_files()
+            files = await self.list_files()
             self._tracked_files = files
             return files
             
@@ -738,7 +761,7 @@ class RedisRepoManager:
             logger.error(f"Error normalizing path {path}: {e}")
             return path
     
-    def get_repository_info(self) -> Dict[str, Any]:
+    async def get_repository_info(self) -> Dict[str, Any]:
         """
         Get repository information and metadata.
         
@@ -747,7 +770,7 @@ class RedisRepoManager:
         """
         try:
             # Ensure repository data is available
-            if not self._ensure_repository_data():
+            if not await self._ensure_repository_data():
                 return {}
             
             # Get repository data from Redis
@@ -759,7 +782,7 @@ class RedisRepoManager:
             metadata = repo_data.get('metadata', {})
             
             # Get file count
-            files = self.list_files()
+            files = await self.list_files()
             
             return {
                 'name': self.repo_name,
