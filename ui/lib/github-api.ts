@@ -245,6 +245,22 @@ class GitHubAPI {
           errorData = { message: errorText };
         }
 
+        // Handle 401 Unauthorized - trigger automatic sign out
+        if (response.status === 401) {
+          console.log('401 Unauthorized detected - triggering automatic sign out');
+          
+          // Dispatch custom event to trigger sign out
+          window.dispatchEvent(new CustomEvent('github-auth-error', {
+            detail: { 
+              status: 401, 
+              message: errorData.message || 'Authentication required',
+              errorData 
+            }
+          }));
+          
+          throw new Error(`GitHub API error: 401 Unauthorized - ${errorData.detail || errorData.message || 'Authentication required'}`);
+        }
+
         // Enhanced error handling for rate limits with proper 429 handling
         if (response.status === 429 || (response.status === 403 && this.isRateLimitError(errorData))) {
           const retryAfter = this.extractRetryAfter(errorData, response.headers);

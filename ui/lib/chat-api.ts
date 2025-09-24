@@ -90,13 +90,35 @@ class ChatAPI {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error(`ChatAPI: Error response:`, errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        
+        // Handle different error response formats
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (errorData) {
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+          } else if (errorData.message) {
+            errorMessage = typeof errorData.message === 'string' ? errorData.message : JSON.stringify(errorData.message);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
-      throw error;
+      
+      // Ensure we always throw a proper Error with a string message
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(`API request failed: ${String(error)}`);
+      }
     }
   }
 

@@ -62,6 +62,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setGithubApi(new GitHubAPI(token));
   }, [token]);
 
+  // Force logout and clear all demo mode settings
+  const forceLogout = useCallback(() => {
+    console.log('Force logout - clearing all data including demo mode');
+    setIsAuthenticated(false);
+    setUser(null);
+    setToken(null);
+    keyManager.removeGitmeshToken();
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('auto_demo_mode');
+    setLoading(false);
+  }, [keyManager, localStorage]);
+
+  // Listen for GitHub authentication errors and auto sign out
+  useEffect(() => {
+    const handleAuthError = (event: CustomEvent) => {
+      const { status, message } = event.detail;
+      if (status === 401) {
+        console.log('GitHub API 401 error detected - automatically signing out');
+        forceLogout();
+      }
+    };
+
+    window.addEventListener('github-auth-error', handleAuthError as EventListener);
+    
+    return () => {
+      window.removeEventListener('github-auth-error', handleAuthError as EventListener);
+    };
+  }, [forceLogout]);
+
   // Initialize auth state from localStorage
   useEffect(() => {
     console.log('AuthContext: Initializing auth state');
@@ -183,17 +212,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Force logout and clear all demo mode settings
-  const forceLogout = () => {
-    console.log('Force logout - clearing all data including demo mode');
-    setIsAuthenticated(false);
-    setUser(null);
-    setToken(null);
-    keyManager.removeGitmeshToken();
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('auto_demo_mode');
-    setLoading(false);
-  };
+
 
   
 

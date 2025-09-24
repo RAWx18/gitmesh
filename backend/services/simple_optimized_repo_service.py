@@ -167,12 +167,55 @@ class SimpleOptimizedRepoService:
             try:
                 from gitingest import ingest
                 
-                # Fetch repository
-                summary, tree, content = ingest(repo_url)
+                # Fetch repository with analytics folder exclusion
+                summary, tree, content = ingest(repo_url, exclude_patterns=[
+                    'analytics/*',
+                    '*/analytics/*',
+                    '.analytics/*',
+                    '*/.analytics/*',
+                    'analytics/**',
+                    '**/analytics/**'
+                ])
+                
+                # Log analytics folder detection and filter content
+                def _filter_analytics_folders(content_str: str, tree_str: str) -> tuple:
+                    """Filter out analytics folders from content and tree data."""
+                    if not content_str or not tree_str:
+                        return content_str, tree_str
+                    
+                    # Log analytics folder detection
+                    analytics_patterns = ['analytics/', '/analytics/', 'analytics\\', '\\analytics\\']
+                    has_analytics = any(pattern in content_str.lower() or pattern in tree_str.lower() 
+                                      for pattern in analytics_patterns)
+                    
+                    if has_analytics:
+                        logger.info(f"Analytics folder detected in repository - filtering from cache storage")
+                        print(f"Analytics folder found - excluding from cache")
+                        
+                        # Filter content - remove sections related to analytics folders
+                        filtered_content_lines = []
+                        for line in content_str.split('\n'):
+                            line_lower = line.lower()
+                            if not any(pattern.strip('/\\') in line_lower for pattern in analytics_patterns):
+                                filtered_content_lines.append(line)
+                        
+                        # Filter tree - remove analytics folder entries
+                        filtered_tree_lines = []
+                        for line in tree_str.split('\n'):
+                            line_lower = line.lower()
+                            if not any(pattern.strip('/\\') in line_lower for pattern in analytics_patterns):
+                                filtered_tree_lines.append(line)
+                        
+                        return '\n'.join(filtered_content_lines), '\n'.join(filtered_tree_lines)
+                    
+                    return content_str, tree_str
+                
+                # Apply analytics folder filtering
+                filtered_content, filtered_tree = _filter_analytics_folders(content, tree)
                 
                 return {
-                    'content': content,
-                    'tree': tree,
+                    'content': filtered_content,
+                    'tree': filtered_tree,
                     'summary': summary,
                     'metadata': {
                         'fetched_at': time.time(),

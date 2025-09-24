@@ -759,7 +759,7 @@ class CosmosWebWrapper:
             self._update_coder_context()
             
             # Add repository context automatically if no specific files are in context
-            self._add_repository_context_if_needed(message)
+            await self._add_repository_context_if_needed(message)
             
             # Process the message through Cosmos
             response_content = ""
@@ -825,7 +825,7 @@ class CosmosWebWrapper:
                 model_used=self.model
             )
     
-    def _add_repository_context_if_needed(self, message: str):
+    async def _add_repository_context_if_needed(self, message: str):
         """Add repository context automatically if needed for repository analysis."""
         try:
             # Check if user is asking about the repository in general
@@ -855,9 +855,9 @@ class CosmosWebWrapper:
                         
                     try:
                         # Check if file has content before adding
-                        content = self.repo_manager.get_file_content(file_path)
+                        content = await self.repo_manager.get_file_content(file_path)
                         if content and content.strip():
-                            self.add_file_to_context(file_path)
+                            await self.add_file_to_context(file_path)
                             files_added += 1
                             logger.info(f"Added {file_path} to context ({len(content)} chars)")
                         else:
@@ -1076,6 +1076,36 @@ class CosmosWebWrapper:
                 r'config\.(py|js|ts|json|yaml|yml)$',
             ]
             
+            # Domain-specific patterns for delivery/tracking/logistics
+            domain_patterns = [
+                # Delivery and tracking related files
+                r'.*delivery.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*tracking.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*logistics.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*shipping.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*transport.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*route.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*order.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*inventory.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*warehouse.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*supply.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*fresh.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*perishable.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                
+                # API and service files
+                r'.*api.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*service.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*controller.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*model.*\.(py|js|ts|java|cpp|c|go|rs|php)$',
+                r'.*component.*\.(py|js|ts|java|cpp|c|go|rs|php|jsx|tsx)$',
+                
+                # Database and schema files
+                r'.*schema.*\.(py|js|ts|sql|json)$',
+                r'.*migration.*\.(py|js|ts|sql)$',
+                r'.*database.*\.(py|js|ts|sql)$',
+                r'.*db.*\.(py|js|ts|sql)$',
+            ]
+            
             # Add files matching priority patterns first
             for pattern in priority_patterns:
                 for file_path in all_files:
@@ -1084,19 +1114,31 @@ class CosmosWebWrapper:
                             important_files.append(file_path)
                             logger.debug(f"Added priority file: {file_path}")
             
+            # Add domain-specific files
+            for pattern in domain_patterns:
+                for file_path in all_files:
+                    if re.search(pattern, file_path, re.IGNORECASE):
+                        if file_path not in important_files:
+                            important_files.append(file_path)
+                            logger.debug(f"Added domain-specific file: {file_path}")
+                            if len(important_files) >= 15:  # Limit to avoid too many files
+                                break
+                if len(important_files) >= 15:
+                    break
+            
             # Add a few more source files if we don't have many yet
-            if len(important_files) < 5:
-                source_extensions = ['.py', '.js', '.ts', '.java', '.cpp', '.c', '.go', '.rs', '.php', '.html']
-                for file_path in all_files[:20]:  # Check first 20 files
+            if len(important_files) < 8:
+                source_extensions = ['.py', '.js', '.ts', '.java', '.cpp', '.c', '.go', '.rs', '.php', '.html', '.jsx', '.tsx']
+                for file_path in all_files[:30]:  # Check first 30 files
                     if any(file_path.endswith(ext) for ext in source_extensions):
                         if file_path not in important_files:
                             important_files.append(file_path)
                             logger.debug(f"Added source file: {file_path}")
-                            if len(important_files) >= 8:  # Don't add too many
+                            if len(important_files) >= 12:  # Don't add too many
                                 break
             
             logger.info(f"Selected {len(important_files)} important files for context")
-            return important_files[:10]  # Return max 10 files
+            return important_files[:12]  # Return max 12 files for better analysis
             
         except Exception as e:
             logger.error(f"Error getting important repository files: {e}")
@@ -1186,7 +1228,7 @@ class CosmosWebWrapper:
         """Get list of files currently in context."""
         return list(self._context_files.values())
     
-    def add_file_to_context(self, file_path: str) -> bool:
+    async def add_file_to_context(self, file_path: str) -> bool:
         """
         Add a file to the context.
         
@@ -1198,7 +1240,7 @@ class CosmosWebWrapper:
         """
         try:
             # Check if file exists in repository
-            metadata = self.repo_manager.get_file_metadata(file_path)
+            metadata = await self.repo_manager.get_file_metadata(file_path)
             if not metadata:
                 logger.error(f"File not found in repository: {file_path}")
                 return False

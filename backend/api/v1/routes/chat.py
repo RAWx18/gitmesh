@@ -29,19 +29,74 @@ router = APIRouter()
 import redis
 import json
 from datetime import timedelta
+import time
 
-# Initialize Redis connection for session storage
+# Initialize Redis connection for session storage with optimized settings
 try:
     redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
-    session_redis = redis.from_url(redis_url, decode_responses=True)
+    
+    # Use environment variables for timeout settings
+    socket_timeout = float(os.getenv('REDIS_SOCKET_TIMEOUT', '10.0'))  # Increased from 5.0
+    connect_timeout = float(os.getenv('REDIS_CONNECT_TIMEOUT', '10.0'))  # Increased from 5.0
+    max_connections = int(os.getenv('REDIS_MAX_CONNECTIONS', '20'))
+    
+    # Create connection pool for better performance
+    connection_pool = redis.ConnectionPool.from_url(
+        redis_url,
+        decode_responses=True,
+        socket_timeout=socket_timeout,
+        socket_connect_timeout=connect_timeout,
+        retry_on_timeout=True,
+        health_check_interval=30,
+        max_connections=max_connections,
+        socket_keepalive=True,
+        socket_keepalive_options={}
+    )
+    
+    session_redis = redis.Redis(connection_pool=connection_pool)
+    
+    # Test the connection
+    session_redis.ping()
     REDIS_AVAILABLE = True
-    logger.info("Redis session storage initialized")
+    logger.info(f"Redis session storage initialized with pool (timeout: {socket_timeout}s, max_conn: {max_connections})")
 except Exception as e:
     logger.warning(f"Redis not available for session storage: {e}")
     REDIS_AVAILABLE = False
     # Fallback to in-memory storage
     chat_sessions: Dict[str, Dict[str, Any]] = {}
     chat_messages: Dict[str, List[Dict[str, Any]]] = {}
+
+# Circuit breaker for Redis operations
+class RedisCircuitBreaker:
+    def __init__(self, failure_threshold=5, recovery_timeout=60):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = 'CLOSED'  # CLOSED, OPEN, HALF_OPEN
+    
+    def can_execute(self):
+        if self.state == 'CLOSED':
+            return True
+        elif self.state == 'OPEN':
+            if time.time() - self.last_failure_time > self.recovery_timeout:
+                self.state = 'HALF_OPEN'
+                return True
+            return False
+        else:  # HALF_OPEN
+            return True
+    
+    def record_success(self):
+        self.failure_count = 0
+        self.state = 'CLOSED'
+    
+    def record_failure(self):
+        self.failure_count += 1
+        self.last_failure_time = time.time()
+        if self.failure_count >= self.failure_threshold:
+            self.state = 'OPEN'
+
+redis_circuit_breaker = RedisCircuitBreaker()
 
 # Session management helper functions
 def get_session_key(session_id: str) -> str:
@@ -58,7 +113,7 @@ def get_user_sessions_key(user_id: str) -> str:
 
 def store_session(session_id: str, session_data: Dict[str, Any], ttl_hours: int = 24):
     """Store session data with TTL."""
-    if REDIS_AVAILABLE:
+    if REDIS_AVAILABLE and redis_circuit_breaker.can_execute():
         try:
             session_redis.setex(
                 get_session_key(session_id),
@@ -70,46 +125,82 @@ def store_session(session_id: str, session_data: Dict[str, Any], ttl_hours: int 
             if user_id:
                 session_redis.sadd(get_user_sessions_key(user_id), session_id)
                 session_redis.expire(get_user_sessions_key(user_id), timedelta(hours=ttl_hours))
+            
+            redis_circuit_breaker.record_success()
+        except (redis.TimeoutError, redis.ConnectionError) as e:
+            logger.error(f"Redis timeout/connection error storing session {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Fallback to in-memory storage for this session
+            chat_sessions[session_id] = session_data
         except Exception as e:
             logger.error(f"Error storing session {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Fallback to in-memory storage for this session
+            chat_sessions[session_id] = session_data
     else:
+        # Use in-memory storage when Redis is unavailable or circuit is open
         chat_sessions[session_id] = session_data
 
 def get_session(session_id: str) -> Optional[Dict[str, Any]]:
     """Get session data."""
-    if REDIS_AVAILABLE:
+    if REDIS_AVAILABLE and redis_circuit_breaker.can_execute():
         try:
             data = session_redis.get(get_session_key(session_id))
-            return json.loads(data) if data else None
+            redis_circuit_breaker.record_success()
+            return json.loads(data) if data else chat_sessions.get(session_id)
+        except (redis.TimeoutError, redis.ConnectionError) as e:
+            logger.error(f"Redis timeout/connection error getting session {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Try fallback to in-memory storage
+            return chat_sessions.get(session_id)
         except Exception as e:
             logger.error(f"Error getting session {session_id}: {e}")
-            return None
+            redis_circuit_breaker.record_failure()
+            # Try fallback to in-memory storage
+            return chat_sessions.get(session_id)
     else:
         return chat_sessions.get(session_id)
 
 def store_messages(session_id: str, messages: List[Dict[str, Any]], ttl_hours: int = 24):
     """Store session messages with TTL."""
-    if REDIS_AVAILABLE:
+    if REDIS_AVAILABLE and redis_circuit_breaker.can_execute():
         try:
             session_redis.setex(
                 get_messages_key(session_id),
                 timedelta(hours=ttl_hours),
                 json.dumps(messages)
             )
+            redis_circuit_breaker.record_success()
+        except (redis.TimeoutError, redis.ConnectionError) as e:
+            logger.error(f"Redis timeout/connection error storing messages for {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Fallback to in-memory storage
+            chat_messages[session_id] = messages
         except Exception as e:
             logger.error(f"Error storing messages for {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Fallback to in-memory storage
+            chat_messages[session_id] = messages
     else:
         chat_messages[session_id] = messages
 
 def get_messages(session_id: str) -> List[Dict[str, Any]]:
     """Get session messages."""
-    if REDIS_AVAILABLE:
+    if REDIS_AVAILABLE and redis_circuit_breaker.can_execute():
         try:
             data = session_redis.get(get_messages_key(session_id))
-            return json.loads(data) if data else []
+            redis_circuit_breaker.record_success()
+            return json.loads(data) if data else chat_messages.get(session_id, [])
+        except (redis.TimeoutError, redis.ConnectionError) as e:
+            logger.error(f"Redis timeout/connection error getting messages for {session_id}: {e}")
+            redis_circuit_breaker.record_failure()
+            # Try fallback to in-memory storage
+            return chat_messages.get(session_id, [])
         except Exception as e:
             logger.error(f"Error getting messages for {session_id}: {e}")
-            return []
+            redis_circuit_breaker.record_failure()
+            # Try fallback to in-memory storage
+            return chat_messages.get(session_id, [])
     else:
         return chat_messages.get(session_id, [])
 
@@ -505,7 +596,7 @@ async def create_chat_session(
         }
     except Exception as e:
         logger.error(f"Error creating chat session: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create session")
+        raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 @router.get("/sessions/{session_id}")
 async def get_chat_session(
@@ -526,7 +617,7 @@ async def get_chat_session(
         raise
     except Exception as e:
         logger.error(f"Error getting chat session: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get session")
+        raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
 
 @router.put("/sessions/{session_id}")
 async def update_chat_session(
@@ -663,7 +754,7 @@ async def send_message(
         raise
     except Exception as e:
         logger.error(f"Error sending message: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send message")
+        raise HTTPException(status_code=500, detail=f"Failed to send message: {str(e)}")
 
 @router.get("/sessions/{session_id}/messages")
 async def get_chat_history(
@@ -688,6 +779,37 @@ async def get_chat_history(
     except Exception as e:
         logger.error(f"Error getting chat history: {e}")
         raise HTTPException(status_code=500, detail="Failed to get chat history")
+
+@router.get("/health")
+async def chat_health_check():
+    """Health check endpoint for chat service"""
+    health_status = {
+        "status": "healthy",
+        "redis_available": REDIS_AVAILABLE,
+        "redis_circuit_breaker": {
+            "state": redis_circuit_breaker.state,
+            "failure_count": redis_circuit_breaker.failure_count
+        },
+        "cosmos_available": COSMOS_AVAILABLE,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # Test Redis connection if available
+    if REDIS_AVAILABLE and redis_circuit_breaker.can_execute():
+        try:
+            session_redis.ping()
+            health_status["redis_ping"] = "success"
+            redis_circuit_breaker.record_success()
+        except Exception as e:
+            health_status["redis_ping"] = f"failed: {str(e)}"
+            health_status["status"] = "degraded"
+            redis_circuit_breaker.record_failure()
+    else:
+        health_status["redis_ping"] = "circuit_open" if REDIS_AVAILABLE else "unavailable"
+        if not REDIS_AVAILABLE:
+            health_status["status"] = "degraded"
+    
+    return health_status
 
 @router.get("/sessions/{session_id}/context/stats")
 async def get_session_context_stats(

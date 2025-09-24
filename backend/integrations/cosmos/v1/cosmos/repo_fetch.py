@@ -425,6 +425,12 @@ def fetch_and_store_repo(repo_url: str) -> bool:
         fetch_start = time.time()
         summary, tree, content = None, None, None
         
+        # Function to log analytics folder access instead of caching
+        def _log_analytics_folder_access(repo_url: str, repo_name: str):
+            """Log analytics folder access instead of caching it."""
+            logger.info(f"Analytics folder detected in repository {repo_name} ({repo_url}) - logging access instead of caching")
+            print(f"Analytics folder found in {repo_name} - logged but not cached")
+        
         for attempt in range(MAX_RETRIES):
             attempt_start = time.time()
             try:
@@ -437,6 +443,19 @@ def fetch_and_store_repo(repo_url: str) -> bool:
                     logger.info("Using GitHub token for authenticated request")
                     print("Found GitHub token. Using it for the request.")
                     ingest_kwargs['token'] = github_token
+                
+                # Exclude analytics folders from caching - just log them
+                ingest_kwargs['exclude_patterns'] = [
+                    'analytics/*',
+                    '*/analytics/*',
+                    '.analytics/*',
+                    '*/.analytics/*',
+                    'analytics/**',
+                    '**/analytics/**'
+                ]
+                
+                if github_token:
+                    pass
                 else:
                     logger.info("No GitHub token found, proceeding without authentication")
                     print("No GitHub token found. Proceeding without authentication (for public repos).")
@@ -460,6 +479,11 @@ def fetch_and_store_repo(repo_url: str) -> bool:
                                      {"attempt": attempt + 1, "repo_name": repo_name})
                 logger.info("Successfully fetched repository data from GitHub")
                 print("Successfully fetched repository data.")
+                
+                # Check for analytics folders and log them instead of caching
+                if tree and ('analytics/' in tree.lower() or '/analytics/' in tree.lower()):
+                    _log_analytics_folder_access(repo_url, repo_name)
+                
                 break
                 
             except Exception as e:
@@ -537,10 +561,46 @@ def fetch_and_store_repo(repo_url: str) -> bool:
             logger.info(f"Storing repository data in Redis for: {repo_name}")
             print(f"Storing repository data in Redis...")
             
+            # Filter out analytics folders from content and tree before storing
+            def _filter_analytics_folders(content_str: str, tree_str: str) -> tuple:
+                """Filter out analytics folders from content and tree data."""
+                if not content_str or not tree_str:
+                    return content_str, tree_str
+                
+                # Log analytics folder detection
+                analytics_patterns = ['analytics/', '/analytics/', 'analytics\\', '\\analytics\\']
+                has_analytics = any(pattern in content_str.lower() or pattern in tree_str.lower() 
+                                  for pattern in analytics_patterns)
+                
+                if has_analytics:
+                    logger.info(f"Analytics folder detected in {repo_name} - filtering from cache storage")
+                    print(f"Analytics folder found in {repo_name} - excluding from Redis cache")
+                    
+                    # Filter content - remove sections related to analytics folders
+                    filtered_content_lines = []
+                    for line in content_str.split('\n'):
+                        line_lower = line.lower()
+                        if not any(pattern.strip('/\\') in line_lower for pattern in analytics_patterns):
+                            filtered_content_lines.append(line)
+                    
+                    # Filter tree - remove analytics folder entries
+                    filtered_tree_lines = []
+                    for line in tree_str.split('\n'):
+                        line_lower = line.lower()
+                        if not any(pattern.strip('/\\') in line_lower for pattern in analytics_patterns):
+                            filtered_tree_lines.append(line)
+                    
+                    return '\n'.join(filtered_content_lines), '\n'.join(filtered_tree_lines)
+                
+                return content_str, tree_str
+            
+            # Apply analytics folder filtering
+            filtered_content, filtered_tree = _filter_analytics_folders(content, tree)
+            
             # Prepare data for batch storage with metadata
             repo_data = {
-                'content': content,
-                'tree': tree,
+                'content': filtered_content,
+                'tree': filtered_tree,
                 'summary': summary,
                 'metadata': f"stored_at:{time.time()},estimated_tokens:{estimated_tokens},user_tier:{user_tier},repo_url:{repo_url}"
             }
