@@ -132,8 +132,27 @@ class ChatCosmosService:
         
         try:
             if self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
-                # Import required services
-                from services.redis_repo_manager import RedisRepoManager
+                # Initialize Cosmos configuration first
+                try:
+                    from integrations.cosmos.v1.cosmos.config import initialize_configuration
+                    initialize_configuration()
+                    logger.info("Cosmos configuration initialized successfully")
+                except Exception as e:
+                    logger.warning(f"Could not initialize Cosmos configuration: {e}")
+                
+                # Import optimized services with fallback
+                try:
+                    from middleware.optimized_repo_middleware import get_repo_middleware
+                    from services.optimized_redis_repo_manager import OptimizedRedisRepoManager
+                    optimized_system_available = True
+                    logger.info("Using full optimized repository system")
+                except ImportError as e:
+                    logger.warning(f"Full optimized system not available: {e}")
+                    # Fallback to simple optimized system
+                    from services.simple_optimized_repo_service import get_simple_optimized_repo_service
+                    from services.redis_repo_manager import RedisRepoManager
+                    optimized_system_available = False
+                    logger.info("Using simple optimized repository system")
                 
                 # Build enhanced context with repository information
                 enhanced_context = context or {}
@@ -196,12 +215,58 @@ class ChatCosmosService:
                     branch = session.get("branch") or context.get("branch") or "main"
                     enhanced_context["branch"] = branch
                     
-                    # Create Redis repo manager with repository URL
-                    repo_manager = RedisRepoManager(
-                        repo_url=repository_url,
-                        branch=branch,
-                        username=user_id
-                    )
+                    if optimized_system_available:
+                        # Use full optimized repository middleware for fast data access with user's GitHub token
+                        repo_middleware = get_repo_middleware(user_id)
+                        
+                        # Get repository context with optimized caching
+                        repo_context = repo_middleware.get_repository_context(repository_url)
+                        
+                        if repo_context.get("error"):
+                            logger.warning(f"Repository context error: {repo_context['error']}")
+                            # Still use optimized manager even with errors
+                            repo_manager = OptimizedRedisRepoManager(
+                                repo_url=repository_url,
+                                branch=branch,
+                                username=user_id
+                            )
+                        else:
+                            logger.info(f"Repository context loaded in {repo_context.get('fetch_time_ms', 0)}ms")
+                            # Create optimized repo manager that uses our fast service
+                            repo_manager = OptimizedRedisRepoManager(
+                                repo_url=repository_url,
+                                branch=branch,
+                                username=user_id
+                            )
+                            
+                            # Pre-load selected files using optimized service
+                            if session.get("selectedFiles"):
+                                for file_info in session["selectedFiles"]:
+                                    if isinstance(file_info, dict) and file_info.get("path"):
+                                        file_path = file_info["path"]
+                                        file_content = repo_middleware.get_file_content_fast(repository_url, file_path)
+                                        if file_content:
+                                            logger.info(f"Pre-loaded file: {file_path}")
+                    else:
+                        # Use simple optimized system as fallback
+                        logger.info("Using simple optimized repository system")
+                        
+                        # Create a wrapper that uses the simple optimized service
+                        simple_service = get_simple_optimized_repo_service(user_id)
+                        
+                        # Test repository access
+                        repo_data = simple_service.get_repository_data(repository_url)
+                        if repo_data:
+                            logger.info("Repository data loaded successfully with simple optimized system")
+                        else:
+                            logger.warning("Repository data not available with simple optimized system")
+                        
+                        # Create standard repo manager but with optimized token handling
+                        repo_manager = RedisRepoManager(
+                            repo_url=repository_url,
+                            branch=branch,
+                            username=user_id
+                        )
                     
                     # Create Cosmos wrapper for this request
                     wrapper = CosmosWebWrapper(
@@ -210,7 +275,7 @@ class ChatCosmosService:
                         user_id=user_id
                     )
                     
-                    # Add selected files to context
+                    # Add selected files to context using optimized access
                     if session.get("selectedFiles"):
                         for file_info in session["selectedFiles"]:
                             if isinstance(file_info, dict) and file_info.get("path"):
@@ -218,11 +283,18 @@ class ChatCosmosService:
                 else:
                     logger.warning("No repository URL found in request - Cosmos will not have repository context")
                     # Create a minimal wrapper without repository context
-                    repo_manager = RedisRepoManager(
-                        repo_url="https://github.com/default/repo",  # Placeholder
-                        branch="main",
-                        username=user_id
-                    )
+                    if optimized_system_available:
+                        repo_manager = OptimizedRedisRepoManager(
+                            repo_url="https://github.com/default/repo",  # Placeholder
+                            branch="main",
+                            username=user_id
+                        )
+                    else:
+                        repo_manager = RedisRepoManager(
+                            repo_url="https://github.com/default/repo",  # Placeholder
+                            branch="main",
+                            username=user_id
+                        )
                     wrapper = CosmosWebWrapper(
                         repo_manager=repo_manager,
                         model=model_name,

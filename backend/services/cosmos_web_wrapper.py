@@ -39,8 +39,11 @@ try:
     
     # Initialize Cosmos configuration first
     from cosmos.config import initialize_configuration
-    initialize_configuration()
-    logger.info("Cosmos configuration initialized")
+    try:
+        initialize_configuration()
+        logger.info("Cosmos configuration initialized")
+    except Exception as config_e:
+        logger.warning(f"Cosmos configuration failed, but continuing: {config_e}")
     
     from cosmos.io import InputOutput
     from cosmos.models import Model
@@ -232,6 +235,10 @@ class WebSafeInputOutput(InputOutput):
             # Track the file modification
             self.wrapper._track_file_modification(filename, content)
             
+            # Ensure conversion_notes is always a list
+            if not hasattr(self, 'conversion_notes') or not isinstance(self.conversion_notes, list):
+                self.conversion_notes = []
+            
             # Add conversion note
             self.conversion_notes.append(f"File write intercepted: {filename}")
             
@@ -241,21 +248,75 @@ class WebSafeInputOutput(InputOutput):
             logger.error(f"Error intercepting file write {filename}: {e}")
             return False
     
-    def confirm_ask(self, question: str, default: str = "y") -> str:
+    def confirm_ask(self, question: str, default: str = "y", **kwargs) -> str:
         """Override confirmation prompts for web safety."""
         # In web mode, we auto-confirm with default values
-        logger.info(f"Auto-confirming prompt: {question} -> {default}")
-        self.conversion_notes.append(f"Auto-confirmed prompt: {question}")
+        # Handle additional arguments like 'subject' that may be passed
+        
+        # Ensure conversion_notes is always a list
+        if not hasattr(self, 'conversion_notes') or not isinstance(self.conversion_notes, list):
+            self.conversion_notes = []
+        
+        subject = kwargs.get('subject', '')
+        if subject:
+            logger.info(f"Auto-confirming prompt for {subject}: {question} -> {default}")
+            self.conversion_notes.append(f"Auto-confirmed prompt for {subject}: {question}")
+        else:
+            logger.info(f"Auto-confirming prompt: {question} -> {default}")
+            self.conversion_notes.append(f"Auto-confirmed prompt: {question}")
         return default
     
     def get_captured_output(self) -> Dict[str, List[str]]:
         """Get all captured output for web display."""
+        # Ensure conversion_notes is always a list
+        if not hasattr(self, 'conversion_notes') or not isinstance(self.conversion_notes, list):
+            self.conversion_notes = []
+            
         return {
             'output': getattr(self, '_captured_output', []),
             'errors': getattr(self, '_captured_errors', []),
             'warnings': getattr(self, '_captured_warnings', []),
             'conversion_notes': self.conversion_notes
         }
+    
+    def interrupt_input(self):
+        """Handle input interruption for web safety."""
+        logger.debug("Input interruption intercepted for web mode")
+        pass
+    
+    def get_mtime(self, filename: str):
+        """Get file modification time - intercepted for web mode."""
+        logger.debug(f"File mtime request intercepted: {filename}")
+        # Return current time as fallback
+        import time
+        return time.time()
+    
+    def get_modified_content(self, filename: str):
+        """Get modified content from virtual file system."""
+        if hasattr(self.wrapper, '_virtual_files') and filename in self.wrapper._virtual_files:
+            return self.wrapper._virtual_files[filename]
+        return None
+    
+    def __getattr__(self, name):
+        """Fallback for any other methods that might be called."""
+        # Don't intercept known attributes
+        if name in ['conversion_notes', 'intercepted_commands', '_captured_output', '_captured_errors', '_captured_warnings']:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        
+        def method_fallback(*args, **kwargs):
+            logger.debug(f"InputOutput method '{name}' intercepted with args={args}, kwargs={kwargs}")
+            # For most methods, just return None or empty result
+            if name.startswith('tool_'):
+                # Tool methods should not return anything
+                return None
+            elif name.startswith('get_') or name.startswith('read_'):
+                # Getter methods should return None
+                return None
+            else:
+                # Other methods return None
+                return None
+        
+        return method_fallback
 
 
 class CosmosWebWrapper:
@@ -688,7 +749,11 @@ class CosmosWebWrapper:
             # Clear previous state
             self._shell_commands_intercepted.clear()
             if hasattr(self.io, 'conversion_notes'):
-                self.io.conversion_notes.clear()
+                # Ensure conversion_notes is a list before clearing
+                if not isinstance(self.io.conversion_notes, list):
+                    self.io.conversion_notes = []
+                else:
+                    self.io.conversion_notes.clear()
             
             # Update context files in coder
             self._update_coder_context()
@@ -700,8 +765,11 @@ class CosmosWebWrapper:
             response_content = ""
             try:
                 if COSMOS_COMPONENTS_AVAILABLE:
-                    # Use the real Cosmos coder's run method with the message
-                    response_content = self.coder.run(with_message=message, preproc=True)
+                    # Prepare enhanced message with repository context
+                    enhanced_message = self._prepare_enhanced_message(message)
+                    
+                    # Use the real Cosmos coder's run method with the enhanced message
+                    response_content = self.coder.run(with_message=enhanced_message, preproc=True)
                     
                     if not response_content:
                         response_content = "I understand your request. How can I help you with your code?"
@@ -763,41 +831,201 @@ class CosmosWebWrapper:
             # Check if user is asking about the repository in general
             repo_analysis_keywords = [
                 'repo', 'repository', 'project', 'codebase', 'what is this',
-                'about', 'overview', 'structure', 'files', 'code'
+                'about', 'overview', 'structure', 'files', 'code', 'analyze',
+                'tell me', 'describe', 'explain', 'understand'
             ]
             
             message_lower = message.lower()
             is_repo_question = any(keyword in message_lower for keyword in repo_analysis_keywords)
             
-            # If no files in context and user is asking about repo, add key files
-            if is_repo_question and len(self._context_files) == 0 and self.repo_manager:
-                logger.info("Adding repository context for general repository analysis")
+            # Be more aggressive - if no files in context and we have a repo manager, add context
+            if len(self._context_files) == 0 and self.repo_manager:
+                logger.info("No files in context, adding repository context")
                 
                 # Get list of important files to add to context
                 important_files = self._get_important_repository_files()
                 
                 # Add important files to context (limit to avoid overwhelming)
                 files_added = 0
-                max_files = 10  # Limit to prevent context overflow
+                max_files = 8  # Reasonable limit for context
                 
                 for file_path in important_files:
                     if files_added >= max_files:
                         break
                         
                     try:
-                        self.add_file_to_context(file_path)
-                        files_added += 1
-                        logger.debug(f"Added {file_path} to context for repository analysis")
+                        # Check if file has content before adding
+                        content = self.repo_manager.get_file_content(file_path)
+                        if content and content.strip():
+                            self.add_file_to_context(file_path)
+                            files_added += 1
+                            logger.info(f"Added {file_path} to context ({len(content)} chars)")
+                        else:
+                            logger.debug(f"Skipped empty file: {file_path}")
                     except Exception as e:
                         logger.debug(f"Could not add {file_path} to context: {e}")
                 
                 if files_added > 0:
                     logger.info(f"Added {files_added} key repository files to context")
-                    # Update coder context after adding files
-                    self._update_coder_context()
+                else:
+                    logger.warning("No individual files could be added to context, will use repository overview instead")
+                    # Don't worry about individual files - the _prepare_enhanced_message method
+                    # will handle adding repository overview when no files are in context
                     
         except Exception as e:
             logger.error(f"Error adding repository context: {e}")
+    
+    def _prepare_enhanced_message(self, original_message: str) -> str:
+        """
+        Prepare enhanced message with repository context for the AI model.
+        
+        Args:
+            original_message: Original user message
+            
+        Returns:
+            Enhanced message with repository context
+        """
+        try:
+            # Start with the original message
+            enhanced_parts = [original_message]
+            
+            # Add repository context if available
+            if self.repo_manager and len(self._context_files) > 0:
+                enhanced_parts.append("\n\n--- Repository Context ---")
+                
+                # Add repository information
+                repo_info = self.repo_manager.get_repository_info()
+                if repo_info:
+                    enhanced_parts.append(f"Repository: {repo_info.get('name', 'Unknown')}")
+                    enhanced_parts.append(f"Files available: {repo_info.get('file_count', 0)}")
+                
+                # Add file contents from context
+                enhanced_parts.append("\nFiles in context:")
+                
+                for file_path, context_file in self._context_files.items():
+                    try:
+                        content = self.repo_manager.get_file_content(file_path)
+                        if content and content.strip():
+                            enhanced_parts.append(f"\n### File: {file_path}")
+                            enhanced_parts.append(f"```{context_file.language}")
+                            # Limit content to avoid overwhelming the context
+                            if len(content) > 3000:
+                                enhanced_parts.append(content[:3000] + "\n... (truncated)")
+                            else:
+                                enhanced_parts.append(content)
+                            enhanced_parts.append("```")
+                        else:
+                            enhanced_parts.append(f"\n### File: {file_path} (empty or not found)")
+                    except Exception as e:
+                        logger.warning(f"Could not get content for {file_path}: {e}")
+                        enhanced_parts.append(f"\n### File: {file_path} (error loading)")
+            
+            # If no context files but we have repository data, add overview
+            elif self.repo_manager and len(self._context_files) == 0:
+                repo_overview = self._get_repository_overview()
+                if repo_overview:
+                    enhanced_parts.append("\n\n--- Repository Overview ---")
+                    enhanced_parts.append(repo_overview)
+                else:
+                    # Fallback: try to get repository data directly
+                    logger.info("No repository overview available, trying direct repository data access")
+                    try:
+                        repo_name = getattr(self.repo_manager, 'repo_name', None)
+                        if repo_name and hasattr(self.repo_manager, 'redis_cache') and self.repo_manager.redis_cache:
+                            repo_data = self.repo_manager.redis_cache.get_repository_data_cached(repo_name)
+                            if repo_data:
+                                enhanced_parts.append("\n\n--- Repository Data ---")
+                                enhanced_parts.append(f"Repository: {repo_name}")
+                                
+                                # Add tree if available
+                                if 'tree' in repo_data and repo_data['tree']:
+                                    enhanced_parts.append("\nFile Structure:")
+                                    enhanced_parts.append("```")
+                                    enhanced_parts.append(repo_data['tree'][:2000])  # First 2000 chars
+                                    enhanced_parts.append("```")
+                                
+                                # Add content if available
+                                if 'content' in repo_data and repo_data['content']:
+                                    enhanced_parts.append("\nRepository Content:")
+                                    enhanced_parts.append(repo_data['content'][:3000])  # First 3000 chars
+                                
+                                logger.info("Added direct repository data to context")
+                    except Exception as e:
+                        logger.warning(f"Could not add direct repository data: {e}")
+            
+            enhanced_message = "\n".join(enhanced_parts)
+            
+            # Log the enhancement
+            if len(enhanced_parts) > 1:
+                logger.info(f"Enhanced message with repository context ({len(enhanced_message)} chars)")
+            
+            return enhanced_message
+            
+        except Exception as e:
+            logger.error(f"Error preparing enhanced message: {e}")
+            return original_message
+    
+    def _get_repository_overview(self) -> str:
+        """
+        Get repository overview from cached data.
+        
+        Returns:
+            Repository overview string
+        """
+        try:
+            if not self.repo_manager:
+                return ""
+            
+            # Get repository data from Redis cache
+            repo_name = getattr(self.repo_manager, 'repo_name', None)
+            if not repo_name:
+                return ""
+            
+            # Try to get cached repository data
+            repo_data = None
+            if hasattr(self.repo_manager, 'redis_cache') and self.repo_manager.redis_cache:
+                try:
+                    repo_data = self.repo_manager.redis_cache.get_repository_data_cached(repo_name)
+                except Exception as e:
+                    logger.warning(f"Could not get repository data from cache: {e}")
+            
+            if not repo_data:
+                return ""
+            
+            overview_parts = []
+            
+            # Add repository name
+            overview_parts.append(f"Repository: {repo_name}")
+            
+            # Add metadata if available
+            if 'metadata' in repo_data:
+                metadata = repo_data['metadata']
+                if 'estimated_tokens' in metadata:
+                    overview_parts.append(f"Size: ~{metadata['estimated_tokens']} tokens")
+            
+            # Add file structure preview
+            if 'tree' in repo_data and repo_data['tree']:
+                overview_parts.append("\nFile Structure (preview):")
+                tree_lines = repo_data['tree'].split('\n')[:20]  # First 20 lines
+                overview_parts.append("```")
+                overview_parts.extend(tree_lines)
+                if len(repo_data['tree'].split('\n')) > 20:
+                    overview_parts.append("... (more files available)")
+                overview_parts.append("```")
+            
+            # Add content preview
+            if 'content' in repo_data and repo_data['content']:
+                overview_parts.append("\nRepository Content (preview):")
+                content_preview = repo_data['content'][:1500]  # First 1500 chars
+                if len(repo_data['content']) > 1500:
+                    content_preview += "\n... (more content available)"
+                overview_parts.append(content_preview)
+            
+            return "\n".join(overview_parts)
+            
+        except Exception as e:
+            logger.error(f"Error getting repository overview: {e}")
+            return ""
     
     def _get_important_repository_files(self) -> List[str]:
         """Get list of important files for repository analysis."""
@@ -810,9 +1038,11 @@ class CosmosWebWrapper:
             # Get all files in repository
             all_files = self.repo_manager.list_files()
             if not all_files:
+                logger.warning("No files found in repository by list_files()")
                 return important_files
             
-            logger.debug(f"Found {len(all_files)} files in repository")
+            logger.info(f"Found {len(all_files)} files in repository")
+            logger.debug(f"Sample files: {all_files[:10]}")
             
             # Priority order for important files - match against full file paths
             priority_patterns = [

@@ -16,8 +16,6 @@ import {
   Settings,
   Bot,
   Zap,
-  Sparkles,
-  BookOpen,
   Search,
   Filter,
   Users,
@@ -25,13 +23,6 @@ import {
   TrendingUp,
   Shield,
   Globe,
-  Database,
-  Upload,
-  Type,
-  ChevronRight,
-  ChevronLeft,
-  Maximize2,
-  Minimize2
 } from 'lucide-react';
 import { VSCodeInterface } from '@/components/VSCodeInterface';
 import { ChatProvider } from '@/contexts/ChatContext';

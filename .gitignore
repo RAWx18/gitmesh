@@ -289,3 +289,4 @@ qdrant_storage/
 .tars
 tars_sessions
 secret.yaml
+data/

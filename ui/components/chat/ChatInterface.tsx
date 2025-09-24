@@ -8,24 +8,20 @@ import { useChat } from '@/contexts/ChatContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Loader2, 
-  AlertCircle, 
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
+  AlertCircle,
   CheckCircle,
   Copy,
   Clock,
   FileText,
-  Settings,
-  Maximize2,
-  Minimize2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -44,12 +40,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
   const { user, isAuthenticated } = useAuth();
   const { repository } = useRepository();
   const { selectedBranch } = useBranch();
-  const { 
-    state, 
-    getActiveSession, 
-    sendMessageWithRetry, 
+  const {
+    state,
+    getActiveSession,
+    sendMessageWithRetry,
     createSession,
-    getMessageStatus 
+    getMessageStatus
   } = useChat();
 
   // Local state
@@ -57,7 +53,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
   const [selectedModel, setSelectedModel] = useState('gemini');
   const [isExpanded, setIsExpanded] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(true);
-  
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -190,19 +186,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Model Selector */}
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
             />
-            
+
             {/* Repository Selector */}
             <RepositorySelector />
-            
+
             <Separator orientation="vertical" className="h-6" />
-            
             {/* Context Panel Toggle */}
             <Button
               variant="ghost"
@@ -210,19 +205,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
               onClick={() => setShowContextPanel(!showContextPanel)}
               className="flex items-center gap-2"
             >
-              <FileText size={16} />
-              <span className="hidden sm:inline">
-                Context ({state.selectedFiles.length})
-              </span>
-            </Button>
-            
-            {/* Expand/Collapse */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              {showContextPanel ? (
+                <span className="text-lg font-bold">&gt;</span>
+              ) : (
+                <span className="text-lg font-bold">&lt;</span>
+              )}
             </Button>
           </div>
         </div>
@@ -275,7 +262,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
                 ))}
               </AnimatePresence>
             )}
-            
+
             {/* Loading indicator */}
             {state.loadingStates.chat && (
               <motion.div
@@ -292,7 +279,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
                 </div>
               </motion.div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
@@ -321,7 +308,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
                 </div>
               </div>
             )}
-            
+
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <Textarea
@@ -354,7 +341,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
                 )}
               </Button>
             </div>
-            
+
             <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span>Press Enter to send, Shift+Enter for new line</span>
@@ -394,13 +381,13 @@ interface ChatMessageComponentProps {
   } | null;
 }
 
-const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({ 
-  message, 
-  onCopy, 
-  messageStatus 
+const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
+  message,
+  onCopy,
+  messageStatus
 }) => {
   const isUser = message.type === 'user';
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -417,18 +404,18 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
         {/* Avatar */}
         <div className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
-          isUser 
-            ? "bg-primary text-primary-foreground" 
+          isUser
+            ? "bg-primary text-primary-foreground"
             : "bg-muted text-muted-foreground"
         )}>
           {isUser ? <User size={16} /> : <Bot size={16} />}
         </div>
-        
+
         {/* Message Content */}
         <div className={cn(
           "rounded-lg p-4 relative group",
-          isUser 
-            ? "bg-primary text-primary-foreground" 
+          isUser
+            ? "bg-primary text-primary-foreground"
             : "bg-muted"
         )}>
           {/* Message Header */}
@@ -438,29 +425,29 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
                 {isUser ? 'You' : 'Assistant'}
               </span>
               {message.model && (
-                <Badge 
-                  variant={isUser ? "secondary" : "outline"} 
+                <Badge
+                  variant={isUser ? "secondary" : "outline"}
                   className="text-xs px-1 py-0 h-4"
                 >
                   {message.model}
                 </Badge>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2 text-xs opacity-70">
               <Clock size={12} />
               <span>
-                {new Date(message.timestamp).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                {new Date(message.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })}
               </span>
-              
+
               {/* Message Status */}
               {messageStatus && (
                 <MessageStatusIndicator {...messageStatus} />
               )}
-              
+
               {/* Copy Button */}
               <Button
                 variant="ghost"
@@ -472,7 +459,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
               </Button>
             </div>
           </div>
-          
+
           {/* Message Content */}
           <div className="prose prose-sm max-w-none dark:prose-invert">
             <ReactMarkdown
@@ -505,7 +492,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
               {message.content}
             </ReactMarkdown>
           </div>
-          
+
           {/* Files Referenced */}
           {message.files && message.files.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/20">

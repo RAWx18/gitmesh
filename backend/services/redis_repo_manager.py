@@ -213,13 +213,22 @@ class RedisRepoManager:
             
             try:
                 # Get GitHub token if username is provided
+                github_token = None
                 if self.username:
                     github_token = self._get_github_token(self.username)
-                    if github_token:
+                    if github_token and len(github_token.strip()) > 10:  # Basic validation
                         os.environ["GITHUB_TOKEN"] = github_token
                         logger.info("Using KeyManager GitHub token for repository fetch")
                     else:
-                        logger.info("No GitHub token available, proceeding without authentication")
+                        logger.info("No valid GitHub token available, proceeding without authentication")
+                        # Clear any invalid token
+                        if "GITHUB_TOKEN" in os.environ:
+                            del os.environ["GITHUB_TOKEN"]
+                else:
+                    logger.info("No username provided, proceeding without authentication")
+                    # Clear any existing token to avoid conflicts
+                    if "GITHUB_TOKEN" in os.environ:
+                        del os.environ["GITHUB_TOKEN"]
                 
                 # Set tier plan
                 os.environ["TIER_PLAN"] = self.user_tier
@@ -250,7 +259,25 @@ class RedisRepoManager:
                     
         except Exception as e:
             logger.error(f"Error during authenticated repository fetch: {e}")
-            return False
+            # Try without authentication as fallback for public repositories
+            logger.info("Attempting to fetch repository without authentication as fallback")
+            try:
+                # Clear any problematic tokens
+                if "GITHUB_TOKEN" in os.environ:
+                    del os.environ["GITHUB_TOKEN"]
+                os.environ["TIER_PLAN"] = self.user_tier
+                
+                success = fetch_and_store_repo(repo_url)
+                if success:
+                    logger.info(f"Successfully fetched repository without authentication: {repo_url}")
+                    self._clear_caches()
+                    return True
+                else:
+                    logger.error(f"Failed to fetch repository even without authentication: {repo_url}")
+                    return False
+            except Exception as fallback_error:
+                logger.error(f"Fallback fetch also failed: {fallback_error}")
+                return False
     
     def _clear_caches(self) -> None:
         """Clear all internal caches."""
