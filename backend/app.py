@@ -102,6 +102,26 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"⚠️ Cosmos integration initialization error: {e}")
         
+        # Initialize cache cleanup scheduler
+        try:
+            from services.cache_cleanup_scheduler import start_cache_cleanup_scheduler, SchedulerConfig
+            
+            scheduler_config = SchedulerConfig(
+                expired_cleanup_interval=300,  # 5 minutes
+                memory_optimization_interval=1800,  # 30 minutes
+                health_check_interval=60,  # 1 minute
+                memory_warning_threshold_mb=80.0,
+                memory_critical_threshold_mb=100.0,
+                enable_health_monitoring=True,
+                enable_memory_alerts=True,
+                log_cleanup_results=True
+            )
+            
+            await start_cache_cleanup_scheduler(scheduler_config)
+            logger.info("✅ Cache cleanup scheduler started successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Cache cleanup scheduler initialization failed: {e}")
+        
         logger.info("✅ Gitmesh System started successfully")
         trace("app_started", {"status": "success"})
         
@@ -115,6 +135,14 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("🛑 Shutting down Gitmesh System...")
     try:
+        # Shutdown cache cleanup scheduler
+        try:
+            from services.cache_cleanup_scheduler import stop_cache_cleanup_scheduler
+            await stop_cache_cleanup_scheduler()
+            logger.info("✅ Cache cleanup scheduler stopped")
+        except Exception as e:
+            logger.warning(f"⚠️ Error stopping cache cleanup scheduler: {e}")
+        
         # Shutdown Cosmos integration service
         if hasattr(app.state, 'cosmos_integration'):
             await app.state.cosmos_integration.shutdown()
@@ -282,6 +310,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Chat Analytics routes not available: {e}")
 except Exception as e:
     logger.error(f"❌ Error loading Chat Analytics routes: {e}")
+
+# Include Repository Validation routes
+try:
+    from api.v1.routes.repository_validation import router as repository_validation_router
+    app.include_router(repository_validation_router, prefix="/api/v1/repository", tags=["repository_validation"])
+    logger.info("✅ Repository Validation routes loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Repository Validation routes not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error loading Repository Validation routes: {e}")
 
 # Include Security Monitoring routes
 try:

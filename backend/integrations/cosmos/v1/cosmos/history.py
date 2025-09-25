@@ -1,7 +1,7 @@
 import argparse
 
 from cosmos import models, prompts
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 
 
 class ChatSummary:

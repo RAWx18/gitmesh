@@ -78,8 +78,8 @@ class ChatAnalyticsService:
             "deepseek-coder": {"input": 0.00014, "output": 0.00028},
         }
         
-        # Initialize alert rules
-        self._initialize_default_alert_rules()
+        # # Initialize alert rules
+        # self._initialize_default_alert_rules()
     
     async def track_session_metrics(
         self,
@@ -951,7 +951,7 @@ class ChatAnalyticsService:
             logger.error("Error getting error analytics", error=str(e))
             return [], 0.0, {}
     
-    def _initialize_default_alert_rules(self) -> None:
+    # def _initialize_default_alert_rules(self) -> None:
         """Initialize default alert rules."""
         try:
             default_rules = [

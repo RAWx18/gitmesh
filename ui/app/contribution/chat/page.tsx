@@ -28,6 +28,7 @@ import { VSCodeInterface } from '@/components/VSCodeInterface';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { RepositoryCacheManager } from '@/components/RepositoryCacheManager';
 import { useRepositoryCache } from '@/hooks/useRepositoryCache';
+import { useNavigationCache } from '@/hooks/useNavigationCache';
 import { toast } from 'sonner';
 
 interface ImportedData {
@@ -50,6 +51,13 @@ export default function ChatPage() {
   
   // Initialize repository caching hook
   useRepositoryCache();
+  
+  // Initialize navigation cache management with notifications
+  useNavigationCache({
+    enableAutoCleanup: true,
+    cleanupDelay: 1000,
+    showNotifications: false // Set to true for debugging
+  });
 
   // Demo repository setup for testing
   React.useEffect(() => {
@@ -191,7 +199,7 @@ export default function ChatPage() {
         
         {/* Repository Cache Manager - Floating */}
         {repository && (
-          <div className="fixed bottom-4 right-4 z-50">
+          <div className="fixed bottom-4 right-4 z-50 space-y-2">
             <RepositoryCacheManager />
           </div>
         )}

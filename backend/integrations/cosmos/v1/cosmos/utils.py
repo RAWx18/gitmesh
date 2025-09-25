@@ -7,8 +7,10 @@ from pathlib import Path
 
 import oslex
 
-from cosmos.dump import dump  # noqa: F401
-from cosmos.waiting import Spinner
+from cosmos.web_module_loader import safe_import
+
+# Safe imports for removed modules
+Spinner = safe_import('cosmos.waiting', fallback=type('Spinner', (), {}))
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp", ".pdf"}
 
@@ -208,53 +210,62 @@ def get_pip_install(args):
 
 
 def run_install(cmd):
+    """SECURITY: Package installation completely disabled for security.
+    
+    COMMENTED OUT: All subprocess-based installation functionality has been disabled.
+    This function now returns a failure message explaining that installations
+    must be done manually outside of the application.
+    """
     print()
-    print("Installing:", printable_shell_command(cmd))
+    print("SECURITY: Package installation disabled for security reasons")
+    print("Command that was blocked:", printable_shell_command(cmd))
+    print("Please install packages manually outside of this application")
+    
+    # SECURITY: All subprocess installation code commented out - no shell execution allowed
+    # # First ensure pip is available
+    # ensurepip_cmd = [sys.executable, "-m", "ensurepip", "--upgrade"]
+    # try:
+    #     subprocess.run(ensurepip_cmd, capture_output=True, check=False)
+    # except Exception:
+    #     pass  # Continue even if ensurepip fails
 
-    # First ensure pip is available
-    ensurepip_cmd = [sys.executable, "-m", "ensurepip", "--upgrade"]
-    try:
-        subprocess.run(ensurepip_cmd, capture_output=True, check=False)
-    except Exception:
-        pass  # Continue even if ensurepip fails
+    # try:
+    #     output = []
+    #     process = subprocess.Popen(
+    #         cmd,
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.STDOUT,
+    #         text=True,
+    #         bufsize=1,
+    #         universal_newlines=True,
+    #         encoding=sys.stdout.encoding,
+    #         errors="replace",
+    #     )
+    #     spinner = Spinner("Installing...")
 
-    try:
-        output = []
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True,
-            encoding=sys.stdout.encoding,
-            errors="replace",
-        )
-        spinner = Spinner("Installing...")
+    #     while True:
+    #         char = process.stdout.read(1)
+    #         if not char:
+    #             break
 
-        while True:
-            char = process.stdout.read(1)
-            if not char:
-                break
+    #         output.append(char)
+    #         spinner.step()
 
-            output.append(char)
-            spinner.step()
+    #     spinner.end()
+    #     return_code = process.wait()
+    #     output = "".join(output)
 
-        spinner.end()
-        return_code = process.wait()
-        output = "".join(output)
+    #     if return_code == 0:
+    #         print("Installation complete.")
+    #         print()
+    #         return True, output
 
-        if return_code == 0:
-            print("Installation complete.")
-            print()
-            return True, output
+    # except subprocess.CalledProcessError as e:
+    #     print(f"\nError running pip install: {e}")
 
-    except subprocess.CalledProcessError as e:
-        print(f"\nError running pip install: {e}")
+    # print("\nInstallation failed.\n")
 
-    print("\nInstallation failed.\n")
-
-    return False, output
+    return False, "SECURITY: Package installation disabled for security reasons"
 
 
 def find_common_root(abs_fnames):

@@ -27,6 +27,7 @@ class FeatureFlag(str, Enum):
     COSMOS_CHAT_ENABLED = "cosmos_chat_enabled"
     COSMOS_CHAT_BETA = "cosmos_chat_beta"
     COSMOS_CHAT_FULL = "cosmos_chat_full"
+    COSMOS_OPTIMIZATION = "cosmos_optimization"  # New flag for OptimizedCosmosWrapper
     TIER_ACCESS_CONTROL = "tier_access_control"
     REDIS_REPO_MANAGER = "redis_repo_manager"
     CONTEXT_FILE_MANAGEMENT = "context_file_management"
@@ -103,6 +104,7 @@ class ProductionSettings(BaseSettings):
                 FeatureFlag.COSMOS_CHAT_ENABLED: True,
                 FeatureFlag.COSMOS_CHAT_BETA: True,
                 FeatureFlag.COSMOS_CHAT_FULL: True,
+                FeatureFlag.COSMOS_OPTIMIZATION: True,  # Enable optimization in dev
                 FeatureFlag.TIER_ACCESS_CONTROL: True,
                 FeatureFlag.REDIS_REPO_MANAGER: True,
                 FeatureFlag.CONTEXT_FILE_MANAGEMENT: True,
@@ -118,6 +120,7 @@ class ProductionSettings(BaseSettings):
                 FeatureFlag.COSMOS_CHAT_ENABLED: True,
                 FeatureFlag.COSMOS_CHAT_BETA: True,
                 FeatureFlag.COSMOS_CHAT_FULL: False,  # Beta only in staging
+                FeatureFlag.COSMOS_OPTIMIZATION: True,  # Test optimization in staging
                 FeatureFlag.TIER_ACCESS_CONTROL: True,
                 FeatureFlag.REDIS_REPO_MANAGER: True,
                 FeatureFlag.CONTEXT_FILE_MANAGEMENT: True,
@@ -133,6 +136,7 @@ class ProductionSettings(BaseSettings):
                 FeatureFlag.COSMOS_CHAT_ENABLED: self.cosmos_chat_enabled,
                 FeatureFlag.COSMOS_CHAT_BETA: False,  # No beta in production
                 FeatureFlag.COSMOS_CHAT_FULL: self.cosmos_chat_enabled,
+                FeatureFlag.COSMOS_OPTIMIZATION: False,  # Conservative in production initially
                 FeatureFlag.TIER_ACCESS_CONTROL: True,
                 FeatureFlag.REDIS_REPO_MANAGER: True,
                 FeatureFlag.CONTEXT_FILE_MANAGEMENT: True,

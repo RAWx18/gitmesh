@@ -466,13 +466,47 @@ class OptimizedRepoService:
             github_token = None
             if self.user_login:
                 try:
+                    # Try get_github_token method first
                     github_token = key_manager.get_github_token(self.user_login)
                     if github_token:
                         logger.info(f"Retrieved GitHub token from KeyManager for user: {self.user_login}")
                     else:
-                        logger.info(f"No GitHub token found in KeyManager for user: {self.user_login}")
+                        # Try alternative method
+                        github_token = key_manager.get_key(self.user_login, 'github_token')
+                        if github_token:
+                            logger.info(f"Retrieved GitHub token from KeyManager (alternative method) for user: {self.user_login}")
+                        else:
+                            logger.info(f"No GitHub token found in KeyManager for user: {self.user_login}")
                 except Exception as e:
                     logger.warning(f"Failed to retrieve GitHub token from KeyManager: {e}")
+            
+            # Fallback to environment variable if no user token available
+            if not github_token:
+                env_token = os.getenv('GITHUB_TOKEN')
+                if env_token and env_token.strip() and not env_token.startswith('your_github') and len(env_token.strip()) > 10:
+                    github_token = env_token
+                    logger.info("Using GitHub token from environment variable as fallback")
+                else:
+                    logger.info("No valid GitHub token available - using public API limits")
+            
+            # CRITICAL: Check repository size before gitingest to prevent Redis memory issues
+            try:
+                from integrations.cosmos.v1.cosmos.repo_fetch import check_repository_size_for_chat
+                
+                size_allowed, size_message, repo_size_kb = check_repository_size_for_chat(
+                    repo_url, github_token, max_size_mb=150
+                )
+                
+                if not size_allowed:
+                    logger.error(f"Repository size check failed for {repo_url}: {size_message}")
+                    return False
+                
+                logger.info(f"Repository size check passed for {repo_url}: {size_message}")
+                
+            except Exception as e:
+                logger.error(f"Repository size check failed for {repo_url}: {e}")
+                # Don't proceed if we can't verify repository size
+                return False
             
             # Set GitHub token in environment for gitingest
             original_token = os.environ.get("GITHUB_TOKEN")

@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 
 _text_prefix = """
 # Header

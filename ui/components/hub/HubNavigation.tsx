@@ -87,21 +87,12 @@ export function HubNavigation() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg overflow-hidden">
-                {/* Show dark_logo.png in light mode, light_logo.png in dark mode */}
                 <Image 
-                  src="/dark_logo.png"
+                  src="/meshy_face.png"
                   alt="GitMesh"
                   width={32}
                   height={32}
-                  className="object-contain block dark:hidden"
-                  priority
-                />
-                <Image 
-                  src="/light_logo.png"
-                  alt="GitMesh"
-                  width={32}
-                  height={32}
-                  className="object-contain hidden dark:block"
+                  className="object-contain"
                   priority
                 />
                 </div>

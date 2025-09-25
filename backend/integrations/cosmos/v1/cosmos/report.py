@@ -7,7 +7,10 @@ import urllib.parse
 import webbrowser
 
 from cosmos import __version__
-from cosmos.versioncheck import VERSION_CHECK_FNAME
+from cosmos.web_module_loader import safe_import
+
+# Safe import for removed module
+VERSION_CHECK_FNAME = safe_import('cosmos.versioncheck', fallback=type('', (), {'VERSION_CHECK_FNAME': '.cosmos.version'})).VERSION_CHECK_FNAME if safe_import('cosmos.versioncheck') else '.cosmos.version'
 
 FENCE = "`" * 3
 

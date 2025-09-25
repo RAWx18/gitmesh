@@ -228,7 +228,7 @@ class SmartRedisCache:
     
     def store_repository_batch(self, repo_name: str, data: Dict[str, str]) -> bool:
         """
-        Store repository data using optimized pipeline operations.
+        Store repository data using optimized pipeline operations with chunking for large data.
         
         Args:
             repo_name: Repository name for key generation
@@ -243,33 +243,92 @@ class SmartRedisCache:
                 if not self.health_check():
                     raise ConnectionError("Redis health check failed")
                 
-                def _pipeline_operation():
-                    # First, clean up any existing keys outside the pipeline
+                # Check data sizes and use chunked storage for large content
+                CHUNK_SIZE = 1024 * 1024  # 1MB chunks
+                large_data_keys = []
+                
+                for data_type, content in data.items():
+                    if isinstance(content, str) and len(content.encode('utf-8')) > CHUNK_SIZE:
+                        large_data_keys.append(data_type)
+                        logger.info(f"Large data detected for {data_type}: {len(content.encode('utf-8'))} bytes, will use chunked storage")
+                
+                def _cleanup_existing_keys():
+                    """Clean up existing keys before storing new data"""
+                    cleanup_keys = []
                     for data_type in ['content', 'tree', 'summary', 'metadata']:
-                        key = f"repo:{repo_name}:{data_type}"
+                        cleanup_keys.append(f"repo:{repo_name}:{data_type}")
+                        # Also clean up potential chunks
+                        if data_type in large_data_keys:
+                            for i in range(100):  # Clean up to 100 potential chunks
+                                cleanup_keys.append(f"repo:{repo_name}:{data_type}:chunk:{i}")
+                    
+                    # Delete in batches to avoid timeout
+                    batch_size = 50
+                    for i in range(0, len(cleanup_keys), batch_size):
+                        batch = cleanup_keys[i:i + batch_size]
                         try:
-                            self._client.delete(key)
+                            self._client.delete(*batch)
                         except:
                             pass  # Ignore errors during cleanup
+                
+                def _store_chunked_data(data_type: str, content: str):
+                    """Store large data in chunks"""
+                    content_bytes = content.encode('utf-8')
+                    chunks = []
                     
-                    # Now use pipeline for storing data
+                    # Split into chunks
+                    for i in range(0, len(content_bytes), CHUNK_SIZE):
+                        chunk = content_bytes[i:i + CHUNK_SIZE]
+                        chunks.append(chunk)
+                    
+                    # Store chunks using pipeline
                     pipe = self._client.pipeline()
                     
-                    # Store all repository data in a single pipeline
-                    for data_type, content in data.items():
-                        key = f"repo:{repo_name}:{data_type}"
-                        pipe.set(key, content)
+                    # Store chunk count first
+                    chunk_count_key = f"repo:{repo_name}:{data_type}:chunk_count"
+                    pipe.set(chunk_count_key, len(chunks))
                     
-                    # Add metadata with timestamp using a simple string instead of hash
+                    # Store each chunk
+                    for i, chunk in enumerate(chunks):
+                        chunk_key = f"repo:{repo_name}:{data_type}:chunk:{i}"
+                        pipe.set(chunk_key, chunk)
+                    
+                    # Execute chunk storage
+                    pipe.execute()
+                    logger.info(f"Stored {data_type} in {len(chunks)} chunks")
+                
+                def _store_regular_data():
+                    """Store regular-sized data using pipeline"""
+                    pipe = self._client.pipeline()
+                    
+                    # Store non-chunked data
+                    for data_type, content in data.items():
+                        if data_type not in large_data_keys:
+                            key = f"repo:{repo_name}:{data_type}"
+                            pipe.set(key, content)
+                    
+                    # Add metadata with timestamp
                     metadata_key = f"repo:{repo_name}:metadata"
-                    metadata_value = f"stored_at:{time.time()},repo_name:{repo_name},data_types:{','.join(data.keys())}"
+                    metadata_value = f"stored_at:{time.time()},repo_name:{repo_name},data_types:{','.join(data.keys())},chunked_types:{','.join(large_data_keys)}"
                     pipe.set(metadata_key, metadata_value)
                     
-                    # Execute pipeline
+                    # Execute regular data storage
                     return pipe.execute()
                 
-                result = self._execute_with_retry(_pipeline_operation)
-                logger.info(f"Successfully stored repository data for {repo_name}")
+                # Step 1: Clean up existing keys
+                logger.info(f"Cleaning up existing keys for {repo_name}")
+                self._execute_with_retry(_cleanup_existing_keys)
+                
+                # Step 2: Store chunked data for large items
+                for data_type in large_data_keys:
+                    logger.info(f"Storing chunked data for {data_type}")
+                    self._execute_with_retry(_store_chunked_data, data_type, data[data_type])
+                
+                # Step 3: Store regular data
+                logger.info(f"Storing regular data for {repo_name}")
+                result = self._execute_with_retry(_store_regular_data)
+                
+                logger.info(f"Successfully stored repository data for {repo_name} (chunked: {large_data_keys})")
                 return True
                 
             except Exception as e:
@@ -278,7 +337,7 @@ class SmartRedisCache:
     
     def get_repository_data_cached(self, repo_name: str) -> Optional[Dict[str, str]]:
         """
-        Get repository data with smart caching and TTL optimization.
+        Get repository data with smart caching and chunked data reconstruction.
         
         Args:
             repo_name: Repository name
@@ -291,44 +350,112 @@ class SmartRedisCache:
                 if not self.health_check():
                     raise ConnectionError("Redis health check failed")
                 
-                def _pipeline_get():
+                def _get_metadata():
+                    """Get metadata to determine which data types are chunked"""
+                    metadata_key = f"repo:{repo_name}:metadata"
+                    metadata_raw = self._client.get(metadata_key)
+                    
+                    metadata = {}
+                    chunked_types = []
+                    
+                    if metadata_raw:
+                        if isinstance(metadata_raw, bytes):
+                            metadata_raw = metadata_raw.decode('utf-8')
+                        
+                        # Parse "key:value,key:value" format
+                        for pair in metadata_raw.split(','):
+                            if ':' in pair:
+                                key, value = pair.split(':', 1)
+                                metadata[key.strip()] = value.strip()
+                        
+                        # Extract chunked types
+                        if 'chunked_types' in metadata:
+                            chunked_types = [t.strip() for t in metadata['chunked_types'].split(',') if t.strip()]
+                    
+                    return metadata, chunked_types
+                
+                def _get_chunked_data(data_type: str) -> Optional[str]:
+                    """Reconstruct chunked data"""
+                    try:
+                        # Get chunk count
+                        chunk_count_key = f"repo:{repo_name}:{data_type}:chunk_count"
+                        chunk_count = self._client.get(chunk_count_key)
+                        
+                        if not chunk_count:
+                            return None
+                        
+                        chunk_count = int(chunk_count)
+                        
+                        # Get all chunks using pipeline
+                        pipe = self._client.pipeline()
+                        for i in range(chunk_count):
+                            chunk_key = f"repo:{repo_name}:{data_type}:chunk:{i}"
+                            pipe.get(chunk_key)
+                        
+                        chunks = pipe.execute()
+                        
+                        # Reconstruct data
+                        if all(chunk is not None for chunk in chunks):
+                            content_bytes = b''.join(chunks)
+                            return content_bytes.decode('utf-8')
+                        else:
+                            logger.warning(f"Missing chunks for {data_type}")
+                            return None
+                            
+                    except Exception as e:
+                        logger.error(f"Failed to reconstruct chunked data for {data_type}: {e}")
+                        return None
+                
+                def _get_regular_data(data_types: List[str]) -> Dict[str, str]:
+                    """Get regular (non-chunked) data"""
                     pipe = self._client.pipeline()
                     
-                    # Get all repository data in a single pipeline
-                    keys = ['content', 'tree', 'summary', 'metadata']
-                    for key_suffix in keys:
-                        key = f"repo:{repo_name}:{key_suffix}"
+                    for data_type in data_types:
+                        key = f"repo:{repo_name}:{data_type}"
                         pipe.get(key)
                     
-                    return pipe.execute()
+                    results = pipe.execute()
+                    
+                    data = {}
+                    for i, data_type in enumerate(data_types):
+                        if results[i] is not None:
+                            content = results[i]
+                            data[data_type] = content.decode('utf-8') if isinstance(content, bytes) else content
+                    
+                    return data
                 
-                results = self._execute_with_retry(_pipeline_get)
+                # Step 1: Get metadata and determine chunked types
+                metadata, chunked_types = self._execute_with_retry(_get_metadata)
                 
-                # Parse results
-                content, tree, summary, metadata_raw = results
-                
-                if not all([content, tree, summary]):
-                    logger.warning(f"Incomplete repository data for {repo_name}")
+                if not metadata:
+                    logger.warning(f"No metadata found for repository {repo_name}")
                     return None
                 
-                # Parse metadata string format
-                metadata = {}
-                if metadata_raw:
-                    if isinstance(metadata_raw, bytes):
-                        metadata_raw = metadata_raw.decode('utf-8')
-                    
-                    # Parse "key:value,key:value" format
-                    for pair in metadata_raw.split(','):
-                        if ':' in pair:
-                            key, value = pair.split(':', 1)
-                            metadata[key.strip()] = value.strip()
+                # Step 2: Get regular data
+                regular_types = [t for t in ['content', 'tree', 'summary'] if t not in chunked_types]
+                regular_data = self._execute_with_retry(_get_regular_data, regular_types)
                 
-                return {
-                    'content': content.decode('utf-8') if isinstance(content, bytes) else content,
-                    'tree': tree.decode('utf-8') if isinstance(tree, bytes) else tree,
-                    'summary': summary.decode('utf-8') if isinstance(summary, bytes) else summary,
-                    'metadata': metadata
-                }
+                # Step 3: Get chunked data
+                result_data = regular_data.copy()
+                for data_type in chunked_types:
+                    if data_type in ['content', 'tree', 'summary']:
+                        chunked_content = self._execute_with_retry(_get_chunked_data, data_type)
+                        if chunked_content is not None:
+                            result_data[data_type] = chunked_content
+                        else:
+                            logger.error(f"Failed to retrieve chunked data for {data_type}")
+                            return None
+                
+                # Verify we have all required data
+                required_keys = ['content', 'tree', 'summary']
+                if not all(key in result_data for key in required_keys):
+                    missing_keys = [key for key in required_keys if key not in result_data]
+                    logger.warning(f"Missing required data for {repo_name}: {missing_keys}")
+                    return None
+                
+                result_data['metadata'] = metadata
+                logger.info(f"Successfully retrieved repository data for {repo_name} (chunked: {chunked_types})")
+                return result_data
                 
             except Exception as e:
                 logger.error(f"Failed to get repository data for {repo_name}: {e}")
@@ -487,7 +614,7 @@ class SmartRedisCache:
     
     def smart_invalidate(self, repo_name: str) -> bool:
         """
-        Intelligently invalidate repository cache.
+        Intelligently invalidate repository cache including chunked data.
         
         Args:
             repo_name: Repository name to invalidate
@@ -499,10 +626,8 @@ class SmartRedisCache:
             if not self.health_check():
                 raise ConnectionError("Redis health check failed")
             
-            def _invalidate():
-                pipe = self._client.pipeline()
-                
-                # Delete all repository-related keys
+            def _get_all_keys_to_delete():
+                """Get all keys related to the repository including chunks"""
                 keys_to_delete = [
                     f"repo:{repo_name}:content",
                     f"repo:{repo_name}:tree", 
@@ -510,15 +635,37 @@ class SmartRedisCache:
                     f"repo:{repo_name}:metadata"
                 ]
                 
-                for key in keys_to_delete:
-                    pipe.delete(key)
+                # Add chunk-related keys
+                for data_type in ['content', 'tree', 'summary']:
+                    # Add chunk count key
+                    keys_to_delete.append(f"repo:{repo_name}:{data_type}:chunk_count")
+                    
+                    # Add potential chunk keys (up to 100 chunks)
+                    for i in range(100):
+                        keys_to_delete.append(f"repo:{repo_name}:{data_type}:chunk:{i}")
                 
-                return pipe.execute()
+                return keys_to_delete
             
-            results = self._execute_with_retry(_invalidate)
-            deleted_count = sum(results)
+            def _invalidate():
+                keys_to_delete = _get_all_keys_to_delete()
+                
+                # Delete in batches to avoid timeout
+                batch_size = 50
+                total_deleted = 0
+                
+                for i in range(0, len(keys_to_delete), batch_size):
+                    batch = keys_to_delete[i:i + batch_size]
+                    try:
+                        deleted = self._client.delete(*batch)
+                        total_deleted += deleted
+                    except Exception as e:
+                        logger.warning(f"Failed to delete batch {i//batch_size + 1}: {e}")
+                
+                return total_deleted
             
-            logger.info(f"Invalidated {deleted_count} keys for repository {repo_name}")
+            deleted_count = self._execute_with_retry(_invalidate)
+            
+            logger.info(f"Invalidated {deleted_count} keys for repository {repo_name} (including chunks)")
             return True
             
         except Exception as e:

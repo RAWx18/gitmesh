@@ -22,8 +22,356 @@ except ImportError:
     COSMOS_COMPONENTS_AVAILABLE = False
     CosmosWebWrapper = None
 
+# Cache management imports
+try:
+    from services.cache_management_service import create_cache_management_service
+    from services.navigation_cache_manager import create_navigation_cache_manager
+    CACHE_MANAGEMENT_AVAILABLE = True
+except ImportError:
+    CACHE_MANAGEMENT_AVAILABLE = False
+    create_cache_management_service = None
+    create_navigation_cache_manager = None
+
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+# Navigation cache management endpoints
+@router.post("/navigation-cleanup")
+async def handle_navigation_cleanup(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Handle cache cleanup during navigation transitions."""
+    try:
+        data = await request.json()
+        from_page = data.get('from_page', '')
+        to_page = data.get('to_page', '')
+        user_id = data.get('user_id') or current_user.id
+        
+        # logger.info(f"Navigation cleanup requested: {from_page} -> {to_page} for user {user_id}")
+        
+        if CACHE_MANAGEMENT_AVAILABLE:
+            # Create navigation cache manager
+            nav_manager = create_navigation_cache_manager(user_id)
+            
+            # Handle navigation with automatic cleanup
+            cleanup_result = nav_manager.handle_navigation(
+                from_page=from_page,
+                to_page=to_page
+            )
+            
+            return JSONResponse(content={
+                "repository_cache_cleared": cleanup_result.repository_cache_cleared,
+                "session_cache_cleared": cleanup_result.session_cache_cleared,
+                "context_cache_cleared": cleanup_result.context_cache_cleared,
+                "entries_cleaned": cleanup_result.entries_cleaned,
+                "memory_freed_mb": cleanup_result.memory_freed_mb,
+                "cleanup_time_ms": cleanup_result.cleanup_time_ms,
+                "success": True
+            })
+        else:
+            logger.warning("Cache management not available")
+            return JSONResponse(content={
+                "repository_cache_cleared": False,
+                "session_cache_cleared": False,
+                "context_cache_cleared": False,
+                "entries_cleaned": 0,
+                "memory_freed_mb": 0.0,
+                "cleanup_time_ms": 0.0,
+                "success": False,
+                "error": "Cache management not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Navigation cleanup error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "repository_cache_cleared": False,
+                "session_cache_cleared": False,
+                "context_cache_cleared": False,
+                "entries_cleaned": 0,
+                "memory_freed_mb": 0.0,
+                "cleanup_time_ms": 0.0,
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+@router.post("/clear-cache")
+async def clear_all_cache(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Clear all cache for a user."""
+    try:
+        data = await request.json()
+        user_id = data.get('user_id') or current_user.id
+        
+        # logger.info(f"Clear all cache requested for user {user_id}")
+        
+        if CACHE_MANAGEMENT_AVAILABLE:
+            # Create cache management service
+            cache_service = create_cache_management_service(user_id)
+            
+            # Clear all user caches
+            repo_cleared = cache_service.clear_user_repository_cache(user_id)
+            session_cleared = cache_service.clear_user_session_cache(user_id)
+            
+            # Cleanup expired entries
+            entries_cleaned = cache_service.cleanup_expired_caches()
+            
+            # Get optimization results
+            optimization_results = cache_service.optimize_memory_usage()
+            
+            return JSONResponse(content={
+                "repository_cache_cleared": repo_cleared,
+                "session_cache_cleared": session_cleared,
+                "entries_cleaned": entries_cleaned,
+                "memory_freed_mb": optimization_results.get('memory_saved_mb', 0.0),
+                "optimization_results": optimization_results,
+                "success": True
+            })
+        else:
+            logger.warning("Cache management not available")
+            return JSONResponse(content={
+                "repository_cache_cleared": False,
+                "session_cache_cleared": False,
+                "entries_cleaned": 0,
+                "memory_freed_mb": 0.0,
+                "success": False,
+                "error": "Cache management not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Clear all cache error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "repository_cache_cleared": False,
+                "session_cache_cleared": False,
+                "entries_cleaned": 0,
+                "memory_freed_mb": 0.0,
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+@router.get("/cache-stats")
+async def get_cache_stats(
+    user_id: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get cache statistics for a user."""
+    try:
+        target_user_id = user_id or current_user.id
+        
+        if CACHE_MANAGEMENT_AVAILABLE:
+            # Create cache management service
+            cache_service = create_cache_management_service(target_user_id)
+            
+            # Get cache statistics
+            cache_stats = cache_service.get_cache_stats()
+            
+            # Create navigation manager for session stats
+            nav_manager = create_navigation_cache_manager(target_user_id)
+            session_stats = nav_manager.get_session_stats()
+            
+            return JSONResponse(content={
+                "cache_stats": {
+                    "total_keys": cache_stats.total_keys,
+                    "memory_usage_mb": cache_stats.memory_usage_mb,
+                    "hit_rate": cache_stats.hit_rate,
+                    "miss_rate": cache_stats.miss_rate,
+                    "expired_keys": cache_stats.expired_keys,
+                    "user_cache_count": cache_stats.user_cache_count,
+                    "repository_cache_count": cache_stats.repository_cache_count,
+                    "session_cache_count": cache_stats.session_cache_count,
+                    "last_cleanup": cache_stats.last_cleanup.isoformat() if cache_stats.last_cleanup else None
+                },
+                "session_stats": session_stats,
+                "success": True
+            })
+        else:
+            logger.warning("Cache management not available")
+            return JSONResponse(content={
+                "cache_stats": {},
+                "session_stats": {},
+                "success": False,
+                "error": "Cache management not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Get cache stats error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "cache_stats": {},
+                "session_stats": {},
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+@router.get("/cache-health")
+async def get_cache_health(
+    user_id: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get cache health status."""
+    try:
+        target_user_id = user_id or current_user.id
+        
+        if CACHE_MANAGEMENT_AVAILABLE:
+            # Create cache management service
+            cache_service = create_cache_management_service(target_user_id)
+            
+            # Get health status
+            health_status = cache_service.health_check()
+            
+            return JSONResponse(content={
+                "health_status": {
+                    "is_healthy": health_status.is_healthy,
+                    "connection_status": health_status.connection_status,
+                    "memory_usage_percent": health_status.memory_usage_percent,
+                    "response_time_ms": health_status.response_time_ms,
+                    "error_count": health_status.error_count,
+                    "last_error": health_status.last_error,
+                    "uptime_seconds": health_status.uptime_seconds
+                },
+                "success": True
+            })
+        else:
+            logger.warning("Cache management not available")
+            return JSONResponse(content={
+                "health_status": {
+                    "is_healthy": False,
+                    "connection_status": "unavailable",
+                    "memory_usage_percent": 0.0,
+                    "response_time_ms": 0.0,
+                    "error_count": 0,
+                    "last_error": "Cache management not available",
+                    "uptime_seconds": 0
+                },
+                "success": False,
+                "error": "Cache management not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Get cache health error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "health_status": {
+                    "is_healthy": False,
+                    "connection_status": "error",
+                    "memory_usage_percent": 0.0,
+                    "response_time_ms": 0.0,
+                    "error_count": 1,
+                    "last_error": str(e),
+                    "uptime_seconds": 0
+                },
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+@router.post("/optimize-cache")
+async def optimize_cache(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Optimize cache memory usage."""
+    try:
+        data = await request.json()
+        user_id = data.get('user_id') or current_user.id
+        
+        # logger.info(f"Cache optimization requested for user {user_id}")
+        
+        if CACHE_MANAGEMENT_AVAILABLE:
+            # Create cache management service
+            cache_service = create_cache_management_service(user_id)
+            
+            # Optimize memory usage
+            optimization_results = cache_service.optimize_memory_usage()
+            
+            return JSONResponse(content={
+                "optimization_results": optimization_results,
+                "success": True
+            })
+        else:
+            logger.warning("Cache management not available")
+            return JSONResponse(content={
+                "optimization_results": {
+                    "cleaned_entries": 0,
+                    "memory_saved_mb": 0.0,
+                    "error": "Cache management not available"
+                },
+                "success": False,
+                "error": "Cache management not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Cache optimization error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "optimization_results": {
+                    "cleaned_entries": 0,
+                    "memory_saved_mb": 0.0,
+                    "error": str(e)
+                },
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+@router.get("/scheduler-status")
+async def get_scheduler_status(
+    current_user: User = Depends(get_current_user)
+):
+    """Get cache cleanup scheduler status."""
+    try:
+        # Import scheduler
+        try:
+            from services.cache_cleanup_scheduler import get_cache_cleanup_scheduler
+            scheduler = get_cache_cleanup_scheduler()
+            
+            # Get scheduler stats
+            stats = scheduler.get_scheduler_stats()
+            job_history = scheduler.get_job_history(limit=10)
+            
+            return JSONResponse(content={
+                "scheduler_stats": stats,
+                "job_history": job_history,
+                "success": True
+            })
+            
+        except ImportError:
+            return JSONResponse(content={
+                "scheduler_stats": {
+                    "is_running": False,
+                    "error": "Scheduler not available"
+                },
+                "job_history": [],
+                "success": False,
+                "error": "Cache cleanup scheduler not available"
+            })
+            
+    except Exception as e:
+        logger.error(f"Get scheduler status error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "scheduler_stats": {
+                    "is_running": False,
+                    "error": str(e)
+                },
+                "job_history": [],
+                "success": False,
+                "error": str(e)
+            }
+        )
 
 # Redis-based session storage for persistence
 import redis
@@ -58,7 +406,7 @@ try:
     # Test the connection
     session_redis.ping()
     REDIS_AVAILABLE = True
-    logger.info(f"Redis session storage initialized with pool (timeout: {socket_timeout}s, max_conn: {max_connections})")
+    # logger.info(f"Redis session storage initialized with pool (timeout: {socket_timeout}s, max_conn: {max_connections})")
 except Exception as e:
     logger.warning(f"Redis not available for session storage: {e}")
     REDIS_AVAILABLE = False
@@ -262,7 +610,7 @@ class ChatCosmosService:
             "createdAt": datetime.now().isoformat(),
             "updatedAt": datetime.now().isoformat(),
             "userId": user_id,
-            "cosmosReady": self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE
+            "cosmosReady": self.cosmos_available and COSMOS_AVAILABLE
         }
         
         # Store session with 24-hour TTL
@@ -274,7 +622,8 @@ class ChatCosmosService:
             try:
                 # Note: Cosmos wrapper will be created per message for now
                 # In the future, we can implement session-based wrapper caching
-                logger.info(f"Cosmos is available for session {session_id}")
+                # logger.info(f"Cosmos is available for session {session_id}")
+                pass
             except Exception as e:
                 logger.error(f"Error checking Cosmos availability: {e}")
         
@@ -303,7 +652,7 @@ class ChatCosmosService:
             raise HTTPException(status_code=403, detail="Access denied")
         
         # Debug: Log the incoming request
-        logger.info(f"Chat request - session: {session_id}, model: {model_name}, message: {message[:100]}...")
+        # logger.info(f"Chat request - session: {session_id}, model: {model_name}, message: {message[:100]}...")
         logger.info(f"Chat context received: {context}")
         if context and context.get("files"):
             files = context.get("files", [])
@@ -333,7 +682,7 @@ class ChatCosmosService:
         model_used = model_name
         
         try:
-            if self.cosmos_available and COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+            if self.cosmos_available and COSMOS_AVAILABLE:
                 # Initialize Cosmos configuration first
                 try:
                     from integrations.cosmos.v1.cosmos.config import initialize_configuration
@@ -359,62 +708,169 @@ class ChatCosmosService:
                 # Build enhanced context with repository information
                 enhanced_context = context or {}
                 
-                # Extract repository URL from different possible sources
+                # Import repository validation service
+                from services.repository_validation_service import repository_validation_service
+                
+                # Import repository context detection service
+                from services.repository_context_detection_service import repository_context_service
+                
+                # Detect repository context automatically from /contribution page
+                repository_context = None
                 repository_url = None
                 
-                # Method 1: From session repositoryId (most common case)
+                # Build page context from available information
+                page_context = {
+                    'repository_id': context.get('repository_id') if context else None,
+                    'repository_url': context.get('repository_url') if context else None,
+                    'branch': context.get('branch') if context else None,
+                    'owner': context.get('owner') if context else None,
+                    'repo': context.get('repo') if context else None,
+                    'current_url': '/contribution/chat',  # Assume we're on the chat page
+                }
+                
+                # Add repository info from session
                 if session.get("repositoryId"):
-                    repo_id = session["repositoryId"]
-                    if "/" in repo_id and not repo_id.startswith("http"):
-                        # Format: "owner/repo" -> "https://github.com/owner/repo"
-                        repository_url = f"https://github.com/{repo_id}"
-                        logger.info(f"Repository URL from session: {repository_url}")
-                    elif repo_id.startswith("http"):
-                        repository_url = repo_id
+                    page_context['repository_id'] = session["repositoryId"]
+                if session.get("repositoryUrl"):
+                    page_context['repository_url'] = session["repositoryUrl"]
+                if session.get("branch"):
+                    page_context['branch'] = session["branch"]
                 
-                # Method 2: From context repository_id
-                if not repository_url and context and context.get("repository_id"):
-                    repo_id = context["repository_id"]
-                    if "/" in repo_id and not repo_id.startswith("http"):
-                        repository_url = f"https://github.com/{repo_id}"
-                        logger.info(f"Repository URL from request: {repository_url}")
-                    elif repo_id.startswith("http"):
-                        repository_url = repo_id
-                
-                # Method 3: From context.repository (legacy)
-                if not repository_url and context and context.get("repository"):
-                    repo_info = context["repository"]
-                    if isinstance(repo_info, dict):
-                        # Build GitHub URL from repository info
-                        owner = repo_info.get("owner", "")
-                        name = repo_info.get("name", "")
-                        if owner and name:
-                            repository_url = f"https://github.com/{owner}/{name}"
-                            logger.info(f"Repository URL from context dict: {repository_url}")
-                    elif isinstance(repo_info, str) and repo_info.startswith("http"):
-                        # Direct URL provided
-                        repository_url = repo_info
-                        logger.info(f"Repository URL from context string: {repository_url}")
-                
-                # Method 4: Extract from files context (if available)
-                if not repository_url and context and context.get("files"):
+                # Add repository info from files context
+                if context and context.get("files"):
                     files = context["files"]
                     if files and len(files) > 0:
                         first_file = files[0]
                         if isinstance(first_file, dict):
-                            owner = first_file.get("owner")
-                            repo = first_file.get("repo")
-                            if owner and repo:
-                                repository_url = f"https://github.com/{owner}/{repo}"
-                                logger.info(f"Repository URL from file context: {repository_url}")
+                            if first_file.get("owner") and first_file.get("repo"):
+                                page_context['owner'] = first_file.get("owner")
+                                page_context['repo'] = first_file.get("repo")
+                
+                # Detect repository context
+                repository_context = repository_context_service.detect_repository_context(page_context)
+                
+                if repository_context:
+                    repository_url = repository_context.url
+                    logger.info(f"Repository context detected: {repository_url} (branch: {repository_context.branch})")
+                    
+                    # Validate repository size before processing
+                    repository_context = await repository_context_service.validate_repository_size(
+                        repository_context, user_id
+                    )
+                    
+                    if repository_context.validation_status == "too_large":
+                        # Repository is too large - block chat
+                        logger.warning(f"Repository too large: {repository_context.size_mb}MB")
+                        
+                        assistant_content = f"🚫 **Repository Too Large**\n\n{repository_context.error_message}\n\nPlease try with a smaller repository (under 150MB) or upgrade your plan for larger repository support."
+                        model_used = "validation_blocked"
+                        confidence = 0.0
+                        knowledge_used = 0
+                        sources = []
+                        
+                        # Create assistant message with error
+                        assistant_message = {
+                            "id": str(uuid.uuid4()),
+                            "type": "assistant", 
+                            "content": assistant_content,
+                            "timestamp": datetime.now().isoformat(),
+                            "files": [],
+                            "model": model_used,
+                            "metadata": {
+                                "confidence": confidence,
+                                "knowledge_used": knowledge_used,
+                                "sources_count": len(sources),
+                                "cosmos_available": False,
+                                "validation_error": "repository_too_large",
+                                "repository_blocked": True,
+                                "size_mb": repository_context.size_mb
+                            }
+                        }
+                        
+                        # Add assistant message to history
+                        messages = get_messages(session_id)
+                        messages.append(assistant_message)
+                        store_messages(session_id, messages, ttl_hours=24)
+                        
+                        # Update session timestamp
+                        session["updatedAt"] = datetime.now().isoformat()
+                        session["messages"] = messages
+                        store_session(session_id, session, ttl_hours=24)
+                        
+                        return {
+                            "userMessage": user_message,
+                            "assistantMessage": assistant_message,
+                            "session": session
+                        }
+                    
+                    elif repository_context.validation_status in ["invalid", "rate_limited"]:
+                        # Repository validation failed or rate limited
+                        logger.warning(f"Repository validation failed: {repository_context.error_message}")
+                        
+                        assistant_content = repository_context.error_message or "Repository validation failed. Please try with a different repository."
+                        model_used = "validation_blocked"
+                        confidence = 0.0
+                        knowledge_used = 0
+                        sources = []
+                        
+                        # Create assistant message with error
+                        assistant_message = {
+                            "id": str(uuid.uuid4()),
+                            "type": "assistant", 
+                            "content": assistant_content,
+                            "timestamp": datetime.now().isoformat(),
+                            "files": [],
+                            "model": model_used,
+                            "metadata": {
+                                "confidence": confidence,
+                                "knowledge_used": knowledge_used,
+                                "sources_count": len(sources),
+                                "cosmos_available": False,
+                                "validation_error": "repository_invalid",
+                                "repository_blocked": True,
+                                "size_mb": repository_context.size_mb
+                            }
+                        }
+                        
+                        # Add assistant message to history
+                        messages = get_messages(session_id)
+                        messages.append(assistant_message)
+                        store_messages(session_id, messages, ttl_hours=24)
+                        
+                        # Update session timestamp
+                        session["updatedAt"] = datetime.now().isoformat()
+                        session["messages"] = messages
+                        store_session(session_id, session, ttl_hours=24)
+                        
+                        return {
+                            "userMessage": user_message,
+                            "assistantMessage": assistant_message,
+                            "session": session
+                        }
+                    
+                    # Repository validation passed - ensure it's cached
+                    logger.info(f"Repository validation passed: {repository_context.size_mb:.2f}MB" if repository_context.size_mb else "Repository validation passed")
+                    
+                    # Ensure repository data is cached in Redis
+                    cache_success = repository_context_service.ensure_repository_cached(
+                        repository_context, user_id
+                    )
+                    
+                    if not cache_success:
+                        logger.warning(f"Failed to cache repository data: {repository_url}")
+                        # Continue anyway, but log the issue
+                else:
+                    logger.warning("No repository context could be detected from request")
+                
+
                 
                 # Set the repository URL in enhanced context
                 if repository_url:
                     enhanced_context["repository_url"] = repository_url
                     logger.info(f"Using repository URL for Cosmos: {repository_url}")
                     
-                    # Get branch info
-                    branch = session.get("branch") or context.get("branch") or "main"
+                    # Get branch info from repository context or fallback
+                    branch = repository_context.branch if repository_context else (session.get("branch") or context.get("branch") or "main")
                     enhanced_context["branch"] = branch
                     
                     if optimized_system_available:
@@ -571,6 +1027,151 @@ class ChatCosmosService:
 
 # Initialize service
 chat_service = ChatCosmosService()
+
+@router.get("/repository/suggested-files")
+async def get_suggested_files(
+    repository_url: str,
+    branch: str = "main",
+    limit: int = 10,
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Get suggested files for repository context"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    try:
+        from services.repository_context_detection_service import repository_context_service
+        
+        # Create repository context
+        repo_context = repository_context_service._create_repository_context(repository_url, branch)
+        
+        # Get suggested files
+        suggested_files = repository_context_service.get_suggested_files(repo_context, limit)
+        
+        return JSONResponse({
+            "success": True,
+            "suggested_files": [
+                {
+                    "path": file.path,
+                    "name": file.name,
+                    "relevance_score": file.relevance_score,
+                    "language": file.language,
+                    "size_bytes": file.size_bytes,
+                    "show_plus_icon": file.show_plus_icon
+                }
+                for file in suggested_files
+            ],
+            "repository_url": repository_url,
+            "branch": branch
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting suggested files: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "suggested_files": []
+        }, status_code=500)
+
+@router.post("/repository/context")
+async def detect_repository_context(
+    request: Dict[str, Any],
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Detect repository context from page information"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    try:
+        from services.repository_context_detection_service import repository_context_service
+        
+        page_context = request.get("page_context", {})
+        user_id = str(current_user.id)
+        
+        # Detect repository context
+        repo_context = repository_context_service.detect_repository_context(page_context)
+        
+        if not repo_context:
+            return JSONResponse({
+                "success": False,
+                "error": "No repository context could be detected",
+                "repository_context": None
+            })
+        
+        # Validate repository size
+        repo_context = await repository_context_service.validate_repository_size(repo_context, user_id)
+        
+        # Ensure repository is cached if validation passed
+        cache_success = False
+        if repo_context.validation_status == "valid":
+            cache_success = repository_context_service.ensure_repository_cached(repo_context, user_id)
+        
+        return JSONResponse({
+            "success": True,
+            "repository_context": {
+                "url": repo_context.url,
+                "branch": repo_context.branch,
+                "name": repo_context.name,
+                "owner": repo_context.owner,
+                "is_private": repo_context.is_private,
+                "size_mb": repo_context.size_mb,
+                "file_count": repo_context.file_count,
+                "validation_status": repo_context.validation_status,
+                "error_message": repo_context.error_message,
+                "cached": cache_success
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error detecting repository context: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "repository_context": None
+        }, status_code=500)
+
+@router.delete("/repository/cache")
+async def clear_repository_cache(
+    repository_url: str,
+    branch: str = "main",
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Clear repository cache (called when navigating away from /contribution)"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    try:
+        from services.repository_context_detection_service import repository_context_service
+        
+        user_id = str(current_user.id)
+        
+        # Clear specific repository cache
+        cache_cleared = repository_context_service.clear_repository_cache(repository_url, branch)
+        
+        # Also cleanup user cache if requested
+        cleanup_all = request.args.get('cleanup_all', 'false').lower() == 'true'
+        if cleanup_all:
+            cleanup_count = repository_context_service.cleanup_user_cache(user_id)
+            return JSONResponse({
+                "success": True,
+                "cache_cleared": cache_cleared,
+                "cleanup_count": cleanup_count,
+                "message": f"Cleared repository cache and {cleanup_count} user cache entries"
+            })
+        
+        return JSONResponse({
+            "success": True,
+            "cache_cleared": cache_cleared,
+            "message": "Repository cache cleared" if cache_cleared else "No cache found to clear"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error clearing repository cache: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "cache_cleared": False
+        }, status_code=500)
 
 @router.post("/sessions")
 async def create_chat_session(
@@ -898,7 +1499,7 @@ async def update_session_context(
 async def get_available_models():
     """Get list of available AI models (equivalent to cosmos --list-models)"""
     try:
-        if COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+        if COSMOS_AVAILABLE:
             from services.redis_repo_manager import RedisRepoManager
             from services.cosmos_web_wrapper import CosmosWebWrapper
             
@@ -938,7 +1539,7 @@ async def get_available_models():
         return {
             "success": True,
             "models": models,
-            "cosmos_available": COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE
+            "cosmos_available": COSMOS_AVAILABLE
         }
     except Exception as e:
         logger.error(f"Error getting available models: {e}")
@@ -1057,7 +1658,7 @@ async def session_heartbeat(
 async def get_model_info(model_name: str):
     """Get detailed information about a specific model"""
     try:
-        if COSMOS_AVAILABLE and COSMOS_COMPONENTS_AVAILABLE:
+        if COSMOS_AVAILABLE:
             from services.redis_repo_manager import RedisRepoManager
             from services.cosmos_web_wrapper import CosmosWebWrapper
             
@@ -1224,3 +1825,237 @@ async def cleanup_repository_cache(
     except Exception as e:
         logger.error(f"Error cleaning up repository cache: {e}")
         raise HTTPException(status_code=500, detail="Failed to cleanup repository cache")
+
+# Cache Management Endpoints
+
+@router.get("/cache/stats")
+async def get_cache_stats(
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Get cache statistics for the current user."""
+    try:
+        if not CACHE_MANAGEMENT_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Cache management not available")
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        # Create cache management service for user
+        cache_service = create_cache_management_service(current_user.id)
+        
+        # Get cache statistics
+        stats = cache_service.get_cache_stats()
+        health = cache_service.health_check()
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "cache_stats": {
+                "total_keys": stats.total_keys,
+                "memory_usage_mb": stats.memory_usage_mb,
+                "hit_rate": stats.hit_rate,
+                "miss_rate": stats.miss_rate,
+                "expired_keys": stats.expired_keys,
+                "user_cache_count": stats.user_cache_count,
+                "repository_cache_count": stats.repository_cache_count,
+                "session_cache_count": stats.session_cache_count,
+                "last_cleanup": stats.last_cleanup.isoformat() if stats.last_cleanup else None
+            },
+            "health_status": {
+                "is_healthy": health.is_healthy,
+                "connection_status": health.connection_status,
+                "memory_usage_percent": health.memory_usage_percent,
+                "response_time_ms": health.response_time_ms,
+                "error_count": health.error_count,
+                "uptime_seconds": health.uptime_seconds
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cache stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get cache statistics")
+
+
+@router.post("/cache/cleanup")
+async def cleanup_cache(
+    request: Dict[str, Any],
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Cleanup expired cache entries for the current user."""
+    try:
+        if not CACHE_MANAGEMENT_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Cache management not available")
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        # Create cache management service for user
+        cache_service = create_cache_management_service(current_user.id)
+        
+        # Get cleanup options from request
+        cleanup_type = request.get("type", "expired")  # expired, repository, session, all
+        
+        cleaned_entries = 0
+        operations_performed = []
+        
+        if cleanup_type in ["expired", "all"]:
+            cleaned_entries += cache_service.cleanup_expired_caches()
+            operations_performed.append("expired_cleanup")
+        
+        if cleanup_type in ["repository", "all"]:
+            cache_service.clear_user_repository_cache()
+            operations_performed.append("repository_cleanup")
+        
+        if cleanup_type in ["session", "all"]:
+            cache_service.clear_user_session_cache()
+            operations_performed.append("session_cleanup")
+        
+        # Get final stats
+        final_stats = cache_service.get_cache_stats()
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "cleanup_type": cleanup_type,
+            "operations_performed": operations_performed,
+            "cleaned_entries": cleaned_entries,
+            "final_stats": {
+                "total_keys": final_stats.total_keys,
+                "memory_usage_mb": final_stats.memory_usage_mb,
+                "repository_cache_count": final_stats.repository_cache_count,
+                "session_cache_count": final_stats.session_cache_count
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cleaning up cache: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cleanup cache")
+
+
+@router.post("/navigation/track")
+async def track_navigation(
+    request: Dict[str, Any],
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Track navigation event and perform automatic cache cleanup."""
+    try:
+        if not CACHE_MANAGEMENT_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Cache management not available")
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        # Get navigation data from request
+        from_page = request.get("from_page", "")
+        to_page = request.get("to_page", "")
+        session_id = request.get("session_id")
+        repository_url = request.get("repository_url")
+        
+        if not from_page or not to_page:
+            raise HTTPException(status_code=400, detail="from_page and to_page are required")
+        
+        # Create navigation cache manager for user
+        nav_manager = create_navigation_cache_manager(current_user.id)
+        
+        # Handle navigation with automatic cleanup
+        cleanup_result = nav_manager.handle_navigation(
+            from_page=from_page,
+            to_page=to_page,
+            session_id=session_id,
+            repository_url=repository_url
+        )
+        
+        # Get navigation history
+        recent_history = nav_manager.get_navigation_history(limit=5)
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "navigation": {
+                "from_page": from_page,
+                "to_page": to_page,
+                "session_id": session_id,
+                "repository_url": repository_url
+            },
+            "cleanup_result": {
+                "repository_cache_cleared": cleanup_result.repository_cache_cleared,
+                "session_cache_cleared": cleanup_result.session_cache_cleared,
+                "context_cache_cleared": cleanup_result.context_cache_cleared,
+                "entries_cleaned": cleanup_result.entries_cleaned,
+                "memory_freed_mb": cleanup_result.memory_freed_mb,
+                "cleanup_time_ms": cleanup_result.cleanup_time_ms
+            },
+            "recent_navigation": recent_history
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error tracking navigation: {e}")
+        raise HTTPException(status_code=500, detail="Failed to track navigation")
+
+
+@router.get("/navigation/session-stats")
+async def get_session_stats(
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Get session statistics including navigation and cache information."""
+    try:
+        if not CACHE_MANAGEMENT_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Cache management not available")
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        # Create navigation cache manager for user
+        nav_manager = create_navigation_cache_manager(current_user.id)
+        
+        # Get session statistics
+        session_stats = nav_manager.get_session_stats()
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "session_stats": session_stats
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting session stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get session statistics")
+
+
+@router.post("/cache/optimize")
+async def optimize_cache_memory(
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Optimize cache memory usage by cleaning up old entries and compacting data."""
+    try:
+        if not CACHE_MANAGEMENT_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Cache management not available")
+        
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        # Create cache management service for user
+        cache_service = create_cache_management_service(current_user.id)
+        
+        # Perform memory optimization
+        optimization_result = cache_service.optimize_memory_usage()
+        
+        return {
+            "success": True,
+            "user_id": current_user.id,
+            "optimization_result": optimization_result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error optimizing cache memory: {e}")
+        raise HTTPException(status_code=500, detail="Failed to optimize cache memory")

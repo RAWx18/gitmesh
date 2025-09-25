@@ -1,0 +1,212 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run benchmarks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run benchmarks against'
+        required: true
+        default: 'ci'
+        type: choice
+        options:
+        - development
+        - ci
+        - production
+
+jobs:
+  performance-benchmarks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest psutil
+    
+    - name: Set up Redis for testing
+      uses: supercharge/redis-github-action@1.7.0
+      with:
+        redis-version: 7
+    
+    - name: Run performance benchmarks
+      run: |
+        cd backend
+        python scripts/run_performance_benchmarks.py --output-file benchmark_results.json --verbose
+      env:
+        BENCHMARK_ENVIRONMENT: ${{ github.event.inputs.environment || 'ci' }}
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: benchmark-results-python-${{ matrix.python-version }}
+        path: backend/benchmark_results.json
+        retention-days: 30
+    
+    - name: Parse benchmark results
+      id: parse-results
+      run: |
+        cd backend
+        if [ -f benchmark_results.json ]; then
+          OVERALL_STATUS=$(python -c "import json; data=json.load(open('benchmark_results.json')); print(data['summary']['overall_status'])")
+          PERFORMANCE_SCORE=$(python -c "import json; data=json.load(open('benchmark_results.json')); print(data['summary']['performance_score'])")
+          echo "overall_status=$OVERALL_STATUS" >> $GITHUB_OUTPUT
+          echo "performance_score=$PERFORMANCE_SCORE" >> $GITHUB_OUTPUT
+        else
+          echo "overall_status=FAIL" >> $GITHUB_OUTPUT
+          echo "performance_score=0" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'backend/benchmark_results.json';
+          
+          if (!fs.existsSync(path)) {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Performance Benchmarks Failed**\n\nBenchmark results file not found. Check the workflow logs for details.'
+            });
+            return;
+          }
+          
+          const results = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const summary = results.summary;
+          const benchmarks = results.benchmarks;
+          
+          let comment = `## 📊 Performance Benchmark Results (Python ${{ matrix.python-version }})\n\n`;
+          
+          // Overall status
+          const statusEmoji = summary.overall_status === 'PASS' ? '✅' : '❌';
+          comment += `**Overall Status:** ${statusEmoji} ${summary.overall_status}\n`;
+          comment += `**Performance Score:** ${summary.performance_score.toFixed(1)}%\n`;
+          comment += `**Duration:** ${summary.total_duration.toFixed(2)}s\n\n`;
+          
+          // Individual benchmark results
+          comment += `### Benchmark Details\n\n`;
+          comment += `| Benchmark | Status | Target | Result |\n`;
+          comment += `|-----------|--------|--------|---------|\n`;
+          
+          for (const [name, data] of Object.entries(benchmarks)) {
+            if (data.error) {
+              comment += `| ${name.replace('_', ' ')} | ❌ ERROR | - | ${data.error} |\n`;
+            } else {
+              const status = data.passed ? '✅ PASS' : '❌ FAIL';
+              const target = data.target || 'N/A';
+              comment += `| ${name.replace('_', ' ')} | ${status} | ${target} | - |\n`;
+            }
+          }
+          
+          // Performance trends (if available)
+          if (results.trends) {
+            comment += `\n### Performance Trends\n\n`;
+            for (const [metric, trend] of Object.entries(results.trends)) {
+              const trendEmoji = trend.trend === 'improving' ? '📈' : trend.trend === 'degrading' ? '📉' : '➡️';
+              comment += `- **${metric}:** ${trendEmoji} ${trend.trend} (${trend.change_percent > 0 ? '+' : ''}${trend.change_percent.toFixed(1)}%)\n`;
+            }
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Fail job if benchmarks failed
+      if: steps.parse-results.outputs.overall_status == 'FAIL'
+      run: |
+        echo "Performance benchmarks failed with score: ${{ steps.parse-results.outputs.performance_score }}%"
+        exit 1
+    
+    - name: Create performance badge
+      if: github.ref == 'refs/heads/main' && matrix.python-version == '3.11'
+      run: |
+        cd backend
+        SCORE="${{ steps.parse-results.outputs.performance_score }}"
+        COLOR="red"
+        if (( $(echo "$SCORE >= 90" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "$SCORE >= 75" | bc -l) )); then
+          COLOR="yellow"
+        elif (( $(echo "$SCORE >= 50" | bc -l) )); then
+          COLOR="orange"
+        fi
+        
+        curl -s "https://img.shields.io/badge/Performance-${SCORE}%25-${COLOR}" > performance-badge.svg
+    
+    - name: Upload performance badge
+      if: github.ref == 'refs/heads/main' && matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-badge
+        path: backend/performance-badge.svg
+        retention-days: 1
+
+  benchmark-summary:
+    needs: performance-benchmarks
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Download all benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        path: benchmark-results
+    
+    - name: Create summary report
+      run: |
+        echo "# Performance Benchmark Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        for result_dir in benchmark-results/benchmark-results-python-*; do
+          if [ -d "$result_dir" ]; then
+            python_version=$(basename "$result_dir" | sed 's/benchmark-results-python-//')
+            result_file="$result_dir/benchmark_results.json"
+            
+            if [ -f "$result_file" ]; then
+              status=$(python3 -c "import json; data=json.load(open('$result_file')); print(data['summary']['overall_status'])")
+              score=$(python3 -c "import json; data=json.load(open('$result_file')); print(data['summary']['performance_score'])")
+              
+              echo "## Python $python_version" >> $GITHUB_STEP_SUMMARY
+              echo "- **Status:** $status" >> $GITHUB_STEP_SUMMARY
+              echo "- **Score:** ${score}%" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+        done

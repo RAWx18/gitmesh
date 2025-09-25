@@ -61,9 +61,18 @@ class KeyManager:
                 'ssl_ca_certs': None,
             })
         
-        # Prefer Redis URL for cloud connections
-        if hasattr(settings, 'redis_url') and settings.redis_url:
-            logger.info(f"Using Redis URL: {settings.redis_url[:20]}...")
+        # Always prefer Redis URL from environment for cloud connections
+        redis_url = os.getenv('REDIS_URL')
+        if redis_url:
+            logger.info(f"Using Redis URL from environment: {redis_url[:50]}...")
+            self.redis_client = redis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_connect_timeout=30,
+                socket_timeout=30
+            )
+        elif hasattr(settings, 'redis_url') and settings.redis_url:
+            logger.info(f"Using Redis URL from settings: {settings.redis_url[:50]}...")
             self.redis_client = redis.from_url(
                 settings.redis_url,
                 decode_responses=True,

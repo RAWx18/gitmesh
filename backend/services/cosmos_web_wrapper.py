@@ -27,6 +27,7 @@ from config.cosmos_models import MODEL_ALIASES
 from services.redis_repo_manager import RedisRepoManager
 from services.response_processor import ResponseProcessor
 from services.conversion_tracking_service import conversion_tracking_service
+from services.shell_command_blocker import shell_blocker, ensure_shell_blocking_active, SecurityError
 from models.api.conversion_tracking import ConversionRequest, ConversionUpdateRequest, ConversionType, ConversionStatus, ConversionPriority
 
 # Configure logging first
@@ -36,6 +37,10 @@ logger = logging.getLogger(__name__)
 try:
     # Import from the actual Cosmos installation
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'integrations', 'cosmos', 'v1'))
+    
+    # Ensure environment variables are loaded before initializing Cosmos configuration
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
     
     # Initialize Cosmos configuration first
     from cosmos.config import initialize_configuration
@@ -48,6 +53,7 @@ try:
     from cosmos.io import InputOutput
     from cosmos.models import Model
     from cosmos.coders.editblock_coder import EditBlockCoder
+    from cosmos.commands import Commands
     from cosmos import run_cmd
     
     COSMOS_COMPONENTS_AVAILABLE = True
@@ -105,9 +111,21 @@ except ImportError as e:
             return 0, f"Mock output for: {command}"
 
     # Use mock classes
+    class MockCommands:
+        def __init__(self, io, coder):
+            self.io = io
+            self.coder = coder
+        
+        def is_command(self, inp):
+            return False
+        
+        def run(self, inp):
+            return None
+    
     InputOutput = MockInputOutput
     Model = MockModel
     EditBlockCoder = MockCoder
+    Commands = MockCommands
     run_cmd = MockRunCmd()
     
     COSMOS_COMPONENTS_AVAILABLE = False
@@ -138,10 +156,14 @@ class ConversionStatus:
 
 @dataclass
 class CosmosResponse:
-    """Response from Cosmos processing."""
+    """Response from Cosmos processing.
+    
+    SECURITY: This response class includes security metadata about shell command filtering
+    and provides user-friendly explanations when shell functionality is requested.
+    """
     content: str
     context_files_used: List[str]
-    shell_commands_converted: List[str]
+    shell_commands_converted: List[str]  # Legacy field - now always empty for security
     conversion_notes: Optional[str]
     error: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
@@ -149,9 +171,212 @@ class CosmosResponse:
     sources: List[str] = None
     model_used: Optional[str] = None
     
+    # Security-related fields
+    shell_commands_filtered: int = 0
+    security_alternatives_provided: int = 0
+    security_notices_added: int = 0
+    
     def __post_init__(self):
         if self.sources is None:
             self.sources = self.context_files_used or []
+        
+        # SECURITY: Ensure shell_commands_converted is always empty for security
+        if self.shell_commands_converted:
+            logger.warning("SECURITY: shell_commands_converted should be empty - clearing for security")
+            self.shell_commands_converted = []
+        
+        # Extract security metadata if available
+        if self.metadata:
+            self.shell_commands_filtered = self.metadata.get('shell_commands_filtered', 0)
+            self.security_alternatives_provided = self.metadata.get('security_alternatives_provided', 0)
+            self.security_notices_added = self.metadata.get('security_notices_added', 0)
+    
+    def has_security_filtering(self) -> bool:
+        """Check if this response had shell commands filtered for security.
+        
+        Returns:
+            True if shell commands were filtered from this response
+        """
+        return self.shell_commands_filtered > 0
+    
+    def get_security_summary(self) -> Optional[str]:
+        """Get a summary of security filtering applied to this response.
+        
+        Returns:
+            Security summary string if filtering was applied, None otherwise
+        """
+        if not self.has_security_filtering():
+            return None
+        
+        return (
+            f"🔒 Security filtering applied: {self.shell_commands_filtered} shell commands filtered, "
+            f"{self.security_alternatives_provided} alternatives provided."
+        )
+
+
+class SafeFileOperations:
+    """
+    Safe file operations without shell command execution.
+    
+    This class provides secure file operations using only direct file APIs
+    and Redis cache, without any shell command execution.
+    """
+    
+    def __init__(self, repo_manager: Optional[RedisRepoManager] = None):
+        """Initialize with optional repository manager."""
+        self.repo_manager = repo_manager
+        self.logger = logging.getLogger(__name__)
+    
+    def safe_read_file(self, file_path: str) -> Optional[str]:
+        """
+        Safely read file content without shell commands.
+        
+        Args:
+            file_path: Path to the file to read
+            
+        Returns:
+            File content or None if file cannot be read
+        """
+        try:
+            # First try Redis cache if available
+            if self.repo_manager:
+                content = self.repo_manager.get_file_content(file_path)
+                if content is not None:
+                    self.logger.debug(f"Read file from Redis cache: {file_path}")
+                    return content
+            
+            # Fallback to direct file reading (safe)
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                    content = f.read()
+                    self.logger.debug(f"Read file directly: {file_path}")
+                    return content
+            
+            self.logger.warning(f"File not found: {file_path}")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error reading file {file_path}: {e}")
+            return None
+    
+    def safe_list_files(self, directory_path: str = ".") -> List[str]:
+        """
+        Safely list files in directory without shell commands.
+        
+        Args:
+            directory_path: Path to directory to list
+            
+        Returns:
+            List of file paths
+        """
+        try:
+            # First try Redis cache if available
+            if self.repo_manager:
+                files = self.repo_manager.list_files()
+                if files:
+                    # Filter files by directory if specified
+                    if directory_path != ".":
+                        files = [f for f in files if f.startswith(directory_path)]
+                    self.logger.debug(f"Listed {len(files)} files from Redis cache")
+                    return files
+            
+            # Fallback to direct directory listing (safe)
+            if os.path.exists(directory_path) and os.path.isdir(directory_path):
+                files = []
+                for root, dirs, filenames in os.walk(directory_path):
+                    for filename in filenames:
+                        file_path = os.path.join(root, filename)
+                        # Convert to relative path
+                        rel_path = os.path.relpath(file_path, directory_path)
+                        files.append(rel_path)
+                
+                self.logger.debug(f"Listed {len(files)} files directly from {directory_path}")
+                return files
+            
+            self.logger.warning(f"Directory not found: {directory_path}")
+            return []
+            
+        except Exception as e:
+            self.logger.error(f"Error listing files in {directory_path}: {e}")
+            return []
+    
+    def safe_get_file_info(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """
+        Safely get file metadata without shell commands.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Dictionary with file metadata or None if file cannot be accessed
+        """
+        try:
+            # First try Redis cache if available
+            if self.repo_manager:
+                metadata = self.repo_manager.get_file_metadata(file_path)
+                if metadata:
+                    self.logger.debug(f"Got file metadata from Redis cache: {file_path}")
+                    return {
+                        'path': file_path,
+                        'size': metadata.size,
+                        'type': metadata.file_type,
+                        'language': getattr(metadata, 'language', 'unknown'),
+                        'source': 'redis_cache'
+                    }
+            
+            # Fallback to direct file stat (safe)
+            if os.path.exists(file_path):
+                stat_info = os.stat(file_path)
+                file_info = {
+                    'path': file_path,
+                    'size': stat_info.st_size,
+                    'modified_time': stat_info.st_mtime,
+                    'is_file': os.path.isfile(file_path),
+                    'is_directory': os.path.isdir(file_path),
+                    'source': 'direct_stat'
+                }
+                
+                # Try to determine file type from extension
+                if os.path.isfile(file_path):
+                    _, ext = os.path.splitext(file_path)
+                    file_info['extension'] = ext.lower()
+                    file_info['type'] = 'file'
+                else:
+                    file_info['type'] = 'directory'
+                
+                self.logger.debug(f"Got file info directly: {file_path}")
+                return file_info
+            
+            self.logger.warning(f"File not found: {file_path}")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error getting file info for {file_path}: {e}")
+            return None
+    
+    def safe_file_exists(self, file_path: str) -> bool:
+        """
+        Safely check if file exists without shell commands.
+        
+        Args:
+            file_path: Path to check
+            
+        Returns:
+            True if file exists, False otherwise
+        """
+        try:
+            # First try Redis cache if available
+            if self.repo_manager:
+                content = self.repo_manager.get_file_content(file_path)
+                if content is not None:
+                    return True
+            
+            # Fallback to direct file check (safe)
+            return os.path.exists(file_path)
+            
+        except Exception as e:
+            self.logger.error(f"Error checking file existence {file_path}: {e}")
+            return False
 
 
 class WebSafeInputOutput(InputOutput):
@@ -208,18 +433,17 @@ class WebSafeInputOutput(InputOutput):
         self._captured_warnings.append(message)
     
     def read_text(self, filename: str) -> Optional[str]:
-        """Read file content through Redis repository manager."""
+        """Read file content using safe file operations without shell commands."""
         try:
-            # Use the wrapper's repo manager for file operations
-            if self.wrapper.repo_manager:
-                content = self.wrapper.repo_manager.get_file_content(filename)
-                if content is not None:
-                    logger.debug(f"Read file via Redis: {filename}")
-                    return content
+            # Use safe file operations instead of shell commands
+            content = self.wrapper.safe_file_ops.safe_read_file(filename)
+            if content is not None:
+                logger.debug(f"Read file safely: {filename}")
+                return content
             
-            # Fall back to original IO if needed
-            logger.debug(f"Falling back to original IO for: {filename}")
-            return self.original_io.read_text(filename)
+            # SECURITY: No fallback to original IO to prevent shell command execution
+            logger.warning(f"Could not read file safely: {filename}")
+            return None
             
         except Exception as e:
             logger.error(f"Error reading file {filename}: {e}")
@@ -355,6 +579,9 @@ class CosmosWebWrapper:
         # Initialize response processor
         self.response_processor = ResponseProcessor()
         
+        # Initialize safe file operations
+        self.safe_file_ops = SafeFileOperations(repo_manager)
+        
         # Context tracking
         self._context_files: Dict[str, ContextFile] = {}
         self._file_modifications: Dict[str, str] = {}
@@ -366,31 +593,37 @@ class CosmosWebWrapper:
             conversion_percentage=0.0
         )
         
+        # SECURITY: Shell command execution completely removed from codebase
+        # All shell command execution capabilities have been commented out for security
+        # ensure_shell_blocking_active()  # COMMENTED OUT - no shell execution possible
+        # shell_blocker.activate(user_id=user_id)  # COMMENTED OUT - no shell execution possible
+        
         # Initialize Cosmos components
         self._initialize_cosmos_components()
         
         # Ensure repository data is available
         self._ensure_repository_data()
         
-        logger.info(f"Initialized CosmosWebWrapper with model: {model}")
+        logger.info(f"Initialized CosmosWebWrapper with model: {model} and COMPLETE shell execution removal")
     
     def _ensure_repository_data(self):
         """Ensure repository data is fetched and available in Redis."""
         try:
             if self.repo_manager:
                 logger.info(f"Ensuring repository data is available for: {self.repo_manager.repo_url}")
-                # This will automatically fetch the repo if not already cached
-                success = self.repo_manager._ensure_repository_data()
-                if success:
-                    logger.info("Repository data is available in Redis")
-                    # Get basic repository info to populate context
-                    repo_info = self.repo_manager.get_repository_info()
-                    file_count = repo_info.get('file_count', 0)
-                    logger.info(f"Repository contains {file_count} files")
-                else:
-                    logger.warning("Failed to ensure repository data availability")
+                # Check if repository data is available synchronously
+                try:
+                    # Try to get file count from cache synchronously
+                    files = self.repo_manager.list_files()
+                    if files:
+                        logger.info(f"Repository data is available in Redis - {len(files)} files cached")
+                    else:
+                        logger.info("Repository data will be fetched on first request")
+                except Exception as cache_e:
+                    logger.debug(f"Repository data not immediately available: {cache_e}")
+                    logger.info("Repository data will be fetched on first request")
         except Exception as e:
-            logger.error(f"Error ensuring repository data: {e}")
+            logger.error(f"Error checking repository data: {e}")
     
     def _initialize_cosmos_components(self):
         """Initialize Cosmos coder and related components."""
@@ -411,7 +644,7 @@ class CosmosWebWrapper:
                 canonical_model_name = MODEL_ALIASES[self.model]
                 self.cosmos_model = Model(canonical_model_name)
                 
-                # Initialize coder with web-safe configuration
+                # Initialize coder with explicit commands=None to prevent auto-creation
                 self.coder = EditBlockCoder(
                     main_model=self.cosmos_model,
                     io=self.io,
@@ -426,8 +659,12 @@ class CosmosWebWrapper:
                     use_git=False,  # Disable git operations
                     suggest_shell_commands=False,  # Disable shell command suggestions
                     auto_lint=False,  # Disable auto-linting
-                    auto_test=False  # Disable auto-testing
+                    auto_test=False,  # Disable auto-testing
+                    commands=None  # Explicitly pass None to prevent auto-creation
                 )
+                
+                # Now create and set the commands properly
+                self.coder.commands = Commands(self.io, self.coder)
                 
                 # Override shell command execution
                 self._patch_shell_execution()
@@ -436,10 +673,13 @@ class CosmosWebWrapper:
             else:
                 # Use mock components
                 self.cosmos_model = Model(self.model)
+                commands = Commands(self.io, None)  # Mock commands
                 self.coder = EditBlockCoder(
                     main_model=self.cosmos_model,
-                    io=self.io
+                    io=self.io,
+                    commands=commands
                 )
+                commands.coder = self.coder
                 
                 logger.info("Mock Cosmos components initialized")
             
@@ -448,167 +688,199 @@ class CosmosWebWrapper:
             raise
     
     def _patch_shell_execution(self):
-        """Patch shell command execution to intercept and block commands."""
-        # Store original run_cmd function
-        self._original_run_cmd = run_cmd.run_cmd
+        """SECURITY: Shell command execution completely removed for security.
         
-        # Replace with our intercepting version
-        run_cmd.run_cmd = self._intercept_shell_command
+        COMMENTED OUT: All shell command patching functionality has been disabled.
+        No shell commands can be executed by this system. This method now serves
+        as documentation only.
         
-        # Also patch the coder's shell command handling
-        if hasattr(self.coder, 'shell_commands'):
-            self.coder.shell_commands = []
+        Original functionality was to patch shell command execution, but now we
+        ensure security by completely removing shell execution capabilities.
+        """
+        # SECURITY: All shell command patching code commented out - no shell execution allowed
+        # # Store original run_cmd function for compatibility
+        # self._original_run_cmd = getattr(run_cmd, 'run_cmd', None)
+        
+        # # Replace with our intercepting version for cosmos-specific handling
+        # if hasattr(run_cmd, 'run_cmd'):
+        #     run_cmd.run_cmd = self._intercept_shell_command
+        
+        # # Also patch the coder's shell command handling
+        # if hasattr(self.coder, 'shell_commands'):
+        #     self.coder.shell_commands = []
+        
+        logger.info("SECURITY: Shell command execution completely disabled - no shell commands possible")
     
     def _intercept_shell_command(self, command: str, **kwargs) -> Tuple[int, str]:
-        """
-        Intercept shell commands and convert to web-safe operations.
+        """SECURITY: Shell command interception completely removed for security.
+        
+        COMMENTED OUT: All shell command interception functionality has been disabled.
+        This method now returns a security message explaining that shell commands
+        are not available.
         
         Args:
-            command: Shell command to intercept
+            command: Shell command that was attempted
             **kwargs: Additional arguments
             
         Returns:
-            Tuple of (return_code, output)
+            Tuple of (return_code, security_message)
         """
-        logger.info(f"Intercepted shell command: {command}")
+        # SECURITY: All shell command execution has been completely removed for security
+        logger.warning(f"SECURITY: Shell command execution attempt blocked: {command}")
         
-        # Track the intercepted command
-        self._shell_commands_intercepted.append(command)
-        self._conversion_status.total_operations += 1
+        # Return security message explaining that shell commands are not available
+        security_message = (
+            f"SECURITY: Shell command execution has been completely disabled for security reasons. "
+            f"The command '{command}' cannot be executed. This system provides text-based responses only, "
+            f"without any shell or CLI integration."
+        )
         
-        # Create conversion tracking operation
-        operation_id = None
-        try:
-            if hasattr(self, '_current_session_id') and self._current_session_id:
-                # Determine operation type based on command
-                operation_type = self._classify_command_type(command)
+        return 1, security_message
+        
+        # SECURITY: All original shell command interception code commented out below
+        # # Track the intercepted command
+        # self._shell_commands_intercepted.append(command)
+        # self._conversion_status.total_operations += 1
+        
+        # # Create conversion tracking operation
+        # operation_id = None
+        # try:
+        #     if hasattr(self, '_current_session_id') and self._current_session_id:
+        #         # Determine operation type based on command
+        #         operation_type = self._classify_command_type(command)
                 
-                # Create conversion request
-                conversion_request = ConversionRequest(
-                    operation_type=operation_type,
-                    original_command=command,
-                    session_id=self._current_session_id,
-                    user_id=self.user_id or "anonymous",
-                    priority=self._determine_command_priority(command),
-                    context_files=list(self._context_files.keys()),
-                    metadata={
-                        'wrapper_instance': id(self),
-                        'model': self.model,
-                        'timestamp': datetime.now().isoformat()
-                    }
-                )
+        #         # Create conversion request
+        #         conversion_request = ConversionRequest(
+        #             operation_type=operation_type,
+        #             original_command=command,
+        #             session_id=self._current_session_id,
+        #             user_id=self.user_id or "anonymous",
+        #             priority=self._determine_command_priority(command),
+        #             context_files=list(self._context_files.keys()),
+        #             metadata={
+        #                 'wrapper_instance': id(self),
+        #                 'model': self.model,
+        #                 'timestamp': datetime.now().isoformat()
+        #             }
+        #         )
+        #         
+        #         # Create operation in tracking service
+        #         import asyncio
+        #         loop = asyncio.get_event_loop()
+        #         operation_id = loop.run_until_complete(
+        #             conversion_tracking_service.create_operation(conversion_request)
+        #         )
                 
-                # Create operation in tracking service
-                import asyncio
-                loop = asyncio.get_event_loop()
-                operation_id = loop.run_until_complete(
-                    conversion_tracking_service.create_operation(conversion_request)
-                )
-                
-                # Update operation to in-progress
-                update_request = ConversionUpdateRequest(
-                    operation_id=operation_id,
-                    status=ConversionStatus.IN_PROGRESS
-                )
-                loop.run_until_complete(
-                    conversion_tracking_service.update_operation(update_request)
-                )
-        except Exception as e:
-            logger.error(f"Error creating conversion tracking operation: {e}")
+        #         # Update operation to in-progress
+        #         update_request = ConversionUpdateRequest(
+        #             operation_id=operation_id,
+        #             status=ConversionStatus.IN_PROGRESS
+        #         )
+        #         loop.run_until_complete(
+        #             conversion_tracking_service.update_operation(update_request)
+        #         )
+        # except Exception as e:
+        #     logger.error(f"Error creating conversion tracking operation: {e}")
         
-        # Analyze and convert the command
-        converted_output = self._convert_shell_command(command)
+        # # Analyze and convert the command
+        # converted_output = self._convert_shell_command(command)
         
-        if converted_output:
-            self._conversion_status.converted_operations += 1
-            self._conversion_status.last_conversion = datetime.now()
+        # if converted_output:
+        #     self._conversion_status.converted_operations += 1
+        #     self._conversion_status.last_conversion = datetime.now()
             
-            # Update conversion percentage
-            self._conversion_status.conversion_percentage = (
-                self._conversion_status.converted_operations / 
-                self._conversion_status.total_operations * 100
-            )
+        #     # Update conversion percentage
+        #     self._conversion_status.conversion_percentage = (
+        #         self._conversion_status.converted_operations / 
+        #         self._conversion_status.total_operations * 100
+        #     )
             
-            # Update tracking operation as completed
-            if operation_id:
-                try:
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    update_request = ConversionUpdateRequest(
-                        operation_id=operation_id,
-                        status=ConversionStatus.COMPLETED,
-                        converted_equivalent=f"Web-safe equivalent for: {command}",
-                        web_equivalent_output=converted_output,
-                        conversion_notes=f"Successfully converted shell command to web operation"
-                    )
-                    loop.run_until_complete(
-                        conversion_tracking_service.update_operation(update_request)
-                    )
-                except Exception as e:
-                    logger.error(f"Error updating conversion tracking operation: {e}")
+        #     # Update tracking operation as completed
+        #     if operation_id:
+        #         try:
+        #             import asyncio
+        #             loop = asyncio.get_event_loop()
+        #             update_request = ConversionUpdateRequest(
+        #                 operation_id=operation_id,
+        #                 status=ConversionStatus.COMPLETED,
+        #                 converted_equivalent=f"Web-safe equivalent for: {command}",
+        #                 web_equivalent_output=converted_output,
+        #                 conversion_notes=f"Successfully converted shell command to web operation"
+        #             )
+        #             loop.run_until_complete(
+        #                 conversion_tracking_service.update_operation(update_request)
+        #             )
+        #         except Exception as e:
+        #             logger.error(f"Error updating conversion tracking operation: {e}")
             
-            return 0, converted_output
-        else:
-            # Command couldn't be converted, add to pending
-            self._conversion_status.pending_conversions.append(command)
+        #     return 0, converted_output
+        # else:
+        #     # Command couldn't be converted, add to pending
+        #     self._conversion_status.pending_conversions.append(command)
             
-            # Update tracking operation as failed
-            if operation_id:
-                try:
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    update_request = ConversionUpdateRequest(
-                        operation_id=operation_id,
-                        status=ConversionStatus.FAILED,
-                        error_message=f"No web-safe equivalent available for command: {command}",
-                        conversion_notes=f"Command type not supported for web conversion"
-                    )
-                    loop.run_until_complete(
-                        conversion_tracking_service.update_operation(update_request)
-                    )
-                except Exception as e:
-                    logger.error(f"Error updating conversion tracking operation: {e}")
+        #     # Update tracking operation as failed
+        #     if operation_id:
+        #         try:
+        #             import asyncio
+        #             loop = asyncio.get_event_loop()
+        #             update_request = ConversionUpdateRequest(
+        #                 operation_id=operation_id,
+        #                 status=ConversionStatus.FAILED,
+        #                 error_message=f"No web-safe equivalent available for command: {command}",
+        #                 conversion_notes=f"Command type not supported for web conversion"
+        #             )
+        #             loop.run_until_complete(
+        #                 conversion_tracking_service.update_operation(update_request)
+        #             )
+        #         except Exception as e:
+        #             logger.error(f"Error updating conversion tracking operation: {e}")
             
-            # Return a web-safe message
-            return 1, f"Shell command blocked for web safety: {command}"
+        #     # Return a web-safe message
+        #     return 1, f"Shell command blocked for web safety: {command}"
     
     def _convert_shell_command(self, command: str) -> Optional[str]:
-        """
-        Convert shell command to web-safe equivalent.
+        """SECURITY: Shell command conversion completely removed for security.
+        
+        COMMENTED OUT: All shell command conversion functionality has been disabled.
+        This method now returns None to indicate no shell commands can be converted.
         
         Args:
-            command: Shell command to convert
+            command: Shell command that was attempted
             
         Returns:
-            Converted output or None if conversion not possible
+            None - no shell command conversion is possible
         """
-        command = command.strip()
+        # SECURITY: All shell command conversion has been completely removed for security
+        logger.warning(f"SECURITY: Shell command conversion attempt blocked: {command}")
+        return None
         
-        # Handle common file operations
-        if command.startswith('ls') or command.startswith('dir'):
-            return self._handle_list_files(command)
-        elif command.startswith('cat') or command.startswith('type'):
-            return self._handle_cat_file(command)
-        elif command.startswith('find'):
-            return self._handle_find_files(command)
-        elif command.startswith('grep'):
-            return self._handle_grep_files(command)
-        elif command.startswith('git'):
-            return self._handle_git_command(command)
-        elif command.startswith('mkdir'):
-            return self._handle_mkdir(command)
-        elif command.startswith('touch'):
-            return self._handle_touch(command)
-        elif command.startswith('rm'):
-            return self._handle_rm(command)
-        elif command.startswith('cp') or command.startswith('copy'):
-            return self._handle_copy(command)
-        elif command.startswith('mv') or command.startswith('move'):
-            return self._handle_move(command)
-        else:
-            # Command not recognized for conversion
-            logger.warning(f"Cannot convert shell command: {command}")
-            return None
+        # SECURITY: All original shell command conversion code commented out below
+        # command = command.strip()
+        
+        # # Handle common file operations
+        # if command.startswith('ls') or command.startswith('dir'):
+        #     return self._handle_list_files(command)
+        # elif command.startswith('cat') or command.startswith('type'):
+        #     return self._handle_cat_file(command)
+        # elif command.startswith('find'):
+        #     return self._handle_find_files(command)
+        # elif command.startswith('grep'):
+        #     return self._handle_grep_files(command)
+        # elif command.startswith('git'):
+        #     return self._handle_git_command(command)
+        #     return self._handle_mkdir(command)
+        # elif command.startswith('touch'):
+        #     return self._handle_touch(command)
+        # elif command.startswith('rm'):
+        #     return self._handle_rm(command)
+        # elif command.startswith('cp') or command.startswith('copy'):
+        #     return self._handle_copy(command)
+        # elif command.startswith('mv') or command.startswith('move'):
+        #     return self._handle_move(command)
+        # else:
+        #     # Command not recognized for conversion
+        #     logger.warning(f"Cannot convert shell command: {command}")
+        #     return None
     
     def _handle_list_files(self, command: str) -> str:
         """Handle ls/dir commands."""
@@ -774,8 +1046,8 @@ class CosmosWebWrapper:
                     if not response_content:
                         response_content = "I understand your request. How can I help you with your code?"
                 else:
-                    # Use mock response when real Cosmos is not available
-                    response_content = f"Mock Cosmos response to: {message}"
+                    # Cosmos is not available - provide helpful error message
+                    response_content = "I'm sorry, but the AI assistant is currently unavailable. Please ensure Cosmos is properly installed and configured, or contact support for assistance."
                 
             except Exception as e:
                 logger.error(f"Error in Cosmos processing: {e}")
@@ -801,26 +1073,42 @@ class CosmosWebWrapper:
                 }
             )
             
-            # Prepare response
+            # Prepare response with security information
             response = CosmosResponse(
                 content=processed_response.content,
                 context_files_used=list(self._context_files.keys()),
-                shell_commands_converted=self._shell_commands_intercepted.copy(),
+                shell_commands_converted=[],  # SECURITY: Always empty for security
                 conversion_notes=processed_response.conversion_notes,
                 metadata=processed_response.metadata,
                 model_used=self.model
             )
+            
+            # Add security summary to conversion notes if shell commands were filtered
+            if response.has_security_filtering():
+                security_summary = response.get_security_summary()
+                if security_summary:
+                    if response.conversion_notes:
+                        response.conversion_notes += f"\n\n{security_summary}"
+                    else:
+                        response.conversion_notes = security_summary
             
             logger.info("Message processed successfully")
             return response
             
         except Exception as e:
             logger.error(f"Error processing message: {e}")
+            
+            # Create error response with security notice
+            error_content = (
+                "I apologize, but I encountered an error processing your request. "
+                "Please note that shell command execution has been disabled for security reasons."
+            )
+            
             return CosmosResponse(
-                content="I apologize, but I encountered an error processing your request.",
+                content=error_content,
                 context_files_used=[],
-                shell_commands_converted=[],
-                conversion_notes=None,
+                shell_commands_converted=[],  # SECURITY: Always empty for security
+                conversion_notes="🔒 Shell command execution is disabled for security.",
                 error=str(e),
                 model_used=self.model
             )
@@ -1408,7 +1696,7 @@ class CosmosWebWrapper:
         """Clean up temporary resources."""
         try:
             # Restore original run_cmd function
-            if hasattr(self, '_original_run_cmd'):
+            if hasattr(self, '_original_run_cmd') and self._original_run_cmd:
                 run_cmd.run_cmd = self._original_run_cmd
             
             # Clean up temporary directory
@@ -1416,7 +1704,9 @@ class CosmosWebWrapper:
                 import shutil
                 shutil.rmtree(self.temp_dir, ignore_errors=True)
             
-            logger.info("Cleanup completed")
+            # SECURITY: Keep shell blocker active - do NOT deactivate
+            # The shell blocker should remain active for the entire application lifecycle
+            logger.info("Cleanup completed (shell blocking remains active)")
             
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

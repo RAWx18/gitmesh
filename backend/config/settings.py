@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     # ========================
     vault_addr: str = Field(default="http://127.0.0.1:8200", env="VAULT_ADDR")
     vault_token: Optional[str] = Field(default=None, env="VAULT_TOKEN")
+    redis_url: Optional[str] = Field(default=None, env="REDIS_URL")
     redis_host: str = Field(default="localhost", env="REDIS_HOST")
     redis_port: int = Field(default=6379, env="REDIS_PORT")
     redis_db_field: int = Field(default=0, env="REDIS_DB")

@@ -3,6 +3,8 @@ Web-Safe Response Processing
 
 Implements response formatting for web display, code syntax highlighting,
 diff visualization, and CLI-to-web conversion for Cosmos chat integration.
+
+SECURITY: This processor filters out shell command suggestions for security.
 """
 
 import re
@@ -12,6 +14,9 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum
+
+# Import shell command filter for security
+from services.shell_command_filter import shell_command_filter
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -211,7 +216,17 @@ class ResponseProcessor:
             # Convert interactive prompts
             processed.interactive_elements.extend(self._extract_interactive_elements(content))
             
-            # Process shell command conversions
+            # SECURITY: Filter shell commands from response content
+            filter_result = shell_command_filter.filter_response(processed.content)
+            processed.content = filter_result.filtered_content
+            
+            # Add shell command filtering metadata
+            if filter_result.commands_filtered:
+                processed.metadata['shell_commands_filtered'] = len(filter_result.commands_filtered)
+                processed.metadata['security_alternatives_provided'] = filter_result.alternatives_suggested
+                logger.info(f"Filtered {len(filter_result.commands_filtered)} shell commands from response")
+            
+            # Process shell command conversions (legacy)
             if shell_commands_converted:
                 processed = self._process_shell_conversions(processed, shell_commands_converted)
             

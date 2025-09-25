@@ -20,8 +20,10 @@ import pathspec
 
 from cosmos import prompts, utils
 
-from .dump import dump  # noqa: F401
-from .waiting import WaitingSpinner
+from cosmos.web_module_loader import safe_import
+
+# Safe imports for removed modules
+WaitingSpinner = safe_import('cosmos.waiting', fallback=type('WaitingSpinner', (), {}))
 from .github_pr import create_pull_request_workflow
 
 ANY_GIT_ERROR += [

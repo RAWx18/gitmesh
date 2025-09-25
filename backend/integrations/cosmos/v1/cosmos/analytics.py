@@ -9,7 +9,7 @@ from mixpanel import MixpanelException
 from posthog import Posthog
 
 from cosmos import __version__
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 from cosmos.models import model_info_manager
 
 PERCENT = 10

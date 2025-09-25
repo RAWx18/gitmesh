@@ -17,7 +17,7 @@ import yaml
 from PIL import Image
 
 from cosmos import __version__
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 from cosmos.llm import litellm
 from cosmos.openrouter import OpenRouterModelManager
 from cosmos.sendchat import ensure_alternating_roles, sanity_check_messages

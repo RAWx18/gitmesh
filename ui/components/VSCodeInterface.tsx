@@ -452,13 +452,13 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
             )}
 
             {/* Theme toggle */}
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </Button>
+            </Button> */}
 
             {/* User menu */}
             {isAuthenticated ? (
@@ -560,7 +560,7 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
                             <CardTitle>General</CardTitle>
                             <CardDescription>Basic application settings</CardDescription>
                           </CardHeader>
-                          <CardContent className="space-y-4">
+                          {/* <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
                               <Label htmlFor="theme">Theme</Label>
                               <Button
@@ -572,7 +572,7 @@ export const VSCodeInterface: React.FC<VSCodeInterfaceProps> = ({ children }) =>
                                 {theme === 'dark' ? 'Dark' : 'Light'}
                               </Button>
                             </div>
-                          </CardContent>
+                          </CardContent> */}
                         </Card>
 
                         {/* Chat Settings */}

@@ -2,7 +2,7 @@ import importlib
 import os
 import warnings
 
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 

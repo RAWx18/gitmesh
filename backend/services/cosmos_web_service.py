@@ -1,6 +1,7 @@
 """
 Cosmos Web Service Foundation
 Provides web-compatible interface to Cosmos AI coding assistant functionality.
+Updated to use OptimizedCosmosWrapper for enhanced performance and Redis-first architecture.
 """
 
 import uuid
@@ -24,6 +25,7 @@ try:
     from ..services.performance_optimization_service import get_performance_service, cached_response
     from ..services.optimized_repo_cache import get_optimized_repo_cache
     from ..services.chat_analytics_service import chat_analytics_service
+    from ..services.optimized_cosmos_wrapper import OptimizedCosmosWrapper
 except ImportError:
     # Fall back to absolute imports (when used directly)
     from config.settings import get_settings
@@ -33,6 +35,7 @@ except ImportError:
     from services.performance_optimization_service import get_performance_service, cached_response
     from services.optimized_repo_cache import get_optimized_repo_cache
     from services.chat_analytics_service import chat_analytics_service
+    from services.optimized_cosmos_wrapper import OptimizedCosmosWrapper
 
 
 class SessionStatus(str, Enum):
@@ -128,8 +131,8 @@ class CosmosWebService:
     Uses Redis for storage and integrates with existing Cosmos MODEL_ALIASES.
     """
     
-    def __init__(self):
-        """Initialize the Cosmos Web Service."""
+    def __init__(self, redis_client: Optional[redis.Redis] = None):
+        """Initialize the Cosmos Web Service with OptimizedCosmosWrapper integration."""
         self.settings = get_settings()
         self.key_manager = key_manager
         
@@ -140,8 +143,8 @@ class CosmosWebService:
         # Initialize analytics service
         self.analytics_service = chat_analytics_service
         
-        # Use optimized Redis client from performance service
-        self.redis_client = self.performance_service.get_redis_client("cosmos_web")
+        # Use provided Redis client or get optimized one from performance service
+        self.redis_client = redis_client or self.performance_service.get_redis_client("cosmos_web")
         
         # Session configuration
         self.session_ttl = 86400  # 24 hours
@@ -151,6 +154,15 @@ class CosmosWebService:
         self.session_prefix = "cosmos:session:"
         self.message_prefix = "cosmos:message:"
         self.user_sessions_prefix = "cosmos:user_sessions:"
+        
+        # OptimizedCosmosWrapper instances cache
+        self.wrapper_cache: Dict[str, OptimizedCosmosWrapper] = {}
+        self.wrapper_cache_ttl = 3600  # 1 hour TTL for wrapper instances
+        self.wrapper_last_used: Dict[str, datetime] = {}
+        
+        # Migration flags for backward compatibility
+        self.use_optimized_wrapper = True  # Feature flag for new wrapper
+        self.fallback_to_legacy = True    # Allow fallback to legacy behavior
     
     async def create_session(
         self, 
@@ -521,6 +533,308 @@ class CosmosWebService:
         end = offset + limit
         return messages[start:end]
     
+    async def get_or_create_wrapper(
+        self, 
+        user_id: str, 
+        session_id: str, 
+        repository_url: Optional[str] = None,
+        model: str = "gemini"
+    ) -> Optional[OptimizedCosmosWrapper]:
+        """
+        Get or create an OptimizedCosmosWrapper instance for a user session.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier (used as project_id)
+            repository_url: Repository URL for context
+            model: AI model to use
+            
+        Returns:
+            OptimizedCosmosWrapper instance or None if creation fails
+        """
+        if not self.use_optimized_wrapper:
+            return None
+        
+        wrapper_key = f"{user_id}:{session_id}:{repository_url or 'no_repo'}"
+        
+        # Check if wrapper exists and is still valid
+        if wrapper_key in self.wrapper_cache:
+            last_used = self.wrapper_last_used.get(wrapper_key, datetime.now())
+            if (datetime.now() - last_used).total_seconds() < self.wrapper_cache_ttl:
+                # Update last used time
+                self.wrapper_last_used[wrapper_key] = datetime.now()
+                return self.wrapper_cache[wrapper_key]
+            else:
+                # Wrapper expired, clean it up
+                await self._cleanup_wrapper(wrapper_key)
+        
+        # Create new wrapper
+        try:
+            wrapper = OptimizedCosmosWrapper(
+                redis_client=self.redis_client,
+                user_id=user_id,
+                project_id=session_id,
+                repository_url=repository_url,
+                model=model
+            )
+            
+            # Initialize wrapper
+            if await wrapper.initialize():
+                self.wrapper_cache[wrapper_key] = wrapper
+                self.wrapper_last_used[wrapper_key] = datetime.now()
+                logger.info(f"Created OptimizedCosmosWrapper for user {user_id}, session {session_id}")
+                return wrapper
+            else:
+                logger.error(f"Failed to initialize OptimizedCosmosWrapper for user {user_id}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error creating OptimizedCosmosWrapper: {e}")
+            return None
+    
+    async def _cleanup_wrapper(self, wrapper_key: str):
+        """Clean up an expired wrapper instance."""
+        try:
+            if wrapper_key in self.wrapper_cache:
+                wrapper = self.wrapper_cache[wrapper_key]
+                wrapper.cleanup()
+                del self.wrapper_cache[wrapper_key]
+                
+            if wrapper_key in self.wrapper_last_used:
+                del self.wrapper_last_used[wrapper_key]
+                
+            logger.debug(f"Cleaned up wrapper: {wrapper_key}")
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up wrapper {wrapper_key}: {e}")
+    
+    async def process_chat_with_optimized_wrapper(
+        self,
+        session_id: str,
+        user_id: str,
+        message: str,
+        context: Dict[str, Any] = None,
+        selected_files: List[str] = None,
+        model_name: str = None
+    ) -> Dict[str, Any]:
+        """
+        Process chat message using OptimizedCosmosWrapper.
+        
+        Args:
+            session_id: Session identifier
+            user_id: User identifier
+            message: User message
+            context: Additional context
+            selected_files: Selected file paths
+            model_name: Override model name
+            
+        Returns:
+            Chat response dictionary
+        """
+        try:
+            # Get session to determine repository context
+            session = await self.get_session(session_id)
+            if not session:
+                return {
+                    "error": "Session not found",
+                    "content": "I couldn't find your chat session. Please start a new conversation."
+                }
+            
+            # Use session model if no override provided
+            model = model_name or session.model
+            
+            # Get or create wrapper
+            wrapper = await self.get_or_create_wrapper(
+                user_id=user_id,
+                session_id=session_id,
+                repository_url=session.repository_url,
+                model=model
+            )
+            
+            if not wrapper:
+                if self.fallback_to_legacy:
+                    logger.warning("OptimizedCosmosWrapper not available, falling back to legacy behavior")
+                    return await self._legacy_chat_processing(session_id, message, context, selected_files)
+                else:
+                    return {
+                        "error": "Cosmos service unavailable",
+                        "content": "I'm currently unable to process your request. Please try again later."
+                    }
+            
+            # Get session history for context
+            session_messages = await self.get_session_messages(session_id, limit=10)
+            session_history = [
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                for msg in session_messages
+            ]
+            
+            # Process message through optimized wrapper
+            response = await wrapper.process_chat_message(
+                message=message,
+                context=context,
+                session_history=session_history,
+                selected_files=selected_files,
+                model_name=model
+            )
+            
+            # Add user message to session
+            await self.add_message(
+                session_id=session_id,
+                role="user",
+                content=message,
+                context_files_used=selected_files,
+                metadata={"model": model}
+            )
+            
+            # Add assistant response to session
+            await self.add_message(
+                session_id=session_id,
+                role="assistant",
+                content=response.get("content", ""),
+                context_files_used=response.get("context_files_used", []),
+                shell_commands_converted=response.get("shell_commands_converted", []),
+                conversion_notes=response.get("conversion_notes"),
+                metadata=response.get("metadata", {})
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error in optimized chat processing: {e}")
+            
+            # Fallback to legacy processing if enabled
+            if self.fallback_to_legacy:
+                logger.info("Falling back to legacy chat processing due to error")
+                return await self._legacy_chat_processing(session_id, message, context, selected_files)
+            else:
+                return {
+                    "error": str(e),
+                    "content": "I encountered an error while processing your message. Please try again."
+                }
+    
+    async def _legacy_chat_processing(
+        self,
+        session_id: str,
+        message: str,
+        context: Dict[str, Any] = None,
+        selected_files: List[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Legacy chat processing fallback method.
+        
+        This method provides backward compatibility when OptimizedCosmosWrapper
+        is not available or fails.
+        """
+        logger.info("Using legacy chat processing")
+        
+        # Simple fallback response
+        return {
+            "content": f"I received your message: {message}. However, I'm currently running in compatibility mode with limited functionality. Please try again later for full AI assistance.",
+            "context_files_used": selected_files or [],
+            "shell_commands_converted": [],
+            "conversion_notes": "Running in legacy compatibility mode",
+            "error": None,
+            "metadata": {
+                "model_used": "legacy",
+                "response_time": 0.1,
+                "legacy_mode": True
+            },
+            "confidence": 0.1,
+            "sources": []
+        }
+    
+    async def cleanup_expired_wrappers(self):
+        """Clean up expired wrapper instances."""
+        try:
+            current_time = datetime.now()
+            expired_keys = []
+            
+            for wrapper_key, last_used in self.wrapper_last_used.items():
+                if (current_time - last_used).total_seconds() > self.wrapper_cache_ttl:
+                    expired_keys.append(wrapper_key)
+            
+            for key in expired_keys:
+                await self._cleanup_wrapper(key)
+            
+            if expired_keys:
+                logger.info(f"Cleaned up {len(expired_keys)} expired wrapper instances")
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up expired wrappers: {e}")
+    
+    async def get_wrapper_performance_metrics(self, user_id: str, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get performance metrics from a user's wrapper instance."""
+        try:
+            wrapper_key = f"{user_id}:{session_id}:*"  # Match any repository
+            
+            # Find matching wrapper
+            for key, wrapper in self.wrapper_cache.items():
+                if key.startswith(f"{user_id}:{session_id}:"):
+                    return wrapper.get_detailed_performance_report()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting wrapper performance metrics: {e}")
+            return None
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """Perform health check on the service and its components."""
+        try:
+            health = {
+                "status": "healthy",
+                "timestamp": datetime.now().isoformat(),
+                "components": {}
+            }
+            
+            # Check Redis connectivity
+            try:
+                self.redis_client.ping()
+                health["components"]["redis"] = "healthy"
+            except Exception as e:
+                health["components"]["redis"] = f"unhealthy: {e}"
+                health["status"] = "degraded"
+            
+            # Check wrapper cache status
+            health["components"]["wrapper_cache"] = {
+                "active_wrappers": len(self.wrapper_cache),
+                "status": "healthy"
+            }
+            
+            # Check performance service
+            try:
+                perf_health = self.performance_service.health_check()
+                health["components"]["performance_service"] = perf_health
+            except Exception as e:
+                health["components"]["performance_service"] = f"unhealthy: {e}"
+            
+            return health
+            
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    async def shutdown(self):
+        """Gracefully shutdown the service and clean up resources."""
+        try:
+            logger.info("Shutting down CosmosWebService...")
+            
+            # Clean up all wrapper instances
+            for wrapper_key in list(self.wrapper_cache.keys()):
+                await self._cleanup_wrapper(wrapper_key)
+            
+            logger.info("CosmosWebService shutdown complete")
+            
+        except Exception as e:
+            logger.error(f"Error during CosmosWebService shutdown: {e}")
+    
     def get_available_models(self) -> List[ModelInfo]:
         """
         Get list of available AI models from Cosmos configuration.
@@ -588,6 +902,88 @@ class CosmosWebService:
             Canonical model name or None if invalid
         """
         return MODEL_ALIASES.get(alias)
+    
+    def enable_optimized_wrapper(self, enable: bool = True):
+        """
+        Enable or disable the OptimizedCosmosWrapper.
+        
+        Args:
+            enable: Whether to enable the optimized wrapper
+        """
+        self.use_optimized_wrapper = enable
+        logger.info(f"OptimizedCosmosWrapper {'enabled' if enable else 'disabled'}")
+    
+    def enable_legacy_fallback(self, enable: bool = True):
+        """
+        Enable or disable fallback to legacy behavior.
+        
+        Args:
+            enable: Whether to enable legacy fallback
+        """
+        self.fallback_to_legacy = enable
+        logger.info(f"Legacy fallback {'enabled' if enable else 'disabled'}")
+    
+    async def migrate_session_to_optimized(self, session_id: str) -> bool:
+        """
+        Migrate an existing session to use OptimizedCosmosWrapper.
+        
+        Args:
+            session_id: Session to migrate
+            
+        Returns:
+            True if migration successful, False otherwise
+        """
+        try:
+            session = await self.get_session(session_id)
+            if not session:
+                logger.error(f"Session {session_id} not found for migration")
+                return False
+            
+            # Create wrapper for this session
+            wrapper = await self.get_or_create_wrapper(
+                user_id=session.user_id,
+                session_id=session_id,
+                repository_url=session.repository_url,
+                model=session.model
+            )
+            
+            if wrapper:
+                logger.info(f"Successfully migrated session {session_id} to OptimizedCosmosWrapper")
+                return True
+            else:
+                logger.error(f"Failed to create OptimizedCosmosWrapper for session {session_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error migrating session {session_id}: {e}")
+            return False
+    
+    def get_service_status(self) -> Dict[str, Any]:
+        """
+        Get current service status and configuration.
+        
+        Returns:
+            Dictionary with service status information
+        """
+        return {
+            "optimized_wrapper_enabled": self.use_optimized_wrapper,
+            "legacy_fallback_enabled": self.fallback_to_legacy,
+            "active_wrappers": len(self.wrapper_cache),
+            "wrapper_cache_ttl": self.wrapper_cache_ttl,
+            "session_ttl": self.session_ttl,
+            "message_ttl": self.message_ttl,
+            "redis_connected": self._check_redis_connection(),
+            "performance_service_available": self.performance_service is not None,
+            "analytics_service_available": self.analytics_service is not None
+        }
+    
+    def _check_redis_connection(self) -> bool:
+        """Check if Redis connection is healthy."""
+        try:
+            self.redis_client.ping()
+            return True
+        except Exception:
+            return False
     
     async def add_context_files(
         self, 

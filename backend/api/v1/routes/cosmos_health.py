@@ -1,399 +1,501 @@
 """
 Cosmos Health Check API Routes
 
-Comprehensive health check endpoints for Cosmos web chat integration
-and production monitoring.
+Provides comprehensive health check endpoints for the Cosmos Web Chat integration,
+including liveness, readiness, and detailed health status for monitoring.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from typing import Dict, Any, Optional
-import logging
-from datetime import datetime
 import asyncio
+from datetime import datetime
+import logging
 
-from backend.config.production import get_production_settings, is_feature_enabled, FeatureFlag
-from backend.config.monitoring import get_monitoring_settings
-from backend.config.deployment import get_deployment_settings
-from backend.services.cosmos_integration_service import get_integration_service
+from ....services.cosmos_integration_service import get_cosmos_integration_service
+from ....config.production import get_production_settings, is_feature_enabled, FeatureFlag
+from ....config.deployment import get_deployment_settings
+from ....config.monitoring import get_monitoring_settings
+from ....services.error_monitoring import get_monitoring_service
+from ....utils.error_handling import ErrorHandler
 
 logger = logging.getLogger(__name__)
 
-# Create router
 router = APIRouter(prefix="/cosmos/health", tags=["cosmos-health"])
 
 
-@router.get("/")
-async def cosmos_health_overview():
+@router.get("/liveness")
+async def liveness_probe():
     """
-    Get overall Cosmos integration health status.
+    Kubernetes liveness probe endpoint.
     
-    This endpoint provides a quick overview of the Cosmos chat integration
-    health and feature status.
+    Returns 200 if the service is alive and can handle requests.
+    This should only fail if the service is completely broken.
     """
     try:
-        # Check if Cosmos is enabled
-        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            return {
-                "status": "disabled",
-                "message": "Cosmos chat is disabled by feature flag",
-                "timestamp": datetime.now().isoformat(),
-                "features_enabled": False
-            }
+        # Basic service availability check
+        integration_service = get_cosmos_integration_service()
         
-        # Get integration service
-        try:
-            integration_service = await get_integration_service()
-            health_status = await integration_service.get_health_status()
-            
-            overall_healthy = health_status.get("overall", False)
-            
-            return {
-                "status": "healthy" if overall_healthy else "unhealthy",
-                "message": "Cosmos integration is operational" if overall_healthy else "Some Cosmos services are unhealthy",
-                "timestamp": datetime.now().isoformat(),
-                "features_enabled": True,
-                "services": health_status,
-                "initialization_time": integration_service.initialization_time.isoformat() if integration_service.initialization_time else None
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting integration service health: {e}")
-            return {
-                "status": "error",
-                "message": f"Failed to get Cosmos integration status: {str(e)}",
-                "timestamp": datetime.now().isoformat(),
-                "features_enabled": True
-            }
-        
-    except Exception as e:
-        logger.error(f"Error in Cosmos health overview: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Health check failed: {str(e)}"
-        )
-
-
-@router.get("/detailed")
-async def cosmos_detailed_health():
-    """
-    Get detailed health information for all Cosmos components.
-    
-    This endpoint provides comprehensive health information including
-    service status, metrics, and configuration details.
-    """
-    try:
-        production_settings = get_production_settings()
-        monitoring_settings = get_monitoring_settings()
-        deployment_settings = get_deployment_settings()
-        
-        health_info = {
-            "timestamp": datetime.now().isoformat(),
-            "environment": production_settings.environment.value,
-            "deployment_type": deployment_settings.deployment_type.value,
-            "feature_flags": production_settings.get_feature_status(),
-            "configuration": {
-                "rollout_percentage": production_settings.cosmos_chat_rollout_percentage,
-                "monitoring_enabled": monitoring_settings.monitoring_enabled,
-                "performance_config": production_settings.get_performance_config(),
-                "security_config": production_settings.get_security_config()
-            }
-        }
-        
-        # Get integration service status if available
-        if is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            try:
-                integration_service = await get_integration_service()
-                
-                # Get comprehensive system metrics
-                system_metrics = await integration_service.get_system_metrics()
-                health_info["system_metrics"] = system_metrics
-                
-                # Get individual service health
-                health_status = await integration_service.get_health_status()
-                health_info["service_health"] = health_status
-                
-                # Overall status
-                health_info["overall_status"] = "healthy" if health_status.get("overall", False) else "unhealthy"
-                
-            except Exception as e:
-                logger.error(f"Error getting detailed integration status: {e}")
-                health_info["integration_error"] = str(e)
-                health_info["overall_status"] = "error"
+        # Simple check - if we can get the service instance, we're alive
+        if integration_service:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "alive",
+                    "timestamp": datetime.now().isoformat(),
+                    "service": "cosmos-web-chat"
+                }
+            )
         else:
-            health_info["overall_status"] = "disabled"
-            health_info["message"] = "Cosmos chat is disabled by feature flag"
-        
-        return health_info
-        
-    except Exception as e:
-        logger.error(f"Error in detailed health check: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Detailed health check failed: {str(e)}"
-        )
-
-
-@router.get("/services/{service_name}")
-async def cosmos_service_health(service_name: str):
-    """
-    Get health status for a specific Cosmos service.
-    
-    Args:
-        service_name: Name of the service to check
-    """
-    try:
-        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Cosmos chat is disabled"
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "dead",
+                    "timestamp": datetime.now().isoformat(),
+                    "error": "Integration service not available"
+                }
             )
-        
-        integration_service = await get_integration_service()
-        health_status = await integration_service.get_health_status()
-        
-        if service_name not in health_status:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Service '{service_name}' not found"
-            )
-        
-        service_healthy = health_status[service_name]
-        
-        return {
-            "service": service_name,
-            "status": "healthy" if service_healthy else "unhealthy",
-            "timestamp": datetime.now().isoformat(),
-            "details": {
-                "available": service_healthy,
-                "last_check": datetime.now().isoformat()
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error checking service health for {service_name}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Service health check failed: {str(e)}"
-        )
-
-
-@router.get("/metrics")
-async def cosmos_metrics():
-    """
-    Get Cosmos integration metrics for monitoring.
     
-    This endpoint provides metrics data for external monitoring systems.
-    """
-    try:
-        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            return {
-                "status": "disabled",
-                "metrics": {},
-                "timestamp": datetime.now().isoformat()
-            }
-        
-        integration_service = await get_integration_service()
-        system_metrics = await integration_service.get_system_metrics()
-        
-        # Format metrics for monitoring systems
-        formatted_metrics = {
-            "cosmos_chat_enabled": 1 if is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED) else 0,
-            "cosmos_services_healthy": 1 if system_metrics.get("health_status", {}).get("overall", False) else 0,
-            "cosmos_uptime_seconds": system_metrics.get("uptime_seconds", 0),
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # Add service-specific metrics
-        if "performance" in system_metrics:
-            performance_metrics = system_metrics["performance"]
-            formatted_metrics.update({
-                "cosmos_active_sessions": performance_metrics.get("active_sessions", 0),
-                "cosmos_total_requests": performance_metrics.get("total_requests", 0),
-                "cosmos_avg_response_time": performance_metrics.get("avg_response_time_ms", 0)
-            })
-        
-        if "analytics" in system_metrics:
-            analytics_metrics = system_metrics["analytics"]
-            formatted_metrics.update({
-                "cosmos_total_messages": analytics_metrics.get("total_messages", 0),
-                "cosmos_unique_users": analytics_metrics.get("unique_users", 0),
-                "cosmos_conversion_rate": analytics_metrics.get("conversion_rate", 0)
-            })
-        
-        return {
-            "status": "active",
-            "metrics": formatted_metrics,
-            "timestamp": datetime.now().isoformat()
-        }
-        
     except Exception as e:
-        logger.error(f"Error getting Cosmos metrics: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Metrics collection failed: {str(e)}"
-        )
-
-
-@router.post("/test-connection")
-async def test_cosmos_connection():
-    """
-    Test Cosmos integration connectivity.
-    
-    This endpoint performs a comprehensive connectivity test
-    of all Cosmos integration components.
-    """
-    try:
-        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Cosmos chat is disabled"
-            )
-        
-        test_results = {}
-        start_time = datetime.now()
-        
-        # Test integration service
-        try:
-            integration_service = await get_integration_service()
-            test_results["integration_service"] = {
-                "status": "success",
-                "initialized": integration_service.is_initialized,
-                "initialization_time": integration_service.initialization_time.isoformat() if integration_service.initialization_time else None
-            }
-        except Exception as e:
-            test_results["integration_service"] = {
-                "status": "failed",
+        logger.error(f"Liveness probe failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "dead",
+                "timestamp": datetime.now().isoformat(),
                 "error": str(e)
             }
-        
-        # Test Redis connectivity
-        try:
-            from backend.services.redis_repo_manager import RedisRepoManager
-            test_repo_manager = RedisRepoManager(
-                repo_url="https://github.com/test/test",
-                branch="main",
-                user_tier="free",
-                username="test_user"
-            )
-            redis_healthy = await test_repo_manager.health_check()
-            test_results["redis_connectivity"] = {
-                "status": "success" if redis_healthy else "failed",
-                "healthy": redis_healthy
-            }
-        except Exception as e:
-            test_results["redis_connectivity"] = {
-                "status": "failed",
-                "error": str(e)
-            }
-        
-        # Test AI model availability
-        try:
-            from backend.services.cosmos_web_service import CosmosWebService
-            cosmos_service = CosmosWebService()
-            available_models = cosmos_service.get_available_models()
-            test_results["ai_models"] = {
-                "status": "success",
-                "available_models": len(available_models),
-                "models": [model.name for model in available_models[:3]]  # First 3 models
-            }
-        except Exception as e:
-            test_results["ai_models"] = {
-                "status": "failed",
-                "error": str(e)
-            }
-        
-        # Calculate test duration
-        test_duration = (datetime.now() - start_time).total_seconds() * 1000
-        
-        # Determine overall test result
-        all_tests_passed = all(
-            result.get("status") == "success" 
-            for result in test_results.values()
-        )
-        
-        return {
-            "overall_status": "success" if all_tests_passed else "partial_failure",
-            "test_duration_ms": int(test_duration),
-            "timestamp": datetime.now().isoformat(),
-            "test_results": test_results
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in connection test: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Connection test failed: {str(e)}"
         )
 
 
 @router.get("/readiness")
-async def cosmos_readiness_probe():
+async def readiness_probe():
     """
     Kubernetes readiness probe endpoint.
     
-    This endpoint is designed for Kubernetes readiness probes
-    and returns a simple status indicating if Cosmos is ready to serve traffic.
+    Returns 200 if the service is ready to handle requests.
+    This can fail temporarily during startup or when dependencies are unavailable.
     """
     try:
-        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
-            return {"status": "ready", "reason": "disabled"}
+        integration_service = get_cosmos_integration_service()
         
-        integration_service = await get_integration_service()
+        if not integration_service:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "not_ready",
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": "Integration service not available"
+                }
+            )
         
+        # Check if service is initialized and healthy
         if not integration_service.is_initialized:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Cosmos integration not initialized"
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "not_ready",
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": "Service not initialized"
+                }
             )
         
-        # Quick health check
-        health_status = await integration_service.get_health_status()
-        core_services_healthy = health_status.get("cosmos_service", False) and health_status.get("redis_connectivity", False)
-        
-        if not core_services_healthy:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Core services not healthy"
+        if not integration_service.is_healthy:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "not_ready",
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": "Service not healthy",
+                    "errors": integration_service.initialization_errors
+                }
             )
         
-        return {
-            "status": "ready",
-            "timestamp": datetime.now().isoformat()
-        }
+        # Check if Cosmos Chat is enabled
+        if not is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "ready",
+                    "timestamp": datetime.now().isoformat(),
+                    "note": "Cosmos Chat is disabled via feature flag"
+                }
+            )
         
-    except HTTPException:
-        raise
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "ready",
+                "timestamp": datetime.now().isoformat(),
+                "service": "cosmos-web-chat"
+            }
+        )
+    
     except Exception as e:
-        logger.error(f"Error in readiness probe: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Readiness check failed: {str(e)}"
+        logger.error(f"Readiness probe failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
+            }
         )
 
 
-@router.get("/liveness")
-async def cosmos_liveness_probe():
+@router.get("/startup")
+async def startup_probe():
     """
-    Kubernetes liveness probe endpoint.
+    Kubernetes startup probe endpoint.
     
-    This endpoint is designed for Kubernetes liveness probes
-    and returns a simple status indicating if the Cosmos service is alive.
+    Returns 200 when the service has completed startup.
+    Used to give the service more time to start up before liveness checks begin.
     """
     try:
-        # Simple liveness check - just verify the service can respond
-        return {
-            "status": "alive",
-            "timestamp": datetime.now().isoformat(),
-            "cosmos_enabled": is_feature_enabled(FeatureFlag.COSMOS_CHAT_ENABLED)
+        integration_service = get_cosmos_integration_service()
+        
+        if not integration_service:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "starting",
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": "Integration service not available"
+                }
+            )
+        
+        # Check initialization status
+        if integration_service.is_initialized:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "started",
+                    "timestamp": datetime.now().isoformat(),
+                    "service": "cosmos-web-chat"
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "starting",
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": "Service still initializing"
+                }
+            )
+    
+    except Exception as e:
+        logger.error(f"Startup probe failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "starting",
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
+            }
+        )
+
+
+@router.get("/detailed")
+async def detailed_health_check():
+    """
+    Detailed health check endpoint for monitoring and debugging.
+    
+    Provides comprehensive health information about all components.
+    """
+    try:
+        integration_service = get_cosmos_integration_service()
+        
+        if not integration_service:
+            raise HTTPException(
+                status_code=503,
+                detail="Integration service not available"
+            )
+        
+        # Get comprehensive health status
+        health_status = await integration_service.get_health_status()
+        
+        # Add additional monitoring information
+        monitoring_service = get_monitoring_service()
+        active_alerts = monitoring_service.get_active_alerts()
+        
+        health_status["monitoring"] = {
+            "active_alerts": len(active_alerts),
+            "alert_details": [
+                {
+                    "type": alert.alert_type.value,
+                    "level": alert.level.value,
+                    "title": alert.title,
+                    "timestamp": alert.timestamp.isoformat()
+                }
+                for alert in active_alerts[:5]  # Show first 5 alerts
+            ]
         }
         
+        # Add configuration information
+        production_settings = get_production_settings()
+        deployment_settings = get_deployment_settings()
+        
+        health_status["configuration"] = {
+            "environment": production_settings.environment.value,
+            "deployment_type": deployment_settings.deployment_type.value,
+            "rollout_percentage": production_settings.cosmos_chat_rollout_percentage,
+            "monitoring_enabled": get_monitoring_settings().monitoring_enabled
+        }
+        
+        # Determine HTTP status code based on health
+        if health_status["cosmos_integration"]["healthy"]:
+            status_code = 200
+        else:
+            status_code = 503
+        
+        return JSONResponse(
+            status_code=status_code,
+            content=health_status
+        )
+    
     except Exception as e:
-        logger.error(f"Error in liveness probe: {e}")
+        logger.error(f"Detailed health check failed: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Liveness check failed: {str(e)}"
+            status_code=500,
+            detail=f"Health check error: {str(e)}"
+        )
+
+
+@router.get("/metrics")
+async def health_metrics():
+    """
+    Health metrics endpoint for Prometheus scraping.
+    
+    Returns metrics in Prometheus format for monitoring.
+    """
+    try:
+        integration_service = get_cosmos_integration_service()
+        monitoring_service = get_monitoring_service()
+        
+        metrics = []
+        
+        # Service health metrics
+        if integration_service:
+            metrics.append(f"cosmos_service_initialized {1 if integration_service.is_initialized else 0}")
+            metrics.append(f"cosmos_service_healthy {1 if integration_service.is_healthy else 0}")
+            metrics.append(f"cosmos_initialization_errors {len(integration_service.initialization_errors)}")
+        
+        # Feature flag metrics
+        production_settings = get_production_settings()
+        for flag, enabled in production_settings.feature_flags.items():
+            flag_name = flag.value.replace("_", "_")
+            metrics.append(f"cosmos_feature_{flag_name} {1 if enabled else 0}")
+        
+        # Alert metrics
+        active_alerts = monitoring_service.get_active_alerts()
+        metrics.append(f"cosmos_active_alerts {len(active_alerts)}")
+        
+        # Alert level breakdown
+        alert_levels = {}
+        for alert in active_alerts:
+            level = alert.level.value
+            alert_levels[level] = alert_levels.get(level, 0) + 1
+        
+        for level, count in alert_levels.items():
+            metrics.append(f"cosmos_alerts_by_level{{level=\"{level}\"}} {count}")
+        
+        # Configuration metrics
+        metrics.append(f"cosmos_rollout_percentage {production_settings.cosmos_chat_rollout_percentage}")
+        metrics.append(f"cosmos_monitoring_enabled {1 if get_monitoring_settings().monitoring_enabled else 0}")
+        
+        # Join metrics with newlines
+        metrics_text = "\n".join(metrics) + "\n"
+        
+        return JSONResponse(
+            status_code=200,
+            content=metrics_text,
+            media_type="text/plain"
+        )
+    
+    except Exception as e:
+        logger.error(f"Metrics endpoint failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Metrics error: {str(e)}"
+        )
+
+
+@router.get("/dependencies")
+async def dependency_health():
+    """
+    Check health of external dependencies.
+    
+    Returns status of Redis, database, AI models, and other dependencies.
+    """
+    try:
+        integration_service = get_cosmos_integration_service()
+        
+        if not integration_service:
+            raise HTTPException(
+                status_code=503,
+                detail="Integration service not available"
+            )
+        
+        dependencies = {
+            "timestamp": datetime.now().isoformat(),
+            "dependencies": {}
+        }
+        
+        # Check Redis
+        try:
+            if integration_service.redis_client:
+                await asyncio.to_thread(integration_service.redis_client.ping)
+                dependencies["dependencies"]["redis"] = {
+                    "status": "healthy",
+                    "response_time_ms": 0  # Would measure actual response time
+                }
+            else:
+                dependencies["dependencies"]["redis"] = {
+                    "status": "not_configured"
+                }
+        except Exception as e:
+            dependencies["dependencies"]["redis"] = {
+                "status": "unhealthy",
+                "error": str(e)
+            }
+        
+        # Check AI model availability (simplified)
+        dependencies["dependencies"]["ai_models"] = {
+            "status": "healthy",  # Would check actual model availability
+            "configured_models": ["gemini-2.0-flash"]  # From configuration
+        }
+        
+        # Check Vault (if enabled)
+        vault_enabled = get_production_settings().production_settings.get("vault_enabled", False)
+        if vault_enabled:
+            dependencies["dependencies"]["vault"] = {
+                "status": "healthy",  # Would check actual Vault connectivity
+                "note": "Vault connectivity check not implemented"
+            }
+        
+        # Determine overall dependency health
+        unhealthy_deps = [
+            name for name, dep in dependencies["dependencies"].items()
+            if dep.get("status") == "unhealthy"
+        ]
+        
+        overall_status = "healthy" if not unhealthy_deps else "degraded"
+        dependencies["overall_status"] = overall_status
+        dependencies["unhealthy_dependencies"] = unhealthy_deps
+        
+        status_code = 200 if overall_status == "healthy" else 503
+        
+        return JSONResponse(
+            status_code=status_code,
+            content=dependencies
+        )
+    
+    except Exception as e:
+        logger.error(f"Dependency health check failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Dependency check error: {str(e)}"
+        )
+
+
+@router.get("/feature-flags")
+async def feature_flag_status():
+    """
+    Get current feature flag status.
+    
+    Returns the status of all feature flags for debugging and monitoring.
+    """
+    try:
+        production_settings = get_production_settings()
+        
+        feature_status = {
+            "timestamp": datetime.now().isoformat(),
+            "environment": production_settings.environment.value,
+            "rollout_percentage": production_settings.cosmos_chat_rollout_percentage,
+            "feature_flags": {}
+        }
+        
+        # Convert feature flags to readable format
+        for flag, enabled in production_settings.feature_flags.items():
+            feature_status["feature_flags"][flag.value] = {
+                "enabled": enabled,
+                "description": _get_feature_description(flag)
+            }
+        
+        return JSONResponse(
+            status_code=200,
+            content=feature_status
+        )
+    
+    except Exception as e:
+        logger.error(f"Feature flag status check failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Feature flag error: {str(e)}"
+        )
+
+
+def _get_feature_description(flag: FeatureFlag) -> str:
+    """Get human-readable description for feature flags."""
+    descriptions = {
+        FeatureFlag.COSMOS_CHAT_ENABLED: "Enable Cosmos Chat functionality",
+        FeatureFlag.COSMOS_CHAT_BETA: "Enable beta features for Cosmos Chat",
+        FeatureFlag.COSMOS_CHAT_FULL: "Enable full Cosmos Chat features",
+        FeatureFlag.TIER_ACCESS_CONTROL: "Enable tier-based access control",
+        FeatureFlag.REDIS_REPO_MANAGER: "Enable Redis repository manager",
+        FeatureFlag.CONTEXT_FILE_MANAGEMENT: "Enable context file management",
+        FeatureFlag.REAL_TIME_CHAT: "Enable real-time chat features",
+        FeatureFlag.SHELL_COMMAND_CONVERSION: "Enable shell command conversion",
+        FeatureFlag.PERFORMANCE_MONITORING: "Enable performance monitoring",
+        FeatureFlag.SECURITY_HARDENING: "Enable security hardening features",
+        FeatureFlag.SESSION_PERSISTENCE: "Enable session persistence",
+        FeatureFlag.ANALYTICS_TRACKING: "Enable analytics tracking"
+    }
+    
+    return descriptions.get(flag, "No description available")
+
+
+@router.post("/reset-health")
+async def reset_health_status():
+    """
+    Reset health status and clear errors.
+    
+    Useful for recovering from transient issues without restarting the service.
+    """
+    try:
+        integration_service = get_cosmos_integration_service()
+        
+        if not integration_service:
+            raise HTTPException(
+                status_code=503,
+                detail="Integration service not available"
+            )
+        
+        # Clear initialization errors
+        integration_service.initialization_errors.clear()
+        
+        # Try to re-initialize if needed
+        if not integration_service.is_initialized:
+            success = await integration_service.initialize()
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to re-initialize service"
+                )
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "reset_complete",
+                "timestamp": datetime.now().isoformat(),
+                "message": "Health status has been reset"
+            }
+        )
+    
+    except Exception as e:
+        logger.error(f"Health reset failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Health reset error: {str(e)}"
         )

@@ -30,6 +30,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { ModelSelector } from './ModelSelector';
 import { RepositorySelector } from './RepositorySelector';
 import { ContextPanel } from './ContextPanel';
+import { RepositorySizeErrorDialog } from './RepositorySizeErrorDialog';
 import { ChatMessage } from '@/lib/chat-api';
 
 interface ChatInterfaceProps {
@@ -45,7 +46,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
     getActiveSession,
     sendMessageWithRetry,
     createSession,
-    getMessageStatus
+    getMessageStatus,
+    setRepositorySizeError
   } = useChat();
 
   // Local state
@@ -365,6 +367,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className }) => {
           <ContextPanel />
         </div>
       )}
+
+      {/* Repository Size Error Dialog */}
+      <RepositorySizeErrorDialog
+        isOpen={!!state.repositorySizeError}
+        onClose={() => setRepositorySizeError(null)}
+        repositoryName={state.repositorySizeError?.repositoryName}
+        repositorySize={state.repositorySizeError?.repositorySize}
+        maxSize={state.repositorySizeError?.maxSize}
+        onUpgrade={() => {
+          // Handle upgrade logic here
+          window.open('/pricing', '_blank');
+        }}
+      />
     </div>
   );
 };

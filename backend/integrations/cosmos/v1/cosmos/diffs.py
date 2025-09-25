@@ -1,7 +1,7 @@
 import difflib
 import sys
 
-from .dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 
 
 def main():

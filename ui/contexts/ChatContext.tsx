@@ -40,6 +40,13 @@ interface FileCache {
   };
 }
 
+interface RepositorySizeError {
+  repositoryName: string;
+  repositorySize: string;
+  maxSize: string;
+  message: string;
+}
+
 interface ChatState {
   sessions: ChatSession[];
   activeSessionId: string | null;
@@ -47,6 +54,7 @@ interface ChatState {
   selectedFiles: Array<{branch: string, path: string, content: string, contentHash?: string}>;
   fileStructures: Record<string, FileSystemItem[]>;
   messageStatuses: Record<string, MessageStatus>;
+  repositorySizeError: RepositorySizeError | null;
   loadingStates: {
     files: Record<string, boolean>;
     chat: boolean;
@@ -76,6 +84,7 @@ type ChatAction =
   | { type: 'REMOVE_SELECTED_FILE'; payload: { branch: string; path: string } }
   | { type: 'CACHE_FILE_CONTENT'; payload: { key: string; content: string; hash: string; error?: string } }
   | { type: 'SET_FILE_STRUCTURE'; payload: { branch: string; structure: FileSystemItem[] } }
+  | { type: 'SET_REPOSITORY_SIZE_ERROR'; payload: { error: RepositorySizeError | null } }
   | { type: 'SET_LOADING_STATE'; payload: { type: 'files' | 'chat' | 'sessions'; key?: string; loading: boolean } }
   | { type: 'SET_ERROR'; payload: { type: 'files' | 'chat' | 'sessions'; key?: string; error: string | null } }
   | { type: 'CLEAR_ERRORS'; payload: { type: 'files' | 'chat' | 'sessions' } }
@@ -89,6 +98,7 @@ const initialState: ChatState = {
   selectedFiles: [],
   fileStructures: {},
   messageStatuses: {},
+  repositorySizeError: null,
   loadingStates: {
     files: {},
     chat: false,
@@ -260,6 +270,12 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         }
       };
 
+    case 'SET_REPOSITORY_SIZE_ERROR':
+      return {
+        ...state,
+        repositorySizeError: action.payload.error
+      };
+
     case 'SET_LOADING_STATE':
       if (action.payload.type === 'files' && action.payload.key) {
         return {
@@ -360,6 +376,9 @@ interface ChatContextType {
   setLoadingState: (type: 'files' | 'chat' | 'sessions', key?: string, loading?: boolean) => void;
   setError: (type: 'files' | 'chat' | 'sessions', key?: string, error?: string | null) => void;
   clearErrors: (type: 'files' | 'chat' | 'sessions') => void;
+  
+  // Repository size error handling
+  setRepositorySizeError: (error: RepositorySizeError | null) => void;
   
   // Utility functions
   generateSessionId: () => string;
@@ -602,6 +621,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return state.messageStatuses[messageId] || null;
   }, [state.messageStatuses]);
 
+  // Repository size error handling
+  const setRepositorySizeError = useCallback((error: RepositorySizeError | null) => {
+    dispatch({ type: 'SET_REPOSITORY_SIZE_ERROR', payload: { error } });
+  }, []);
+
   // Enhanced sendMessage with retry logic
   const sendMessageWithRetry = useCallback(async (sessionId: string, message: string, maxRetries: number = 3, options?: { model?: string; context?: any }): Promise<ChatMessage> => {
     if (!chatAPI) {
@@ -676,6 +700,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(`Attempt ${attempt + 1} failed:`, error);
         lastError = error instanceof Error ? error : new Error('Unknown error');
         
+        // Check if this is a repository size error
+        const errorMessage = lastError.message.toLowerCase();
+        if (errorMessage.includes('repository size') && errorMessage.includes('exceeds') && errorMessage.includes('mb')) {
+          // Parse repository size error
+          const sizeMatch = errorMessage.match(/(\d+\.?\d*)\s*mb.*exceeds.*?(\d+)\s*mb/i);
+          if (sizeMatch) {
+            const repositorySize = `${sizeMatch[1]} MB`;
+            const maxSize = `${sizeMatch[2]} MB`;
+            const repositoryName = repository?.full_name || 'Unknown Repository';
+            
+            const repositorySizeError: RepositorySizeError = {
+              repositoryName,
+              repositorySize,
+              maxSize,
+              message: lastError.message
+            };
+            
+            // Set the repository size error to show the dialog
+            setRepositorySizeError(repositorySizeError);
+            
+            // Update message status to failed
+            updateMessageStatus(messageId, { 
+              status: 'failed', 
+              error: 'Repository too large' 
+            });
+            
+            // Don't set general chat error for size errors
+            throw lastError;
+          }
+        }
+        
         if (attempt === maxRetries) {
           // Final failure
           updateMessageStatus(messageId, { 
@@ -695,7 +750,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // This should never be reached, but TypeScript requires it
     throw lastError || new Error('Unknown error occurred');
-  }, [chatAPI, state.selectedFiles, repository, generateMessageId, setMessageStatus, updateMessageStatus]);
+  }, [chatAPI, state.selectedFiles, repository, generateMessageId, setMessageStatus, updateMessageStatus, setRepositorySizeError]);
 
   // File management
   const setSelectedFiles = useCallback((files: Array<{branch: string, path: string, content: string, contentHash?: string}>) => {
@@ -786,6 +841,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getCachedFileContent,
     cacheFileContent,
     setFileStructure,
+    setRepositorySizeError,
     setLoadingState,
     setError,
     clearErrors,

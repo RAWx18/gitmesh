@@ -2,7 +2,7 @@
 
 import re
 
-from cosmos.dump import dump  # noqa
+# Removed dump import - not needed for web
 
 # Standard tag identifier
 REASONING_TAG = "thinking-content-" + "7bbeb8e1441453ad999a0bbba8a46d4b"

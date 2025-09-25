@@ -17,9 +17,11 @@ from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from tqdm import tqdm
 
-from cosmos.dump import dump
+from cosmos.web_module_loader import safe_import
 from cosmos.special import filter_important_files
-from cosmos.waiting import Spinner
+
+# Safe imports for removed modules
+Spinner = safe_import('cosmos.waiting', fallback=type('Spinner', (), {}))
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)

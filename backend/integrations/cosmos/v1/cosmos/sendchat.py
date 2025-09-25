@@ -1,4 +1,4 @@
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 from cosmos.utils import format_messages
 
 

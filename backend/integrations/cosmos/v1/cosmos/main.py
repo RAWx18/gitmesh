@@ -4,7 +4,6 @@ import re
 import sys
 import threading
 import traceback
-import webbrowser
 from dataclasses import fields
 from pathlib import Path
 
@@ -13,35 +12,40 @@ try:
 except ImportError:
     git = None
 
-import importlib_resources
-import shtab
 from dotenv import load_dotenv
-from prompt_toolkit.enums import EditingMode
 
+# Web-optimized imports - use safe importing for CLI-specific modules
+from cosmos.web_module_loader import safe_import, initialize_web_cosmos
+
+# Core cosmos imports (essential for web)
 from cosmos import __version__, models, utils
-from cosmos.analytics import Analytics
-from cosmos.args import get_parser
-from cosmos.coders import Coder
-from cosmos.coders.base_coder import UnknownEditFormat
-from cosmos.commands import Commands, SwitchCoder
-from cosmos.copypaste import ClipboardWatcher
-from cosmos.deprecated import handle_deprecated_model_args
 from cosmos.format_settings import format_settings, scrub_sensitive_info
-from cosmos.history import ChatSummary
 from cosmos.io import InputOutput
 from cosmos.llm import litellm  # noqa: F401; properly init litellm on launch
 from cosmos.models import ModelSettings
-from cosmos.onboarding import offer_openrouter_oauth, select_default_model
 from cosmos.repo import ANY_GIT_ERROR, GitRepo
 from cosmos.repo_factory import create_repo
-from cosmos.report import report_uncaught_exceptions
-from cosmos.versioncheck import check_version, install_from_main_branch, install_upgrade
-from cosmos.watch import FileWatcher
 
-try:
-    from .dump import dump  # noqa: F401
-except ImportError:
-    from dump import dump  # noqa: F401
+# Safe imports for CLI-specific modules (will be mocked)
+Analytics = safe_import('cosmos.analytics', fallback=type('Analytics', (), {}))
+get_parser = safe_import('cosmos.args', fallback=lambda: None).get_parser if safe_import('cosmos.args') else lambda: None
+Coder = safe_import('cosmos.coders', fallback=type('Coder', (), {}))
+UnknownEditFormat = safe_import('cosmos.coders.base_coder', fallback=Exception).UnknownEditFormat if safe_import('cosmos.coders.base_coder') else Exception
+Commands = safe_import('cosmos.commands', fallback=type('Commands', (), {}))
+SwitchCoder = safe_import('cosmos.commands', fallback=Exception).SwitchCoder if safe_import('cosmos.commands') else Exception
+ClipboardWatcher = safe_import('cosmos.copypaste', fallback=type('ClipboardWatcher', (), {}))
+handle_deprecated_model_args = safe_import('cosmos.deprecated', fallback=lambda *args, **kwargs: None)
+ChatSummary = safe_import('cosmos.history', fallback=type('ChatSummary', (), {}))
+offer_openrouter_oauth = safe_import('cosmos.onboarding', fallback=lambda *args, **kwargs: None)
+select_default_model = safe_import('cosmos.onboarding', fallback=lambda *args, **kwargs: None)
+report_uncaught_exceptions = safe_import('cosmos.report', fallback=lambda *args, **kwargs: None)
+check_version = safe_import('cosmos.versioncheck', fallback=lambda *args, **kwargs: None)
+install_from_main_branch = safe_import('cosmos.versioncheck', fallback=lambda *args, **kwargs: None)
+install_upgrade = safe_import('cosmos.versioncheck', fallback=lambda *args, **kwargs: None)
+FileWatcher = safe_import('cosmos.watch', fallback=type('FileWatcher', (), {}))
+
+# Initialize web-optimized cosmos
+initialize_web_cosmos()
 
 
 def check_config_files_for_yes(config_files):

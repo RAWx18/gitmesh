@@ -5,9 +5,8 @@
    <img src="public/logo/dark_logo.png" alt="GitMesh Logo" width="250">
 </picture>
 
-**The Next-Generation Git Collaboration Platform**
+**AI-powered Git collaboration network for OSS**
 
-*Transforming Open Source Development with Branch-Level Collaboration*
 
 [![OpenSource License](https://img.shields.io/badge/License-Apache%20License-orange.svg?style=for-the-badge)](LICENSE.md)
 [![Contributors](https://img.shields.io/github/contributors/LF-Decentralized-Trust-Mentorships/gitmesh.svg?style=for-the-badge&logo=git)](https://github.com/LF-Decentralized-Trust-Mentorships/gitmesh/graphs/contributors)
@@ -15,7 +14,8 @@
 [![Join Discord](https://img.shields.io/badge/Join%20us%20on-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/FkrWfGtZn3)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10972/badge)](https://www.bestpractices.dev/projects/10972)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/LF-Decentralized-Trust-Mentorships/gitmesh/badge)](https://scorecard.dev/viewer/?uri=github.com/LF-Decentralized-Trust-Mentorships/gitmesh)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffossas%2Ffossa-cli.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffossas%2Ffossa-cli?ref=badge_shield)
+
+*Code with purpose, Integrate with confidence*
 
 [**Documentation**](https://github.com/LF-Decentralized-Trust-Mentorships/gitmesh/README.md) • [**Join Community**](https://discord.gg/FkrWfGtZn3)
 
@@ -31,27 +31,13 @@ Our mascot (Meshy/Mesh Wolf) reflects GitMesh’s core: agile, resilient, and un
 
 [Waitlist website](www.gitmesh.dev)
 
-### 🤖 AI-Powered Chat with Your Codebase
-
-GitMesh includes an integrated AI chat system that lets you interact with your repositories naturally. Just like using `cosmos --model gemini` in the CLI, you can:
-
-- Ask questions about your code and get intelligent explanations
-- Get suggestions for improvements and best practices  
-- Understand complex codebases through natural conversation
-- Receive context-aware responses based on your specific repository
-
-The chat automatically uses the repository you have open, making it seamless to get help with your current project.
-
 ---
 
 <div align="center">
 
 ## </> **Why Choose Our Platform?**
 
-| **Efficient** | **Fast** | **Collaborative** | **Secure** |
-|:---:|:---:|:---:|:---:|
-| Data-driven insights | Lightning fast responses | Team-first approach | Enterprise-grade security |
-| Branch visualization | Real-time updates | Conflict-free workflows | SSO & compliance ready |
+
 
 </div>
 

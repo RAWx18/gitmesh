@@ -33,17 +33,41 @@ class SimpleOptimizedRepoService:
     def get_github_token(self) -> Optional[str]:
         """Get GitHub token from KeyManager if available."""
         if not self.user_login:
+            # Fallback to environment variable if no user
+            env_token = os.getenv('GITHUB_TOKEN')
+            if env_token and env_token.strip() and not env_token.startswith('your_github') and len(env_token.strip()) > 10:
+                logger.info("Using GitHub token from environment variable (no user login)")
+                return env_token
             return None
         
         try:
             from config.key_manager import key_manager
+            
+            # Try get_github_token method first
             token = key_manager.get_github_token(self.user_login)
             if token:
                 logger.info(f"Retrieved GitHub token from KeyManager for user: {self.user_login}")
-            return token
+                return token
+            
+            # Try alternative method
+            token = key_manager.get_key(self.user_login, 'github_token')
+            if token:
+                logger.info(f"Retrieved GitHub token from KeyManager (alternative method) for user: {self.user_login}")
+                return token
+            
+            logger.info(f"No GitHub token found in KeyManager for user: {self.user_login}")
+            
         except Exception as e:
             logger.warning(f"Failed to retrieve GitHub token from KeyManager: {e}")
-            return None
+        
+        # Fallback to environment variable
+        env_token = os.getenv('GITHUB_TOKEN')
+        if env_token and env_token.strip() and not env_token.startswith('your_github') and len(env_token.strip()) > 10:
+            logger.info("Using GitHub token from environment variable as fallback")
+            return env_token
+        
+        logger.info("No valid GitHub token available")
+        return None
     
     def get_repository_data(self, repo_url: str, force_refresh: bool = False) -> Optional[Dict[str, Any]]:
         """
@@ -163,6 +187,25 @@ class SimpleOptimizedRepoService:
             if github_token:
                 os.environ["GITHUB_TOKEN"] = github_token
                 logger.info("Using KeyManager GitHub token for gitingest")
+            
+            # CRITICAL: Check repository size before gitingest to prevent Redis memory issues
+            try:
+                from integrations.cosmos.v1.cosmos.repo_fetch import check_repository_size_for_chat
+                
+                size_allowed, size_message, repo_size_kb = check_repository_size_for_chat(
+                    repo_url, github_token, max_size_mb=150
+                )
+                
+                if not size_allowed:
+                    logger.error(f"Repository size check failed for {repo_url}: {size_message}")
+                    return None
+                
+                logger.info(f"Repository size check passed for {repo_url}: {size_message}")
+                
+            except Exception as e:
+                logger.error(f"Repository size check failed for {repo_url}: {e}")
+                # Don't proceed if we can't verify repository size
+                return None
             
             try:
                 from gitingest import ingest

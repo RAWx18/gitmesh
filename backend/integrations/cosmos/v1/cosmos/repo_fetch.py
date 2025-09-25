@@ -3,6 +3,7 @@ import time
 import logging
 import re
 import traceback
+import requests
 from typing import Dict, Any, Optional, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
@@ -74,6 +75,13 @@ class GitHubAPIError(RepoFetchError):
     
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, ErrorCategory.GITHUB_API, details)
+
+
+class RepositorySizeError(RepoFetchError):
+    """Repository size exceeds limits."""
+    
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, ErrorCategory.VALIDATION, details)
 
 def _create_repository_files_and_index(storage_dir: str, repo_name: str, content: str, tree: str) -> None:
     """
@@ -293,6 +301,97 @@ def _get_repo_name_from_url(repo_url: str) -> str:
         raise ValueError(f"Could not determine repository name from URL '{repo_url}': {e}")
 
 
+def check_repository_size_for_chat(repo_url: str, github_token: Optional[str] = None, max_size_mb: int = 150) -> Tuple[bool, str, Optional[int]]:
+    """
+    Check repository size for chat functionality - exposed function for chat API.
+    
+    Args:
+        repo_url: GitHub repository URL
+        github_token: Optional GitHub token for authenticated requests
+        max_size_mb: Maximum allowed repository size in MB
+        
+    Returns:
+        Tuple of (is_allowed, message, size_kb)
+    """
+    return _check_repository_size(repo_url, github_token, max_size_mb)
+
+
+def _check_repository_size(repo_url: str, github_token: Optional[str] = None, max_size_mb: int = 150) -> Tuple[bool, str, Optional[int]]:
+    """
+    Check repository size using GitHub API before starting gitingest.
+    
+    Args:
+        repo_url: GitHub repository URL
+        github_token: Optional GitHub token for authenticated requests
+        max_size_mb: Maximum allowed repository size in MB
+        
+    Returns:
+        Tuple of (is_allowed, message, size_kb)
+        
+    Raises:
+        GitHubAPIError: If API request fails
+    """
+    try:
+        # Extract owner and repo from URL
+        path = urlparse(repo_url).path
+        path_parts = [part for part in path.strip('/').split('/') if part]
+        
+        if len(path_parts) < 2:
+            raise ValueError("Invalid repository URL format")
+        
+        owner = path_parts[0]
+        repo = path_parts[1].replace('.git', '')
+        
+        # GitHub API endpoint
+        api_url = f"https://api.github.com/repos/{owner}/{repo}"
+        
+        # Prepare headers
+        headers = {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Cosmos-Web-Chat/1.0'
+        }
+        
+        if github_token:
+            headers['Authorization'] = f'token {github_token}'
+        
+        logger.info(f"Checking repository size for {owner}/{repo}")
+        
+        # Make API request with timeout
+        response = requests.get(api_url, headers=headers, timeout=10)
+        
+        if response.status_code == 404:
+            return False, f"Repository {owner}/{repo} not found or not accessible", None
+        elif response.status_code == 403:
+            # Rate limit or permission issue
+            if 'rate limit' in response.text.lower():
+                return False, "GitHub API rate limit exceeded. Please try again later or provide a GitHub token.", None
+            else:
+                return False, f"Access denied to repository {owner}/{repo}. Repository may be private.", None
+        elif response.status_code != 200:
+            raise GitHubAPIError(f"GitHub API request failed with status {response.status_code}: {response.text}")
+        
+        repo_data = response.json()
+        size_kb = repo_data.get('size', 0)  # GitHub API returns size in KB
+        size_mb = size_kb / 1024
+        
+        logger.info(f"Repository {owner}/{repo} size: {size_mb:.2f} MB ({size_kb} KB)")
+        
+        if size_mb > max_size_mb:
+            message = f"Repository size ({size_mb:.2f} MB) exceeds the maximum allowed size of {max_size_mb} MB. Large repositories are not supported in your current plan."
+            return False, message, size_kb
+        
+        return True, f"Repository size check passed: {size_mb:.2f} MB", size_kb
+        
+    except requests.exceptions.Timeout:
+        raise GitHubAPIError("GitHub API request timed out")
+    except requests.exceptions.ConnectionError:
+        raise GitHubAPIError("Failed to connect to GitHub API")
+    except requests.exceptions.RequestException as e:
+        raise GitHubAPIError(f"GitHub API request failed: {e}")
+    except Exception as e:
+        raise GitHubAPIError(f"Repository size check failed: {e}")
+
+
 def fetch_and_store_repo(repo_url: str) -> bool:
     """
     Fetches a GitHub repository using gitingest and stores its data in Redis.
@@ -390,6 +489,44 @@ def fetch_and_store_repo(repo_url: str) -> bool:
             print(f"Error: {e}")
             _log_operation_metrics(operation, time.time() - start_time, False, 
                                  {"error": str(e), "repo_url": repo_url})
+            return False
+
+        # 6.5. Check repository size before proceeding with gitingest
+        size_check_start = time.time()
+        try:
+            size_allowed, size_message, repo_size_kb = _check_repository_size(repo_url, github_token)
+            _log_operation_metrics("repository_size_check", time.time() - size_check_start, size_allowed, 
+                                 {"repo_name": repo_name, "size_kb": repo_size_kb})
+            
+            if not size_allowed:
+                error = RepositorySizeError(size_message, {"repo_url": repo_url, "repo_name": repo_name, "size_kb": repo_size_kb})
+                logger.error(f"Repository size check failed: {size_message}")
+                print(f"Error: {size_message}")
+                _log_operation_metrics(operation, time.time() - start_time, False, 
+                                     {"error": "repository_too_large", "repo_name": repo_name, "size_kb": repo_size_kb})
+                return False
+            
+            logger.info(f"Repository size check passed: {size_message}")
+            print(f"Repository size check: {size_message}")
+            
+        except GitHubAPIError as e:
+            _log_operation_metrics("repository_size_check", time.time() - size_check_start, False, 
+                                 {"error": str(e)})
+            logger.error(f"Repository size check failed (API error): {e}")
+            print(f"Error: Could not verify repository size: {e}")
+            # Do not continue if we can't verify repository size due to API limits
+            # This prevents processing potentially large repositories
+            _log_operation_metrics(operation, time.time() - start_time, False, 
+                                 {"error": "size_check_api_failure", "repo_name": repo_name})
+            return False
+        except Exception as e:
+            _log_operation_metrics("repository_size_check", time.time() - size_check_start, False, 
+                                 {"error": str(e)})
+            logger.error(f"Repository size check failed (unexpected error): {e}")
+            print(f"Error: Repository size check failed: {e}")
+            # Do not continue if we can't verify repository size
+            _log_operation_metrics(operation, time.time() - start_time, False, 
+                                 {"error": "size_check_failure", "repo_name": repo_name})
             return False
 
         # 7. Check if repository already exists in Redis with error recovery

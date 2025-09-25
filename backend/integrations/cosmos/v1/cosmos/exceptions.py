@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from cosmos.dump import dump  # noqa: F401
+# Removed dump import - not needed for web
 
 
 @dataclass

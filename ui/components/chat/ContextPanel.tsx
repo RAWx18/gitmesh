@@ -5,6 +5,7 @@ import { useRepository } from '@/contexts/RepositoryContext';
 import { useBranch } from '@/contexts/BranchContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRepositoryContext } from '@/hooks/useRepositoryContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,6 +111,16 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ className }) => {
     setLoadingState,
     setError 
   } = useChat();
+  
+  // Use repository context detection
+  const {
+    repositoryContext,
+    suggestedFiles,
+    isLoading: isContextLoading,
+    error: contextError,
+    detectContext,
+    getSuggestedFiles
+  } = useRepositoryContext();
 
   // Local state
   const [isAddFileDialogOpen, setIsAddFileDialogOpen] = useState(false);
@@ -414,6 +425,41 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ className }) => {
     }
   };
 
+  // Add suggested file to context
+  const addSuggestedFileToContext = async (suggestedFile: any) => {
+    if (!repository || !selectedBranch || !githubApi) {
+      toast.error('Repository information not available');
+      return;
+    }
+
+    try {
+      setLoadingState('files', `adding-${suggestedFile.path}`, true);
+      
+      // Fetch file content
+      const fileContent = await githubApi.getFileContent(
+        repository.owner.login,
+        repository.name,
+        suggestedFile.path,
+        selectedBranch
+      );
+      
+      // Add to context
+      addSelectedFile({
+        branch: selectedBranch,
+        path: suggestedFile.path,
+        content: fileContent,
+        contentHash: btoa(fileContent).slice(0, 8) // Simple hash
+      });
+      
+      toast.success(`Added ${suggestedFile.name} to context`);
+    } catch (error) {
+      console.error(`Failed to load suggested file ${suggestedFile.path}:`, error);
+      toast.error(`Failed to load ${suggestedFile.name}`);
+    } finally {
+      setLoadingState('files', `adding-${suggestedFile.path}`, false);
+    }
+  };
+
   // Remove file from context
   const removeFromContext = (file: ContextFile) => {
     removeSelectedFile(file.branch, file.path);
@@ -437,6 +483,21 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ className }) => {
 
   // Calculate total context size
   const totalContextSize = contextFiles.reduce((sum, file) => sum + file.size, 0);
+
+  // Format relative time
+  const formatRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
   // Filter files based on search query and filter settings
   const filterFiles = (items: FileSystemItem[], query: string): FileSystemItem[] => {
@@ -748,6 +809,93 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ className }) => {
         )}
       </div>
 
+      {/* Suggested Files Section */}
+      {suggestedFiles.length > 0 && (
+        <div className="border-b border-border">
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Suggested Files</h4>
+              <Badge variant="outline" className="text-xs">
+                {suggestedFiles.length}
+              </Badge>
+            </div>
+            <div className="space-y-1">
+              {suggestedFiles.slice(0, 5).map((file) => {
+                const isInContext = contextFiles.some(f => f.path === file.path);
+                
+                return (
+                  <div
+                    key={file.path}
+                    className={cn(
+                      "flex items-center justify-between p-2 rounded border transition-colors",
+                      isInContext 
+                        ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800" 
+                        : "bg-muted/30 border-border hover:border-primary/50 cursor-pointer"
+                    )}
+                    onClick={() => !isInContext && addSuggestedFileToContext(file)}
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {getFileIcon(file.path)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate">
+                            {file.name}
+                          </span>
+                          {file.language && (
+                            <Badge variant="outline" className="text-xs px-1 py-0">
+                              {file.language}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {file.path}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      {file.size_bytes && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(file.size_bytes)}
+                        </span>
+                      )}
+                      {isInContext ? (
+                        <Check size={16} className="text-green-500" />
+                      ) : (
+                        file.show_plus_icon && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-primary/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addSuggestedFileToContext(file);
+                            }}
+                          >
+                            <Plus size={14} className="text-primary" />
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {suggestedFiles.length > 5 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-2 text-xs"
+                onClick={() => setIsAddFileDialogOpen(true)}
+              >
+                View all {suggestedFiles.length} suggested files
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Context Files List */}
       <ScrollArea className="flex-1 p-2">
         {contextFiles.length === 0 ? (
@@ -759,6 +907,11 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ className }) => {
             <p className="text-xs text-muted-foreground">
               Add files to provide context for your AI conversations
             </p>
+            {suggestedFiles.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Try adding some suggested files above
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-2">

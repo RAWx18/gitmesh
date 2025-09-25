@@ -34,10 +34,11 @@ from rich.style import Style as RichStyle
 from rich.text import Text
 
 from cosmos.mdstream import MarkdownStream
+from cosmos.web_module_loader import safe_import
+from cosmos.utils import is_image_file
 
-from .dump import dump  # noqa: F401
-from .editor import pipe_editor
-from .utils import is_image_file
+# Safe imports for CLI-specific modules (will be mocked)
+pipe_editor = safe_import('cosmos.editor', fallback=lambda *args, **kwargs: None)
 
 # Constants
 NOTIFICATION_MESSAGE = "Cosmos is waiting for your input"
