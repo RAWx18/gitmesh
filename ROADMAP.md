@@ -15,12 +15,12 @@ Welcome to the GitMesh roadmap! Below you'll find a detailed list of both curren
 - [x] **GitHub Authentication**  
   Secure single sign-on with ease and security.
 
+- [x] **Secure Vault**  
+  Secure PAT token of user using Hashicorp Vault OSS.
+
 ***
 
 ## Planned Features
-
-- [ ] **Secure Vault**  
-  Secure PAT token of user using Hashicorp Vault OSS.
 
 - [ ] **SSO Authentication**  
   Secure single sign-on so teams and organizations can collaborate with ease and security.
@@ -29,7 +29,10 @@ Welcome to the GitMesh roadmap! Below you'll find a detailed list of both curren
   Auto-updates changelog per commit, detects root-cause commits, validates trending issues, and escalates real bugs to maintainers.
 
 - [ ] **Contribution Heatmaps**  
-  Visualizes when and where contributors are most active, enabling better planning and resource management.
+  Visualizes when and where
+  
+- [ ] **Secure Vault**  
+  Secure PAT token of user using Hashicorp Vault OSS. contributors are most active, enabling better planning and resource management.
 
 - [ ] **Velocity Tracking**  
   Measures contributor and project velocity, helping maintainers spot bottlenecks and track progress toward milestones.

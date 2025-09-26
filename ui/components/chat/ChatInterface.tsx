@@ -413,7 +413,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
       )}
     >
       <div className={cn(
-        "flex gap-3 max-w-[80%]",
+        "flex gap-3 max-w-[80%] min-w-0",
         isUser && "flex-row-reverse"
       )}>
         {/* Avatar */}
@@ -428,7 +428,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
 
         {/* Message Content */}
         <div className={cn(
-          "rounded-lg p-4 relative group",
+          "rounded-lg p-4 relative group min-w-0 break-words overflow-hidden",
           isUser
             ? "bg-primary text-primary-foreground"
             : "bg-muted"
@@ -476,21 +476,21 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
           </div>
 
           {/* Message Content */}
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden chat-message-content">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
               components={{
-                h1: ({ children }) => <h1 className="text-xl font-bold mb-2">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-base font-medium mb-1">{children}</h3>,
-                p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+                h1: ({ children }) => <h1 className="text-xl font-bold mb-2 break-words">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 break-words">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-base font-medium mb-1 break-words">{children}</h3>,
+                p: ({ children }) => <p className="mb-2 leading-relaxed break-words">{children}</p>,
                 ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
                 ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
                 code: ({ children, className }) => {
                   const isInline = !className;
                   return isInline ? (
-                    <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono">
+                    <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono break-all">
                       {children}
                     </code>
                   ) : (
@@ -498,7 +498,7 @@ const ChatMessageComponent: React.FC<ChatMessageComponentProps> = ({
                   );
                 },
                 pre: ({ children }) => (
-                  <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-sm">
+                  <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-sm max-w-full whitespace-pre-wrap">
                     {children}
                   </pre>
                 ),

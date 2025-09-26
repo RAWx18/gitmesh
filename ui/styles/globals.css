@@ -189,6 +189,37 @@
   overflow: hidden;
 }
 
+/* Word breaking utilities for chat messages */
+.word-break-all {
+  word-break: break-all;
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+/* Ensure chat messages don't overflow horizontally */
+.chat-message-content {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+/* Special handling for code blocks in chat */
+.chat-message-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.chat-message-content code {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
 /* Syntax highlighting for code blocks */
 .hljs {
   background: hsl(var(--muted)) !important;

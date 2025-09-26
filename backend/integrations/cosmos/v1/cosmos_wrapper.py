@@ -24,12 +24,23 @@ if cosmos_dir.exists():
 
 # Safe imports for Cosmos with fallback handling  
 try:
-    # Initialize web module loader first to mock CLI-specific modules
-    from cosmos.web_module_loader import WebModuleLoader
-    web_loader = WebModuleLoader()
-    web_loader.setup_web_environment()
+    # Only mock audio modules that aren't needed for web interface
     
-    # Import core cosmos components after web environment is set up
+    # Mock pydub and its submodules comprehensively
+    mock_pydub = MagicMock()
+    mock_pydub.AudioSegment = MagicMock()
+    mock_pydub.exceptions = MagicMock()
+    mock_pydub.playback = MagicMock()
+    
+    # Patch the audio modules before importing cosmos
+    sys.modules['audioop'] = MagicMock()
+    sys.modules['pyaudioop'] = MagicMock()
+    sys.modules['pydub'] = mock_pydub
+    sys.modules['pydub.AudioSegment'] = mock_pydub.AudioSegment
+    sys.modules['pydub.exceptions'] = mock_pydub.exceptions
+    sys.modules['pydub.playback'] = mock_pydub.playbook
+    
+    # Import core cosmos components first (skip main.py for now)
     from cosmos.io import InputOutput
     from cosmos.models import Model, MODEL_ALIASES
     from cosmos import models
@@ -199,7 +210,7 @@ class GitMeshCosmosWrapper:
         #          content here...
         file_sections = re.split(r'={40,}', content)  # Allow more flexible separator length
         
-        # logger.info(f"File parsing: found {len(file_sections)} sections after splitting")
+        logger.info(f"File parsing: found {len(file_sections)} sections after splitting")
         
         current_file_path = None
         

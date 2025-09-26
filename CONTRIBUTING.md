@@ -10,7 +10,6 @@ GitMesh aims to transform how developers collaborate by integrating AI-powered i
 
 ### Essential Requirements
 
-
 **Join the weekly meetings on Wednesday at 1 pm UTC time zone.**
 
 These meetings are essential for:

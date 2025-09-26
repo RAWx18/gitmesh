@@ -336,7 +336,7 @@ export const RealTimeChatInterface: React.FC<RealTimeChatInterfaceProps> = ({
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                className={`max-w-[80%] min-w-0 rounded-lg px-3 py-2 overflow-hidden ${
                   message.role === 'user'
                     ? 'bg-blue-500 text-white'
                     : message.isError
@@ -344,7 +344,7 @@ export const RealTimeChatInterface: React.FC<RealTimeChatInterfaceProps> = ({
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                <div className="whitespace-pre-wrap break-words">
+                <div className="whitespace-pre-wrap break-words overflow-wrap-anywhere chat-message-content">
                   {message.content}
                   {message.isStreaming && (
                     <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
@@ -368,8 +368,8 @@ export const RealTimeChatInterface: React.FC<RealTimeChatInterfaceProps> = ({
           {/* Streaming response */}
           {streamingResponse && (
             <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-lg px-3 py-2 bg-gray-100 text-gray-800">
-                <div className="whitespace-pre-wrap break-words">
+              <div className="max-w-[80%] min-w-0 rounded-lg px-3 py-2 bg-gray-100 text-gray-800 overflow-hidden">
+                <div className="whitespace-pre-wrap break-words overflow-wrap-anywhere chat-message-content">
                   {streamingResponse}
                   <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
                 </div>

@@ -217,9 +217,8 @@ def run_install(cmd):
     must be done manually outside of the application.
     """
     print()
-    print("SECURITY: Package installation disabled for security reasons")
-    print("Command that was blocked:", printable_shell_command(cmd))
-    print("Please install packages manually outside of this application")
+    print("Package installation is not available in this environment")
+    print("Command:", printable_shell_command(cmd))
     
     # SECURITY: All subprocess installation code commented out - no shell execution allowed
     # # First ensure pip is available
@@ -265,7 +264,7 @@ def run_install(cmd):
 
     # print("\nInstallation failed.\n")
 
-    return False, "SECURITY: Package installation disabled for security reasons"
+    return False, "Package installation is not available in this environment"
 
 
 def find_common_root(abs_fnames):

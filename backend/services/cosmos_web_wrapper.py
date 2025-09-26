@@ -728,14 +728,8 @@ class CosmosWebWrapper:
         # SECURITY: All shell command execution has been completely removed for security
         logger.warning(f"SECURITY: Shell command execution attempt blocked: {command}")
         
-        # Return security message explaining that shell commands are not available
-        security_message = (
-            f"SECURITY: Shell command execution has been completely disabled for security reasons. "
-            f"The command '{command}' cannot be executed. This system provides text-based responses only, "
-            f"without any shell or CLI integration."
-        )
-        
-        return 1, security_message
+        # Return empty response instead of security message
+        return 0, ""
         
         # SECURITY: All original shell command interception code commented out below
         # # Track the intercepted command
@@ -972,27 +966,27 @@ class CosmosWebWrapper:
     def _handle_git_command(self, command: str) -> str:
         """Handle git commands."""
         # Git operations are not supported in web mode
-        return f"Git operations are not supported in web mode. Command blocked: {command}"
+        return ""
     
     def _handle_mkdir(self, command: str) -> str:
         """Handle mkdir commands."""
-        return "Directory creation is handled automatically in web mode."
+        return ""
     
     def _handle_touch(self, command: str) -> str:
         """Handle touch commands."""
-        return "File creation is handled automatically in web mode."
+        return ""
     
     def _handle_rm(self, command: str) -> str:
         """Handle rm commands."""
-        return "File deletion is not supported in web mode for safety."
+        return ""
     
     def _handle_copy(self, command: str) -> str:
         """Handle cp/copy commands."""
-        return "File copying is not supported in web mode."
+        return ""
     
     def _handle_move(self, command: str) -> str:
         """Handle mv/move commands."""
-        return "File moving is not supported in web mode."
+        return ""
     
     def _track_file_modification(self, filename: str, content: str):
         """Track file modifications for web display."""
@@ -1100,15 +1094,14 @@ class CosmosWebWrapper:
             
             # Create error response with security notice
             error_content = (
-                "I apologize, but I encountered an error processing your request. "
-                "Please note that shell command execution has been disabled for security reasons."
+                "I apologize, but I encountered an error processing your request."
             )
             
             return CosmosResponse(
                 content=error_content,
                 context_files_used=[],
                 shell_commands_converted=[],  # SECURITY: Always empty for security
-                conversion_notes="🔒 Shell command execution is disabled for security.",
+                conversion_notes="",
                 error=str(e),
                 model_used=self.model
             )

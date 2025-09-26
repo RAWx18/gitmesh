@@ -239,7 +239,7 @@ class ShellCommandBlockedError(CosmosError):
         actions = [
             SuggestedAction(
                 action_type="check_settings",
-                description="Shell commands are disabled in the web interface for security reasons."
+                description=""
             )
         ]
         

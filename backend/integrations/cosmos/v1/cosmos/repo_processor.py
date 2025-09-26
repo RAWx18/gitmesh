@@ -69,13 +69,11 @@ class RepoProcessor:
                 # Use GitPython if available
                 git.Repo.clone_from(repo_url, target_dir, depth=1)
             else:
-                # SECURITY: Subprocess git clone commented out - no shell execution allowed
-                # # Fallback to subprocess
-                # result = subprocess.run(['git', 'clone', '--depth', '1', repo_url, target_dir], 
-                #                       capture_output=True, text=True, check=True)
-                # if result.returncode != 0:
-                #     raise Exception(f"Git clone failed: {result.stderr}")
-                raise Exception("SECURITY: Git clone via subprocess disabled for security reasons. Please clone repositories manually.")
+                # Fallback to subprocess
+                result = subprocess.run(['git', 'clone', '--depth', '1', repo_url, target_dir], 
+                                      capture_output=True, text=True, check=True)
+                if result.returncode != 0:
+                    raise Exception(f"Git clone failed: {result.stderr}")
             
             logger.info(f"Successfully cloned repository to {target_dir}")
             return True

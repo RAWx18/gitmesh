@@ -177,11 +177,11 @@ class ResponseProcessor:
             ProcessedResponse with web-safe formatting
         """
         try:
-            logger.debug("Processing response for web display")
+            logger.debug("Response processing simplified - returning original content")
             
-            # Initialize processed response
+            # Return original content without any processing
             processed = ProcessedResponse(
-                content="",
+                content=content,
                 response_type=ResponseType.TEXT,
                 code_blocks=[],
                 diff_blocks=[],
@@ -193,47 +193,11 @@ class ResponseProcessor:
                 raw_content=content
             )
             
-            # Detect primary response type
-            processed.response_type = self._detect_response_type(content)
+            # Set minimal metadata
+            processed.metadata['shell_commands_filtered'] = 0
+            processed.metadata['security_alternatives_provided'] = 0
             
-            # Process different content types
-            if processed.response_type == ResponseType.CODE:
-                processed = self._process_code_response(content, processed)
-            elif processed.response_type == ResponseType.DIFF:
-                processed = self._process_diff_response(content, processed)
-            elif processed.response_type == ResponseType.SHELL_OUTPUT:
-                processed = self._process_shell_output(content, processed)
-            elif processed.response_type == ResponseType.FILE_LIST:
-                processed = self._process_file_list(content, processed)
-            elif processed.response_type == ResponseType.REPO_MAP:
-                processed = self._process_repo_map(content, processed)
-            else:
-                processed = self._process_text_response(content, processed)
-            
-            # Extract and process code blocks
-            processed.code_blocks.extend(self._extract_code_blocks(content))
-            
-            # Convert interactive prompts
-            processed.interactive_elements.extend(self._extract_interactive_elements(content))
-            
-            # SECURITY: Filter shell commands from response content
-            filter_result = shell_command_filter.filter_response(processed.content)
-            processed.content = filter_result.filtered_content
-            
-            # Add shell command filtering metadata
-            if filter_result.commands_filtered:
-                processed.metadata['shell_commands_filtered'] = len(filter_result.commands_filtered)
-                processed.metadata['security_alternatives_provided'] = filter_result.alternatives_suggested
-                logger.info(f"Filtered {len(filter_result.commands_filtered)} shell commands from response")
-            
-            # Process shell command conversions (legacy)
-            if shell_commands_converted:
-                processed = self._process_shell_conversions(processed, shell_commands_converted)
-            
-            # Clean and format final content
-            processed.content = self._format_final_content(processed)
-            
-            logger.debug(f"Response processed successfully: {processed.response_type}")
+            logger.debug("Response returned without processing")
             return processed
             
         except Exception as e:
