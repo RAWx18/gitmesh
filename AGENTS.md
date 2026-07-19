@@ -1,146 +1,77 @@
-# AGENTS.md
+# GitMesh — Instructions for Coding Agents
 
-Guidance for human and AI contributors working in this repository.
+## Status: repository pivot in progress
 
-## 1. Purpose
+GitMesh is pivoting from a multi-agent orchestration runtime to the **Agent
+Workspace Compiler** — a single CLI + GitHub Action that audits (`doctor`),
+compiles (`apply`), drift-checks (`check`), and enforces (`policy`)
+coding-agent configuration from the repo. No server, no database, no daemon
+in the new product.
 
-GitMesh Agents is a control plane for AI-agent projects.
-The current implementation target is V1 and is defined in `doc/v1-spec.md`.
+**Before any work, read `docs/pivot.md` (the canonical plan) and
+`docs/research_results.md` (the evidence).** If anything in this repository —
+including this file — contradicts `docs/pivot.md`, the pivot doc wins.
 
-## 2. Read This First
+## How to work
 
-Before making changes, read in this order:
+- Implement the task backlog in `docs/pivot.md` §12 **strictly in order**,
+  starting from the first unfinished task. One task = one branch/PR.
+- Meet the task's acceptance criteria and add its tests before moving on.
+  Never batch tasks, never skip ahead, never start a task the previous one
+  hasn't unblocked.
+- If the plan is ambiguous, or reality contradicts it (an agent vendor
+  changed a config format since 2026-07-19), stop and ask the maintainer,
+  citing the pivot section number. Never improvise silently on plan-level
+  decisions.
 
-1. `doc/GOAL.md`
-2. `doc/vision.md`
-3. `doc/v1-spec.md`
-4. `doc/DEVELOPING.md`
-5. `doc/DATABASE.md`
+## Repository map
 
-`doc/architecture.md` is long-horizon product context.
-`doc/v1-spec.md` is the concrete V1 build contract.
+| Area | Status | Notes |
+|---|---|---|
+| `cli/` | ACTIVE | becomes the `gitmesh` CLI (`doctor`, `init`, `migrate`, `apply`, `check`, `policy`); legacy commands move under `gitmesh legacy` (task T0.3) |
+| `lib/workspace-core/` | ACTIVE (new) | IR, normalizer, GM risk rules, lockfile, marker/merge engine |
+| `lib/adapters/` | ACTIVE (new) | per-agent adapters: detect / import / plan / emit + golden fixtures |
+| existing `lib/` code (OPA policy compiler, MCP/ACP parsers, Ed25519 attestation, forge clients) | REUSE | repurpose per `docs/pivot.md` §9.1 — do not rewrite wholesale, do not delete |
+| `server/`, `ui/`, `docker/`, `playbooks/`, `agents/`, heartbeat / Postgres / webhook code | FROZEN | do not modify, refactor, "clean up", or delete anything here |
+| `doc/`, `docs/` | docs | `docs/pivot.md` is canonical; server-era docs (`SETUP.md`, `doc/DEVELOPING.md`, docker-compose files) are legacy — do not follow them for pivot work |
 
-## 3. Repo Map
+## Hard rules
 
-- `server/`: Express REST API and orchestration services
-- `ui/`: React + Vite maintainer UI
-  - `ui/src/views/`: Page-level view components, grouped by domain
-  - `ui/src/features/`: Complex domain-specific feature components
-  - `ui/src/components/`: Shared primitive UI components
-  - `ui/src/adapters/`: Adapter UI modules (gateway, claude, codex, etc.)
-- `lib/data/`: Drizzle schema, migrations, DB clients
-- `lib/core/`: shared types, constants, validators, API path constants
-- `doc/`: operational and product docs
+1. Nothing in `lib/workspace-core` or `lib/adapters` may import from
+   `server/**`, `drizzle*`, or `pg*`. Task T0.4 turns this into a lint rule —
+   honor it even before that lands.
+2. No servers, databases, network calls, or telemetry in any new code path.
+   `doctor` / `apply` / `check` are pure file operations. `doctor` never
+   writes files; tests enforce no-write and no-network with spies.
+3. Determinism: same inputs → byte-identical outputs. No timestamps,
+   wallclock values, or nondeterministic ordering in emitted files.
+4. Every detector and emitter ships golden fixtures
+   (`fixtures/<adapter>/<case>/{input-repo/, expected/}`), including at least
+   one negative case.
+5. Secret values must never appear in any output mode (TTY, `--json`,
+   `--md`) — findings redact values, always.
+6. Pivot work needs no database and no dev server. Never run `pnpm dev`,
+   `setup.sh`, `docker-compose`, or start Postgres for new-code tasks.
 
-## 4. Dev Setup (Auto DB)
+## Dev loop
 
-Use embedded PGlite in dev by leaving `DATABASE_URL` unset.
+- `pnpm install` — bootstrap the workspace (`--no-frozen-lockfile` on first
+  clone; CI uses the frozen lockfile).
+- `pnpm test` — Vitest suite. (Verify the exact script names in the root
+  `package.json` before assuming others exist.)
+- Releases go through Changesets: include one changeset in every PR.
 
-```sh
-pnpm install
-pnpm dev
-```
+## Conventions
 
-This starts:
+- **Every commit must be DCO signed off: `git commit -s`.** This is a Linux
+  Foundation requirement for this repo; unsigned commits will be rejected.
+- Branch naming: `type/branch-name` (e.g. `feat/doctor-claude-detector`).
+- Keep PRs single-task and small; the backlog is sized so each task is
+  0.5–2 days.
 
-- API: `http://localhost:3100`
-- UI: `http://localhost:3100` (served by API server in dev middleware mode)
+## Scope guardrails (from `docs/pivot.md` §8.6)
 
-Quick checks:
-
-```sh
-curl http://localhost:3100/api/health
-curl http://localhost:3100/api/projects
-```
-
-Reset local dev DB:
-
-```sh
-rm -rf data/pglite
-pnpm dev
-```
-
-## 5. Core Engineering Rules
-
-1. Keep changes project-scoped.
-Every domain entity should be scoped to a project and project boundaries must be enforced in routes/services.
-
-2. Keep contracts synchronized.
-If you change schema/API behavior, update all impacted layers:
-- `lib/data` schema and exports
-- `lib/core` types/constants/validators
-- `server` routes/services
-- `ui` API clients and pages
-
-3. Preserve control-plane invariants.
-- Single-assignee task model
-- Atomic issue checkout semantics
-- Approval gates for governed actions
-- Budget hard-stop auto-pause behavior
-- Activity logging for mutating actions
-
-4. Do not replace strategic docs wholesale unless asked.
-Prefer additive updates. Keep `doc/architecture.md` and `doc/v1-spec.md` aligned.
-
-## 6. Database Change Workflow
-
-When changing data model:
-
-1. Edit `lib/data/src/schema/*.ts`
-2. Ensure new tables are exported from `lib/data/src/schema/index.ts`
-3. Generate migration:
-
-```sh
-pnpm db:generate
-```
-
-4. Validate compile:
-
-```sh
-pnpm -r typecheck
-```
-
-Notes:
-- `lib/data/drizzle.config.ts` reads compiled schema from `dist/schema/*.js`
-- `pnpm db:generate` compiles `lib/data` first
-
-## 7. Verification Before Hand-off
-
-Run this full check before claiming done:
-
-```sh
-pnpm -r typecheck
-pnpm test:run
-pnpm build
-```
-
-If anything cannot be run, explicitly report what was not run and why.
-
-## 8. API and Auth Expectations
-
-- Base path: `/api`
-- Maintainer access is treated as full-control operator context
-- Agent access uses bearer API keys (`agent_api_keys`), hashed at rest
-- Agent keys must not access other projects
-
-When adding endpoints:
-
-- apply project access checks
-- enforce actor permissions (operator vs agent)
-- write activity log entries for mutations
-- return consistent HTTP errors (`400/401/403/404/409/422/500`)
-
-## 9. UI Expectations
-
-- Keep routes and nav aligned with available API surface
-- Use project selection context for project-scoped pages
-- Surface failures clearly; do not silently ignore API errors
-
-## 10. Definition of Done
-
-A change is done when all are true:
-
-1. Behavior matches `doc/v1-spec.md`
-2. Typecheck, tests, and build pass
-3. Contracts are synced across db/shared/server/ui
-4. Docs updated when behavior or commands change
+The product is never: a server, an agent runtime or wrapper, an MCP/model
+gateway, a marketplace, a content-security scanner, or a telemetry system.
+If a task seems to require one of these, the task is being misread — stop
+and ask.
