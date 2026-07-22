@@ -34,6 +34,9 @@ jobs:
       - name: Check forbidden tokens
         run: pnpm check:tokens
 
+      - name: Lint import boundaries
+        run: pnpm lint
+
       - name: Type check
         run: pnpm -r typecheck
 
