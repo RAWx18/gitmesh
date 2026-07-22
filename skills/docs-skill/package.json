@@ -1,6 +1,6 @@
 {
   "name": "@gitmesh/docs-skill",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "GitMesh Docs Skill - Documentation detection and generation",
   "type": "module",
   "license": "Apache-2.0",

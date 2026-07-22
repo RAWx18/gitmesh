@@ -1,6 +1,6 @@
 {
   "name": "@gitmesh/community-skill",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "GitMesh Community Skill - Community engagement and discussion monitoring",
   "type": "module",
   "license": "Apache-2.0",

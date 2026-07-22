@@ -1,6 +1,6 @@
 {
   "name": "@gitmesh/release-skill",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "GitMesh Release Skill - Release management and automation",
   "type": "module",
   "license": "Apache-2.0",

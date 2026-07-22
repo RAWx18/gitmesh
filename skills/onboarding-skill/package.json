@@ -1,6 +1,6 @@
 {
   "name": "@gitmesh/onboarding-skill",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "GitMesh Onboarding Skill - Contributor onboarding automation",
   "type": "module",
   "license": "Apache-2.0",
