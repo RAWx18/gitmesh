@@ -7,8 +7,11 @@
 #
 # Dist-tags: `next` (the default, and the package.json publishConfig default)
 # until the doctor launch (E2); switch to `latest` per release afterwards.
-# Provenance: publishConfig.provenance + the id-token permission below give
-# npm provenance attestations; requires the NPM_TOKEN secret (automation
+# Provenance: NPM_CONFIG_PROVENANCE on the publish step + the id-token
+# permission below give npm provenance attestations. Provenance lives here,
+# not in publishConfig — it only works inside a supported CI, and setting it
+# in the manifest breaks deliberate manual publishes (e.g. the first
+# name-claiming release). Requires the NPM_TOKEN secret (granular access
 # token for an npm account that owns the `gitmesh-cli` name).
 name: Release gitmesh-cli
 
@@ -63,6 +66,7 @@ jobs:
         run: pnpm --filter gitmesh-cli publish --tag "${{ inputs.tag }}" --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
 
       - name: Verify npx installability
         if: ${{ !inputs.dry-run }}

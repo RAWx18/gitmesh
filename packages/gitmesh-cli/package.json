@@ -4,7 +4,7 @@
   "description": "GitMesh — audit and govern every coding agent from your repo. One source of truth for instructions, tools, and guardrails: doctored, compiled to each agent's native config, drift-checked in CI.",
   "type": "module",
   "bin": {
-    "gitmesh": "./dist/gitmesh.js"
+    "gitmesh": "dist/gitmesh.js"
   },
   "keywords": [
     "gitmesh",
@@ -22,7 +22,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LF-Decentralized-Trust-labs/gitmesh.git",
+    "url": "git+https://github.com/LF-Decentralized-Trust-labs/gitmesh.git",
     "directory": "packages/gitmesh-cli"
   },
   "homepage": "https://github.com/LF-Decentralized-Trust-labs/gitmesh",
@@ -34,7 +34,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true,
     "tag": "next"
   },
   "scripts": {
