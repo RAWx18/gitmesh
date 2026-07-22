@@ -1,0 +1,77 @@
+# Publishes the `gitmesh-cli` npm package (pivot T0.6).
+#
+# Versioning stays with Changesets: PRs add changesets, `pnpm version-packages`
+# bumps the fixed group, and this workflow publishes whatever version is on
+# the ref it runs against. Manual dispatch keeps publishing deliberate while
+# the CLI is pre-launch.
+#
+# Dist-tags: `next` (the default, and the package.json publishConfig default)
+# until the doctor launch (E2); switch to `latest` per release afterwards.
+# Provenance: NPM_CONFIG_PROVENANCE on the publish step + the id-token
+# permission below give npm provenance attestations. Provenance lives here,
+# not in publishConfig — it only works inside a supported CI, and setting it
+# in the manifest breaks deliberate manual publishes (e.g. the first
+# name-claiming release). Requires the NPM_TOKEN secret (granular access
+# token for an npm account that owns the `gitmesh-cli` name).
+name: Release gitmesh-cli
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: npm dist-tag to publish under
+        type: choice
+        options:
+          - next
+          - latest
+        default: next
+      dry-run:
+        description: Run everything except the actual npm publish
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    name: Smoke test & publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clean-install smoke test
+        run: ./scripts/smoke-gitmesh-cli.sh
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry-run }}
+        run: pnpm --filter gitmesh-cli publish --tag "${{ inputs.tag }}" --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+
+      - name: Verify npx installability
+        if: ${{ !inputs.dry-run }}
+        run: |
+          sleep 30 # registry propagation
+          VERSION="$(node -p "require('./packages/gitmesh-cli/package.json').version")"
+          cd "$(mktemp -d)"
+          npx --yes "gitmesh-cli@${VERSION}" --version | grep -Fx "$VERSION"

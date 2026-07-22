@@ -1,10 +1,25 @@
+import { createRequire } from "node:module";
 import { Command } from "commander";
-import { registerLegacyCommands } from "./legacy.js";
 import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.js";
 
 export type CliMode = "gitmesh" | "gitmesh-agents";
 
-const CLI_VERSION = "0.2.7";
+/**
+ * Attaches the legacy GitMesh Agents command surface onto a parent command.
+ * Injected by entry points instead of imported here so the published
+ * `gitmesh-cli` bundle (entry src/gitmesh.ts) never reaches the legacy
+ * command tree — and therefore ships no server, Drizzle, or Postgres code
+ * (pivot §10.8, ADR-002). The monorepo dev entry (src/gitmesh-dev.ts) and
+ * the gitmesh-agents entry (src/index.ts) inject the real registrar.
+ */
+export type LegacyRegistrar = (parent: Command) => void;
+
+// Resolved at runtime relative to the executing entry (src/ in dev, dist/ in
+// a published package), so `--version` always reports the manifest of the
+// package actually installed — changeset bumps never leave it stale.
+const CLI_VERSION: string = (
+  createRequire(import.meta.url)("../package.json") as { version: string }
+).version;
 
 const STUB_COMMANDS: ReadonlyArray<[name: string, description: string]> = [
   ["doctor", "Audit agent configuration across coding agents"],
@@ -25,6 +40,7 @@ const STUB_COMMANDS: ReadonlyArray<[name: string, description: string]> = [
 export function createProgram(
   mode: CliMode,
   configure?: (program: Command) => void,
+  registerLegacy?: LegacyRegistrar,
 ): Command {
   const program = new Command();
   configure?.(program);
@@ -39,11 +55,14 @@ export function createProgram(
   });
 
   if (mode === "gitmesh-agents") {
+    if (!registerLegacy) {
+      throw new Error("gitmesh-agents mode requires a legacy registrar");
+    }
     program
       .name("gitmesh-agents")
       .description("GitMesh Agents CLI — setup, diagnose, and configure your instance")
       .version(CLI_VERSION);
-    registerLegacyCommands(program);
+    registerLegacy(program);
     return program;
   }
 
@@ -61,16 +80,31 @@ export function createProgram(
       });
   }
 
-  const legacy = program
-    .command("legacy")
-    .description("Legacy GitMesh Agents server & orchestration commands (maintenance mode)");
-  registerLegacyCommands(legacy);
+  if (registerLegacy) {
+    const legacy = program
+      .command("legacy")
+      .description("Legacy GitMesh Agents server & orchestration commands (maintenance mode)");
+    registerLegacy(legacy);
+  } else {
+    program
+      .command("legacy")
+      .description("Legacy GitMesh Agents server & orchestration commands (not included in this package)")
+      .argument("[args...]")
+      .allowUnknownOption()
+      .action((_args: unknown, _opts: unknown, cmd: Command) => {
+        cmd.error(
+          "gitmesh legacy: the legacy GitMesh Agents commands are not included in the gitmesh-cli package.\n" +
+            "Run them from a GitMesh repository checkout (pnpm gitmesh-agents ...) or install the gitmesh-agents package.",
+          { exitCode: 1 },
+        );
+      });
+  }
 
   return program;
 }
 
-export function runCli(mode: CliMode): void {
-  createProgram(mode)
+export function runCli(mode: CliMode, registerLegacy?: LegacyRegistrar): void {
+  createProgram(mode, undefined, registerLegacy)
     .parseAsync()
     .catch((err) => {
       console.error(err instanceof Error ? err.message : String(err));

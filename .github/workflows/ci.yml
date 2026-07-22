@@ -34,6 +34,9 @@ jobs:
       - name: Check forbidden tokens
         run: pnpm check:tokens
 
+      - name: Lint import boundaries
+        run: pnpm lint
+
       - name: Type check
         run: pnpm -r typecheck
 
@@ -42,3 +45,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: gitmesh-cli clean-install smoke test
+        run: ./scripts/smoke-gitmesh-cli.sh

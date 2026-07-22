@@ -24,12 +24,13 @@
     "claude:proxy:start": "node scripts/claude-anthropic-proxy.mjs",
     "claude:official": "./scripts/claude-mode-official.sh",
     "claude:proxy": "./scripts/claude-mode-proxy.sh",
-    "gitmesh": "node cli/node_modules/tsx/dist/cli.mjs cli/src/gitmesh.ts",
+    "gitmesh": "node cli/node_modules/tsx/dist/cli.mjs cli/src/gitmesh-dev.ts",
     "gitmesh-agents": "node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts",
     "build:npm": "./scripts/build-npm.sh",
     "release": "./scripts/release.sh",
     "changeset": "changeset",
     "version-packages": "changeset version",
+    "lint": "eslint lib/workspace-core lib/workspace-adapters",
     "check:tokens": "node scripts/check-forbidden-tokens.mjs",
     "docs:dev": "cd docs && npx mintlify dev"
   },
@@ -37,8 +38,10 @@
     "@changesets/cli": "^2.30.0",
     "cross-env": "^10.1.0",
     "esbuild": "^0.27.3",
+    "eslint": "^10.7.0",
     "jsdom": "^29.1.1",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.0"
   },
   "engines": {

@@ -10,6 +10,14 @@ export default defineConfig({
       "server",
       "ui",
       "cli",
+      // Repo-level infrastructure tests (lint boundary guard, release smoke).
+      {
+        test: {
+          name: "repo-infra",
+          environment: "node",
+          include: ["scripts/__tests__/**/*.test.ts"],
+        },
+      },
     ],
   },
 });

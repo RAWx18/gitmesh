@@ -1,0 +1,5 @@
+# Golden fixtures are byte-exact test data (pivot T0.5, hard rules 3–4):
+# eol conversion on checkout or commit would silently corrupt the bytes the
+# harness compares. Never text-convert them, on any platform.
+lib/workspace-adapters/fixtures/** -text
+lib/adapters/**/fixtures/** -text
