@@ -45,3 +45,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: gitmesh-cli clean-install smoke test
+        run: ./scripts/smoke-gitmesh-cli.sh

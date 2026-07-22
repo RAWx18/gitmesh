@@ -1,10 +1,16 @@
+import { createRequire } from "node:module";
 import { Command } from "commander";
 import { registerLegacyCommands } from "./legacy.js";
 import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.js";
 
 export type CliMode = "gitmesh" | "gitmesh-agents";
 
-const CLI_VERSION = "0.2.7";
+// Resolved at runtime relative to the executing entry (src/ in dev, dist/ in
+// a published package), so `--version` always reports the manifest of the
+// package actually installed — changeset bumps never leave it stale.
+const CLI_VERSION: string = (
+  createRequire(import.meta.url)("../package.json") as { version: string }
+).version;
 
 const STUB_COMMANDS: ReadonlyArray<[name: string, description: string]> = [
   ["doctor", "Audit agent configuration across coding agents"],

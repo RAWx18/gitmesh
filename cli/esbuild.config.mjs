@@ -53,9 +53,12 @@ for (const name of externalWorkspacePackages) {
   externals.add(name);
 }
 
+// The `gitmesh` bin ships from packages/gitmesh-cli (pivot T0.6), which
+// bundles src/gitmesh.ts with these same externals; this package keeps only
+// the legacy `gitmesh-agents` entry.
 /** @type {import('esbuild').BuildOptions} */
 export default {
-  entryPoints: ["src/index.ts", "src/gitmesh.ts"],
+  entryPoints: ["src/index.ts"],
   bundle: true,
   platform: "node",
   target: "node20",

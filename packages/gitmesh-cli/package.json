@@ -1,0 +1,57 @@
+{
+  "name": "gitmesh-cli",
+  "version": "0.2.7",
+  "description": "GitMesh — audit and govern every coding agent from your repo. One source of truth for instructions, tools, and guardrails: doctored, compiled to each agent's native config, drift-checked in CI.",
+  "type": "module",
+  "bin": {
+    "gitmesh": "./dist/gitmesh.js"
+  },
+  "keywords": [
+    "gitmesh",
+    "agents",
+    "agents.md",
+    "claude-code",
+    "codex",
+    "cursor",
+    "copilot",
+    "mcp",
+    "config",
+    "audit",
+    "cli"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LF-Decentralized-Trust-labs/gitmesh.git",
+    "directory": "packages/gitmesh-cli"
+  },
+  "homepage": "https://github.com/LF-Decentralized-Trust-labs/gitmesh",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "next"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "node build.mjs"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "commander": "^13.1.0",
+    "dotenv": "^17.0.1",
+    "drizzle-orm": "0.45.2",
+    "picocolors": "^1.1.1",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3"
+  }
+}
