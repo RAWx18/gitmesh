@@ -14,3 +14,14 @@ export {
   type AdapterLoader,
   type AdapterRegistry,
 } from "./registry.js";
+export {
+  assertGoldenCase,
+  listGoldenCases,
+  readTreeAsGoldenOutputs,
+  runGoldenCase,
+  type GoldenCase,
+  type GoldenDifference,
+  type GoldenOutputFile,
+  type GoldenResult,
+  type GoldenRunner,
+} from "./golden.js";
