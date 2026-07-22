@@ -1,5 +1,11 @@
 # @gitmesh/data
 
+## 0.3.0
+
+### Patch Changes
+
+- @gitmesh/core@0.3.0
+
 ## 0.2.7
 
 ### Patch Changes

@@ -1,5 +1,7 @@
 # @gitmesh/adapter-sdk
 
+## 0.3.0
+
 ## 0.2.7
 
 ### Patch Changes

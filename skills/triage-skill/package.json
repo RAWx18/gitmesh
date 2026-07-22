@@ -1,6 +1,6 @@
 {
   "name": "@gitmesh/triage-skill",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "GitMesh Triage Skill - Automated issue triage and labeling",
   "type": "module",
   "license": "Apache-2.0",

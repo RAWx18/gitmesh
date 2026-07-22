@@ -1,5 +1,20 @@
 # @gitmesh/server
 
+## 0.3.0
+
+### Patch Changes
+
+- @gitmesh/adapter-sdk@0.3.0
+- @gitmesh/adapter-claude-local@0.3.0
+- @gitmesh/adapter-claude-gateway@0.3.0
+- @gitmesh/adapter-codex-local@0.3.0
+- @gitmesh/adapter-cursor-local@0.3.0
+- @gitmesh/adapter-gateway@0.3.0
+- @gitmesh/adapter-opencode-local@0.3.0
+- @gitmesh/adapter-pi-local@0.3.0
+- @gitmesh/core@0.3.0
+- @gitmesh/data@0.3.0
+
 ## 0.2.7
 
 ### Patch Changes
