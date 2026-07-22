@@ -1,3 +1,4 @@
 import { runCli } from "./program.js";
+import { registerLegacyCommands } from "./legacy.js";
 
-runCli("gitmesh-agents");
+runCli("gitmesh-agents", registerLegacyCommands);

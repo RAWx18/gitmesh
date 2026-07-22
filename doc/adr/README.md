@@ -15,3 +15,7 @@ ADR-NNN`.
 
 Format: Status / Date / Context / Decision / Consequences. Cite
 `doc/pivot/pivot.md` section numbers so a decision's evidence can be audited.
+
+Numbering note: `pivot.md` T2.3 refers to the future no-telemetry decision as
+"ADR-005"; that number was consumed here by npm naming (merge order wins), so
+the no-telemetry ADR will land as **ADR-006**.

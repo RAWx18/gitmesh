@@ -1,23 +1,28 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Command } from "commander";
 import { createProgram, type CliMode } from "../program.js";
+import { registerLegacyCommands } from "../legacy.js";
 
 const STUB_NAMES = ["apply", "check", "doctor", "init", "migrate", "policy"];
 
-function makeHarness(mode: CliMode) {
+function makeHarness(mode: CliMode, { legacy = true }: { legacy?: boolean } = {}) {
   let out = "";
   let err = "";
-  const program = createProgram(mode, (p) => {
-    p.exitOverride();
-    p.configureOutput({
-      writeOut: (s) => {
-        out += s;
-      },
-      writeErr: (s) => {
-        err += s;
-      },
-    });
-  });
+  const program = createProgram(
+    mode,
+    (p) => {
+      p.exitOverride();
+      p.configureOutput({
+        writeOut: (s) => {
+          out += s;
+        },
+        writeErr: (s) => {
+          err += s;
+        },
+      });
+    },
+    legacy ? registerLegacyCommands : undefined,
+  );
   return { program, out: () => out, err: () => err };
 }
 
@@ -88,6 +93,21 @@ describe("createProgram (gitmesh mode)", () => {
       code: "commander.helpDisplayed",
     });
     expect(out()).toContain("Usage: gitmesh");
+  });
+});
+
+describe("createProgram (gitmesh mode, published package: no legacy registrar)", () => {
+  it("still lists legacy in help", () => {
+    const { program } = makeHarness("gitmesh", { legacy: false });
+    expect(commandNames(program)).toEqual([...STUB_NAMES, "legacy"].sort());
+  });
+
+  it("legacy invocations exit 1 with install guidance instead of running", async () => {
+    const { program, err } = makeHarness("gitmesh", { legacy: false });
+    await expect(
+      program.parseAsync(["legacy", "setup"], { from: "user" }),
+    ).rejects.toMatchObject({ exitCode: 1 });
+    expect(err()).toContain("not included in the gitmesh-cli package");
   });
 });
 

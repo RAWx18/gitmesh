@@ -135,7 +135,8 @@ describe("runGoldenCase", () => {
     ).rejects.toThrow(/duplicate output path/);
   });
 
-  it("rejects symlinks inside an expected tree", async () => {
+  // Creating file symlinks on Windows needs admin rights or Developer Mode.
+  it.skipIf(process.platform === "win32")("rejects symlinks inside an expected tree", async () => {
     const expectedDir = tempExpectedDir({ "real.txt": "x\n" });
     symlinkSync(join(expectedDir, "real.txt"), join(expectedDir, "link.txt"));
     await expect(

@@ -44,16 +44,43 @@ const RESTRICTED_IMPORT_PATTERNS = [
       "Pivot boundary (AGENTS.md hard rule 1): no Postgres client libraries in workspace-core/adapters — the new product has no database.",
   },
   {
-    group: ["@gitmesh/data", "@gitmesh/data/**"],
+    // `../**/data` catches relative escapes into lib/data without blocking a
+    // package-local `./data/` directory.
+    group: ["@gitmesh/data", "@gitmesh/data/**", "../**/data", "../**/data/**"],
     message:
       "Pivot boundary: @gitmesh/data is the legacy Drizzle/Postgres layer and must not leak into workspace-core/adapters.",
   },
 ];
 
+// no-restricted-imports only sees ESM import/export syntax; these selectors
+// close the `require()` escape for the CommonJS file types the glob covers.
+const RESTRICTED_REQUIRE_SELECTORS = [
+  {
+    selector:
+      "CallExpression[callee.name='require'] > Literal[value=/^(drizzle|pg$|pg-|postgres|@gitmesh\\u002F(server|data))/]",
+    message:
+      "Pivot boundary (AGENTS.md hard rule 1): no server, Drizzle, or Postgres requires in workspace-core/adapters.",
+  },
+  {
+    selector:
+      "CallExpression[callee.name='require'] > Literal[value=/^(\\.\\.\\u002F)+(.*\\u002F)?(server|data)(\\u002F|$)/]",
+    message:
+      "Pivot boundary (AGENTS.md hard rule 1): relative requires must not escape into server/ or the legacy data layer.",
+  },
+];
+
 export default tseslint.config(
   {
-    // `data/` holds local Postgres state (unreadable, legacy-only) — never crawl it.
-    ignores: ["**/dist/**", "**/node_modules/**", "data/**"],
+    // `data/` holds local Postgres state (unreadable, legacy-only) — never
+    // crawl it. Golden fixtures are test data modeling user repos (some will
+    // deliberately contain forbidden imports for GM risk rules to detect) —
+    // they are compared byte-exactly, never executed, and must not be linted.
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "data/**",
+      "lib/workspace-adapters/fixtures/**",
+    ],
   },
   {
     files: PIVOT_PACKAGE_GLOBS,
@@ -64,6 +91,7 @@ export default tseslint.config(
     },
     rules: {
       "no-restricted-imports": ["error", { patterns: RESTRICTED_IMPORT_PATTERNS }],
+      "no-restricted-syntax": ["error", ...RESTRICTED_REQUIRE_SELECTORS],
     },
   },
 );

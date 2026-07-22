@@ -26,7 +26,7 @@ Installs a `gitmesh` binary:
 | `gitmesh apply` | Compile canonical config to each agent's native files |
 | `gitmesh check` | Verify generated configs are in sync (CI drift gate) |
 | `gitmesh policy` | Manage policy packs and permission rules |
-| `gitmesh legacy …` | The previous GitMesh Agents server/orchestration CLI (maintenance mode) |
+| `gitmesh legacy …` | Points to the legacy GitMesh Agents CLI — not bundled here, so this package stays dependency-light (run legacy commands from a GitMesh repo checkout) |
 
 The npm package name is `gitmesh-cli` (the unscoped name `gitmesh` belongs to
 an unrelated project); the installed binary is `gitmesh`.

@@ -12,7 +12,7 @@
  * of failing `npx gitmesh-cli` on a user's machine.
  */
 
-import { chmodSync, readFileSync } from "node:fs";
+import { chmodSync, readFileSync, rmSync } from "node:fs";
 import { builtinModules } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,10 +22,14 @@ import cliConfig from "../../cli/esbuild.config.mjs";
 const packageDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(packageDir, "../..");
 
-// Resolved at runtime via dynamic import with a graceful "server not
-// installed" error path (cli/src/commands/run.ts) — the legacy server is
-// deliberately not a dependency of the new CLI.
-const RUNTIME_OPTIONAL = new Set(["@gitmesh/server"]);
+// Packages the bundle may reference at runtime without declaring as
+// dependencies (loaded via dynamic import behind graceful error paths).
+// Empty today: the gitmesh.ts entry ships a legacy stub, so no server or
+// database code path is reachable (ADR-002).
+const RUNTIME_OPTIONAL = new Set([]);
+
+// Stale artifacts in dist/ would be published via files:["dist"].
+rmSync(resolve(packageDir, "dist"), { recursive: true, force: true });
 
 const result = await esbuild.build({
   ...cliConfig,
@@ -35,6 +39,9 @@ const result = await esbuild.build({
   outfile: "dist/gitmesh.js",
   splitting: false,
   metafile: true,
+  // The published artifact ships no sourcemap — with sourcesContent it
+  // triples the tarball for no end-user benefit.
+  sourcemap: false,
 });
 
 chmodSync(resolve(packageDir, "dist/gitmesh.js"), 0o755);

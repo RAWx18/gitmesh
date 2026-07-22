@@ -13,11 +13,13 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const eslint = new ESLint({ cwd: repoRoot });
 
+const BOUNDARY_RULES = new Set(["no-restricted-imports", "no-restricted-syntax"]);
+
 /** Lints a snippet as if it lived at `file`, returning boundary violations. */
 async function boundaryErrors(file: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath: join(repoRoot, file) });
   return result.messages
-    .filter((m) => m.ruleId === "no-restricted-imports")
+    .filter((m) => m.ruleId !== null && BOUNDARY_RULES.has(m.ruleId))
     .map((m) => m.message);
 }
 
@@ -33,6 +35,8 @@ const FORBIDDEN_IMPORTS = [
   'postgres',
   '@gitmesh/data',
   '@gitmesh/data/schema.js',
+  '../../data/src/client.js',
+  '../../../lib/data/src/client.js',
 ];
 
 const ALLOWED_IMPORTS = [
@@ -40,6 +44,17 @@ const ALLOWED_IMPORTS = [
   'node:fs',
   '@gitmesh/workspace-core',
   './registry.js',
+  './data/constants.js',
+];
+
+const FORBIDDEN_REQUIRES = [
+  'pg',
+  'postgres',
+  'drizzle-orm',
+  '@gitmesh/server',
+  '@gitmesh/data',
+  '../../data/src/client.js',
+  '../../../server/src/index.js',
 ];
 
 describe.each([
@@ -65,5 +80,29 @@ describe.each([
     const code = 'import type { Sql } from "postgres";\nexport interface X { db: Sql }\n';
     const errors = await boundaryErrors(probeFile, code);
     expect(errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe.each([
+  "lib/workspace-core/src/__boundary_probe__.cts",
+  "lib/workspace-adapters/src/__boundary_probe__.cjs",
+])("require() boundary in %s", (probeFile) => {
+  it.each(FORBIDDEN_REQUIRES)("rejects require of %s", async (specifier) => {
+    const errors = await boundaryErrors(probeFile, `const x = require("${specifier}");\n`);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("allows benign requires", async () => {
+    const code = 'const zod = require("zod");\nconst local = require("./data/constants.js");\n';
+    await expect(boundaryErrors(probeFile, code)).resolves.toEqual([]);
+  });
+});
+
+describe("scope boundaries of the lint itself", () => {
+  it("does not lint golden fixture trees (fixtures may contain forbidden imports as data)", async () => {
+    const ignored = await eslint.isPathIgnored(
+      join(repoRoot, "lib/workspace-adapters/fixtures/dummy/copy-through/input-repo/user-code.ts"),
+    );
+    expect(ignored).toBe(true);
   });
 });
