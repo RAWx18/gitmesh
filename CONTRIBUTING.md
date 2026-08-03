@@ -1,6 +1,6 @@
-# Contributing to GitMesh (Community Edition)
+# Contributing to GitMesh
 
-This document describes the minimal rules and workflow for contributing to GitMesh Community Edition.
+This document describes the minimal rules and workflow for contributing to GitMesh.
 
 ---
 
