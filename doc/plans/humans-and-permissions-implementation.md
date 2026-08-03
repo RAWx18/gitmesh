@@ -3,7 +3,7 @@
 
 # Implementation Spec: Humans & Permissions (V1)
 
-**Status** Draft &middot; **Owners** Server + UI + CLI + DB + Shared &middot; **Companion** [`doc/plan/humans-and-permissions.md`](./humans-and-permissions.md) &middot; **Drafted** 2026-02-21
+**Status** Draft &middot; **Owners** Server + UI + CLI + DB + Shared &middot; **Companion** [`doc/plans/humans-and-permissions.md`](./humans-and-permissions.md) &middot; **Drafted** 2026-02-21
 
 This is the engineering implementation contract. It translates the
 companion plan's product decisions into concrete schema, API,
@@ -461,7 +461,7 @@ If any command is skipped, record exactly what was skipped and why.
 
 ## N. Done criteria
 
-1. Behaviour matches the locked V1 decisions in this doc and `doc/plan/humans-and-permissions.md`.
+1. Behaviour matches the locked V1 decisions in this doc and `doc/plans/humans-and-permissions.md`.
 2. Cloud mode requires auth; local mode has no login UX.
 3. Unified invite + pending-approval flow works for both humans and agents.
 4. Shared principal membership + permission system is live for both users and agents.

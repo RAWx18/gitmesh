@@ -22,7 +22,7 @@
 
 **GitMesh Community Edition** is an open-source multi-agent orchestration runtime and governed MCP server purpose-built for open source projects. It enables AI agent teams — Triage, PR Review, Docs, Security, Community, Onboarding, and Release — to handle maintainer work autonomously, with every connected tool (Claude Code, Copilot, Cursor, Codex, Gemini CLI, and more) governed by a single maintainer-defined Policy-as-Code layer via OPA.
 
-Built on a proven orchestration engine with atomic task checkout, persistent agent context, heartbeat scheduling, and budget enforcement, GitMesh extends this foundation with native GitHub/GitLab integration and distributes governance through MCP and ACP compatibility with every major AI coding tool. Any project can adopt it with one YAML file and one CI step.
+GitMesh combines an orchestration engine (atomic task checkout, persistent agent context, heartbeat scheduling, budget enforcement) with native GitHub/GitLab integration, and distributes governance over MCP and ACP so any compatible AI coding tool is covered. Adoption requires one YAML file and one CI step.
 
 ### Core Capabilities
 
@@ -32,14 +32,14 @@ Built on a proven orchestration engine with atomic task checkout, persistent age
 - **MCP Server** — Any MCP-compatible IDE (VS Code, Cursor, JetBrains) connects once and every AI tool is automatically governed by the project's policy
 - **ACP Orchestrator** — JSON-RPC 2.0 agent-to-agent coordination. Multiple agents work simultaneously without conflicts, double work, or runaway costs
 - **Immutable Audit Log** — Every action logged with actor, policy version, and outcome (allowed/blocked). Filterable and exportable as JSON/CSV
-- **Project Templates** — Pre-configured agent teams for CLI tools, JS libraries, DevOps projects, CNCF sandboxes, and solo maintainers. One-click adoption
+- **Project Templates** — Pre-configured agent teams for CLI tools, JS libraries, DevOps projects, CNCF sandboxes, and solo maintainers
 
 ### Three-View Dashboard
 
 | View | Purpose |
 |------|---------|
-| **Active Agents** | Agent status, budget consumption, current work. One-click pause, terminate, or reconfigure |
-| **Pending Approvals** | Mobile-first approval queue — merge PRs, CVE disclosures, issue closures. Clear in 5 minutes |
+| **Active Agents** | Agent status, budget consumption, current work. Pause, terminate, or reconfigure |
+| **Pending Approvals** | Mobile-first approval queue — merge PRs, CVE disclosures, issue closures |
 | **Audit Log** | Chronological action history with policy outcome filtering |
 
 ---
@@ -151,22 +151,18 @@ Deployment mode, auth, and GitHub integration are documented in **`.env.example`
 
 ---
 
-## Join the Pack
-
-We believe the strongest solutions emerge from diverse perspectives working in concert. Whether you're fixing a bug, proposing a feature, or improving documentation, your contribution matters.
+## Contributing
 
 [![LFX Active Contributors](https://insights.linuxfoundation.org/api/badge/active-contributors?project=lf-decentralized-trust-labs&repos=https://github.com/LF-Decentralized-Trust-labs/gitmesh)](https://insights.linuxfoundation.org/project/lf-decentralized-trust-labs/repository/lf-decentralized-trust-labs-gitmesh)
 [![GitMesh CE Governance](https://img.shields.io/github/actions/workflow/status/LF-Decentralized-Trust-labs/gitmesh/gov-sync.yml?label=GitMesh%20CE%20Governance)](https://github.com/LF-Decentralized-Trust-labs/gitmesh/actions/workflows/gov-sync.yml)
 
-### Contribution Path
-
 1. Fork the repository
-2. Create your feature branch: `git checkout -b type/branch-name`
-3. Commit your changes with sign-off: `git commit -s -m 'Add innovative feature'`
-4. Push to your branch: `git push origin type/branch-name`
-5. Open a signed pull request
+2. Create a branch: `git checkout -b type/branch-name`
+3. Commit with sign-off (DCO is enforced): `git commit -s -m "feat: add ..."`
+4. Push the branch: `git push origin type/branch-name`
+5. Open a pull request
 
-Read our detailed [Contributing Guide](CONTRIBUTING.md) for best practices and guidelines.
+See the [Contributing Guide](CONTRIBUTING.md) for the full workflow.
 
 ---
 
@@ -225,25 +221,4 @@ Licensed under the **Apache License 2.0**. See the [`LICENSE`](LICENSE) file in 
 
 **A Lab under the [Linux Foundation Decentralized Trust](https://www.lfdecentralizedtrust.org/)**
 
----
-
-*GitMesh is a governed mesh for AI agents on your repo: policies define the boundaries, the runtime keeps work coordinated and auditable, and humans stay in charge when it matters—so open-source teams ship **clear, trusted software**, not runaway automation.*
-
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

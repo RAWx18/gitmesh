@@ -30,11 +30,16 @@ packages/db/seed-*.mjs
 # npm publish build artifacts
 cli/package.dev.json
 
-# Build artifacts in src directories
+# Build artifacts in src directories (tsc emits next to sources when run
+# without the package tsconfig, which is never what we want committed).
 server/src/**/*.js
 server/src/**/*.js.map
 !server/src/**/*.d.ts
 server/src/**/*.d.ts.map
+lib/**/src/**/*.js
+lib/**/src/**/*.js.map
+!lib/**/src/**/*.d.ts
+lib/**/src/**/*.d.ts.map
 tmp/
 
 # Editor / tool temp files
