@@ -7,9 +7,7 @@ mkdir -p "$PC_HOME" "$PC_CACHE" "$PC_DATA"
 echo "PC_TEST_ROOT: $PC_TEST_ROOT"
 echo "PC_HOME: $PC_HOME"
 cd $PC_TEST_ROOT
-# Replace with your actual upstream URL; left as a placeholder so the
-# forbidden-token scanner does not match a legacy slug here.
-GITMESH_REPO_URL="${GITMESH_REPO_URL:-https://github.com/AlveoliLabs/gitmesh.git}"
+GITMESH_REPO_URL="${GITMESH_REPO_URL:-https://github.com/LF-Decentralized-Trust-labs/gitmesh.git}"
 git clone "$GITMESH_REPO_URL" repo
 cd repo
 pnpm install

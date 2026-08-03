@@ -31,7 +31,7 @@ ROLE_HIERARCHY = [
     "Maintainer"
 ]
 
-PROTECTED_ROLES = ["CEO", "CTO"]
+PROTECTED_ROLES = ["Core Maintainer"]
 
 headers = {
     "Authorization": f"token {GITHUB_TOKEN}",
@@ -71,7 +71,7 @@ def validate_role_change(action, current_role, target_role):
     if current_role in PROTECTED_ROLES:
         return False, f"Role '{current_role}' is a protected role and cannot be updated by bot."
     
-    # Handle roles outside standard hierarchy (e.g. CEO, CTO)
+    # Handle roles outside the standard hierarchy (e.g. Core Maintainer)
     if current_role not in ROLE_HIERARCHY:
         # For now, allow promotion FROM non-hierarchy roles if it's the first assignment
         # or if it's a manual override. But logically, we can't 'promote' relative to them.
@@ -410,7 +410,6 @@ def handle_bot_command(action, target_user, author, pr_number, branch_name):
             new_contributor = {
                 "username": target_user,
                 "role": "Newbie Contributor", # Reset to default
-                "team": "CE",
                 "status": "active",
                 "assigned_by": author,
                 "assigned_at": get_now_ist_str(),
@@ -670,7 +669,6 @@ def run_sync_mode():
             new_contributor = {
                 "username": username, # Keep original casing for display
                 "role": "Newbie Contributor",
-                "team": "CE",
                 "status": "active",
                 "assigned_by": "GitMesh-Steward-bot",
                 "assigned_at": merged_at,

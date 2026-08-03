@@ -2,11 +2,11 @@ events:
 - timestamp: '2025-12-27T10:32:14+05:30'
   type: ROLE_ASSIGNMENT
   username: rawx18
-  details: 'Role: CEO, Assigned by: EE-board'
+  details: 'Role: Core Maintainer, Assigned by: governance-bootstrap'
 - timestamp: '2025-12-27T10:32:14+05:30'
   type: ROLE_ASSIGNMENT
   username: ronit-raj9
-  details: 'Role: CTO, Assigned by: EE-board'
+  details: 'Role: Core Maintainer, Assigned by: governance-bootstrap'
 - timestamp: '2025-12-27T10:32:14+05:30'
   type: ROLE_ASSIGNMENT
   username: parvm1102

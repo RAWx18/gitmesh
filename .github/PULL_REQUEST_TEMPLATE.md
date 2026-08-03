@@ -39,9 +39,8 @@ Notes:
 
 
 
-## CE & Security Check
+## Security Check
 
-- [ ] Targets **GitMesh CE** only (no EE code)
 - [ ] No secrets or credentials committed
 
 

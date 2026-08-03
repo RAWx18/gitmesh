@@ -1,29 +1,29 @@
-# GitMesh Community Edition — Governance (CE)
+# GitMesh Governance
 
 ## Purpose
-This document defines the contributor roles, assignment rules, promotion/demotion process, activity policy, and governance operations for GitMesh Community Edition (CE). CE is governed within the LF Decentralized Trust workflow and follows the contribution, review, and assignment processes defined in the LFDT project.
+This document defines the contributor roles, assignment rules, promotion/demotion process, activity policy, and governance operations for GitMesh. The project is governed within the LF Decentralized Trust workflow and follows the contribution, review, and assignment processes defined in the LFDT project.
 
-## Roles (CE)
-- **Newbie Contributor** — Starts with small tasks, documentation, and first PRs.
-- **Active Contributor** — Regular contributor with growing responsibility and roadmap visibility.
-- **Core Contributor** — Proven contributor trusted with code reviews and higher-impact tasks.
-- **Principal Contributor** — Long-term, high-impact contributor considered for maintainer or core roles; eligible for special consideration for long-term positions such as maintainer or Founding Engineer track and ESOP allocation.
+## Roles
+- **Newbie Contributor**: Starts with small tasks, documentation, and first PRs.
+- **Active Contributor**: Regular contributor with growing responsibility and roadmap visibility.
+- **Core Contributor**: Proven contributor trusted with code reviews and higher-impact tasks.
+- **Principal Contributor**: Long-term, high-impact contributor considered for maintainer or core roles.
 
 ## Who Assigns Roles (summary)
 - Each tier is promoted by the tier immediately above it.
   - Newbie ← assigned by Active Contributors
   - Active ← assigned by Core Contributors
   - Core ← assigned by Principal Contributors
-- **Principal Contributors** — nominated and assigned by CE Maintainers. Maintainers may consult Core Contributors, but maintainers make CE Principal assignments.
+- **Principal Contributors**: nominated and assigned by Maintainers. Maintainers may consult Core Contributors, but maintainers make Principal assignments.
 
 ## Promotion & Nomination Process
 1. **Nomination**
-   - A candidate is nominated by one or more contributors from the tier above (written nomination on the CE governance issue tracker).
+   - A candidate is nominated by one or more contributors from the tier above (written nomination on the governance issue tracker).
    - Nomination must reference: contribution history, key PRs/issues, impact, and any relevant reviews.
 
 2. **Review**
    - The nominating tier reviews the candidate against criteria (see Criteria section).
-   - For Principal nomination, CE Maintainers perform the review and decide.
+   - For Principal nomination, Maintainers perform the review and decide.
 
 3. **Decision**
    - If the reviewing tier approves, the role change is posted as an issue/PR to the governance tracker and applied to the contributors registry.
@@ -46,21 +46,21 @@ This document defines the contributor roles, assignment rules, promotion/demotio
 - **Demotion**
     - **180 days** of inactivity -> demotion by one tier (except Newbie tag which remains on record).
     - Demotion is performed by the tier that would normally assign the role (e.g., Core Contributors can demote Active Contributors) with notification and published rationale.
-    - **Note**: Time-based demotion is not mandatory for upper roles (Core Contributor and above). Principal Contributors, CE Maintainers, or Governance Council may execute demotion in special cases at their discretion, regardless of the standard timeframes, with documented rationale.
+    - **Note**: Time-based demotion is not mandatory for upper roles (Core Contributor and above). Principal Contributors, Maintainers, or Governance Council may execute demotion in special cases at their discretion, regardless of the standard timeframes, with documented rationale.
 - **Removal**
     - **365 days** of inactivity -> role can be removed from active lists but historical record retained in `contributors.yaml`.
-    - **Note**: Time-based removal is not mandatory for upper roles (Core Contributor and above). Principal Contributors, CE Maintainers, or Governance Council may execute removal in special cases at their discretion, regardless of the standard timeframes, with documented rationale.
+    - **Note**: Time-based removal is not mandatory for upper roles (Core Contributor and above). Principal Contributors, Maintainers, or Governance Council may execute removal in special cases at their discretion, regardless of the standard timeframes, with documented rationale.
 - **Reactivation**
     - Any contribution (even a single PR) will clear the `inactive` flag and restore the user to the appropriate tier per the current promotion rules. Newbie status, once earned, remains as a permanent historical badge.
 
 ## Conflicts, Appeals, and Veto
 - **Conflict resolution**
   - Start with an issue in the governance tracker describing the dispute.
-  - CE Maintainers mediate; if unresolved, escalate to the Governance Council.
+  - Maintainers mediate; if unresolved, escalate to the Governance Council.
 - **Appeals**
-  - Affected contributor may file a formal appeal; CE Maintainers convene a review panel within 21 days.
+  - Affected contributor may file a formal appeal; Maintainers convene a review panel within 21 days.
 - **Veto**
-  - Governance Council may veto any CE decision with a public rationale. Veto should be exceptional and recorded.
+  - Governance Council may veto any governance decision with a public rationale. Veto should be exceptional and recorded.
 
 ## Privileges & Responsibilities by Role
 - **Newbie Contributor**
@@ -73,14 +73,13 @@ This document defines the contributor roles, assignment rules, promotion/demotio
   - Privileges: review rights, ability to assign Active and Newbie roles, can nominate for Principal.
   - Responsibilities: enforce code standards, mentor Active contributors.
 - **Principal Contributor**
-  - Privileges: assign Core/Active/Newbie roles (per policy), lead significant CE initiatives, eligible to propose maintainer candidates.
-  - Responsibilities: long-term stewardship, security and release participation, liaison with EE when necessary.
+  - Privileges: assign Core/Active/Newbie roles (per policy), lead significant project initiatives, eligible to propose maintainer candidates.
+  - Responsibilities: long-term stewardship, security and release participation.
 
 ## Maintainers
-- CE Maintainers hold operational responsibilities:
-  - Issue triage, label policies, merging policy for CE,
-  - Principal selection (as above),
-  - Ensuring no conflict with EE proprietary lines.
+- Maintainers hold operational responsibilities:
+  - Issue triage, label policies, and merging policy,
+  - Principal selection (as above).
 - Maintainers must document decisions and record reasons in the governance tracker.
 
 ## Governance Records & Registry
@@ -106,18 +105,18 @@ The sync workflow runs:
 
 All governance automation is transparent, auditable, and designed to support (not replace) human decision-making. Maintainers review and approve all automated updates before they take effect.
 
-## Badging, Recognition, and ESOP Pathways
+## Badging and Recognition
 - Badges and public recognition follow role assignment.
-- Eligibility for the Founding Engineer track and reserved ESOP pool is determined by Alveoli Founding Team and CE Maintainers, based on documented sustained impact and alignment with core engineering values. Final appointment for company-level equity requires Governance Council approval.
+- Sustained impact is recognised through promotion within the role hierarchy above, decided by Maintainers against the criteria in this document.
 
 ## Code of Conduct
 - All participants must follow the project Code of Conduct (link in repo). Breaches may lead to role restrictions or removal.
 
 ## Updates to this Policy
-- CE governance updates are made via PR in the gitmesh repo. Substantive changes require a 14-day comment period and a recorded decision.
+- Governance updates are made via PR in the gitmesh repo. Substantive changes require a 14-day comment period and a recorded decision.
 
 ## Development of Governance Structure
-- The governance structure for GitMesh Community Edition is currently under development by the GitMesh engineering team.
-- Final decisions regarding the governance framework rest with the CE Maintainers, who retain the authority to block or modify any aspect of the governance policies as deemed necessary.
+- The governance structure for GitMesh is currently under development by the GitMesh engineering team.
+- Final decisions regarding the governance framework rest with the Maintainers, who retain the authority to block or modify any aspect of the governance policies as deemed necessary.
 - Changes to the governance structure can be implemented immediately if required, ensuring that the framework remains adaptable and responsive to the needs of the community and project evolution.
 - All stakeholders are encouraged to provide feedback during this development phase to foster a collaborative and inclusive governance model.
