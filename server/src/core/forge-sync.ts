@@ -114,7 +114,7 @@ export function forgeSyncService(db: Db) {
       let forgeWebhookId: string | null = null;
       let registrationError: string | null = null;
 
-      // GitHub rejects callback URLs pointing at localhost / 127.x — skip
+      // GitHub rejects callback URLs pointing at localhost / 127.x - skip
       // registration in that case and rely on the periodic poll-based sync.
       // Operators can set GITMESH_PUBLIC_BASE_URL to a tunnel (e.g. cloudflared,
       // smee.io) to opt back into real webhooks.
@@ -152,7 +152,7 @@ export function forgeSyncService(db: Db) {
               `Failed to register GitHub webhook for ${registration.forgeOwner}/${registration.forgeRepo}:`,
               error,
             );
-            // Continue — record in DB so the UI can show the failure state
+            // Continue - record in DB so the UI can show the failure state
           }
         }
       } else if (skipRemoteRegistration) {
@@ -243,7 +243,7 @@ export function forgeSyncService(db: Db) {
               `Failed to update GitHub webhook secret for ${webhook.forgeOwner}/${webhook.forgeRepo}:`,
               error,
             );
-            // Continue — DB will still be updated so the UI is consistent
+            // Continue - DB will still be updated so the UI is consistent
           }
         }
       }
@@ -334,7 +334,7 @@ export function forgeSyncService(db: Db) {
             }
           } catch (err) {
             // wakeup throws on bad agent state (paused, terminated, pending_approval).
-            // Log and continue — other agents may still be wakeable.
+            // Log and continue - other agents may still be wakeable.
             console.warn(
               `[forge-sync] wakeup failed for agent ${agent.id} on ${event.eventType}:`,
               err instanceof Error ? err.message : err,
@@ -1043,7 +1043,7 @@ export async function syncProjectIssues(db: Db, projectId: string) {
           body: ghIssue.body ?? "",
         });
       } else {
-        // No transition — just refresh local mirror without waking agents.
+        // No transition - just refresh local mirror without waking agents.
         await syncForgeIssue(db, {
           provider: "github",
           eventType,

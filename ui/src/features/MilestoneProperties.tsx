@@ -31,7 +31,7 @@ interface PropertyRow {
   label: string;
   /** Render the read-only display node */
   render: () => ReactNode;
-  /** Optional editable picker — when both `onUpdate` and this are present, the row is editable */
+  /** Optional editable picker - when both `onUpdate` and this are present, the row is editable */
   picker?: {
     options: readonly string[];
     current: string;

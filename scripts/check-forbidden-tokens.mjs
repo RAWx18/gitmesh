@@ -30,7 +30,7 @@ const hooksTokensFile = resolve(repoRoot, gitDir, "hooks/forbidden-tokens.txt");
 const tokensFile = existsSync(repoTokensFile) ? repoTokensFile : hooksTokensFile;
 
 if (!existsSync(tokensFile)) {
-  console.log("  ℹ  Forbidden tokens list not found — skipping check.");
+  console.log("  ℹ  Forbidden tokens list not found - skipping check.");
   process.exit(0);
 }
 
@@ -62,7 +62,7 @@ const tokens = readFileSync(tokensFile, "utf8")
   .map(parseTokenEntry);
 
 if (tokens.length === 0) {
-  console.log("  ℹ  Forbidden tokens list is empty — skipping check.");
+  console.log("  ℹ  Forbidden tokens list is empty - skipping check.");
   process.exit(0);
 }
 
@@ -97,7 +97,7 @@ for (const token of tokens) {
       }
     }
   } catch {
-    // git grep returns exit code 1 when no matches — that's fine
+    // git grep returns exit code 1 when no matches - that's fine
   }
 }
 

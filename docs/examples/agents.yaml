@@ -52,7 +52,7 @@ agents:
 
   - name: Release Agent
     role: release
-    # manual trigger only — maintainer calls via UI or API
+    # manual trigger only - maintainer calls via UI or API
     budget: 2000
     requires_approval: true
 

@@ -1,7 +1,7 @@
 /**
  * `agent` subcommands.
  *
- * `agent local-cli` is the heaviest subcommand here — it bundles a few
+ * `agent local-cli` is the heaviest subcommand here - it bundles a few
  * unrelated side effects (mint API key + symlink playbooks + emit shell
  * exports). The implementation pulls each of those into its own helper so
  * `run()` reads as a thin orchestration layer instead of one long function.

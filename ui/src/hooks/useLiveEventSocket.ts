@@ -1,5 +1,5 @@
 /**
- * `useLiveEventSocket` — small reconnecting WebSocket hook for the
+ * `useLiveEventSocket`: small reconnecting WebSocket hook for the
  * `/api/projects/:id/events/ws` stream.
  *
  * Extracted from `LiveRunWidget` so future live-event consumers (run

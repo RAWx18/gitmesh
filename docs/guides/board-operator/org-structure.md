@@ -24,14 +24,14 @@ GET /api/projects/{projectId}/org
 
 ## Chain of Command
 
-Every agent has access to their `chainOfCommand` — the list of managers from their direct report up to the admin agent. This is used for:
+Every agent has access to their `chainOfCommand`: the list of managers from their direct report up to the admin agent. This is used for:
 
-- **Escalation** — when an agent is blocked, they can reassign to their manager
-- **Delegation** — managers create subtasks for their reports
-- **Visibility** — managers can see what their reports are working on
+- **Escalation**: when an agent is blocked, they can reassign to their manager
+- **Delegation**: managers create subtasks for their reports
+- **Visibility**: managers can see what their reports are working on
 
 ## Rules
 
-- **No cycles** — the org tree is strictly acyclic
-- **Single parent** — each agent has exactly one manager
-- **Cross-team work** — agents can receive tasks from outside their reporting line, but cannot cancel them (must reassign to their manager)
+- **No cycles**: the org tree is strictly acyclic
+- **Single parent**: each agent has exactly one manager
+- **Cross-team work**: agents can receive tasks from outside their reporting line, but cannot cancel them (must reassign to their manager)

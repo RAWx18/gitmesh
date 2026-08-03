@@ -3,7 +3,7 @@
  *
  * Cross-cutting UI concerns (toasts, theme, etc.) are available through a
  * single `useUI()` hook. Call-sites may still use `useToast()` /
- * `useTheme()` — thin wrappers that read the same store.
+ * `useTheme()`: thin wrappers that read the same store.
  */
 
 import {

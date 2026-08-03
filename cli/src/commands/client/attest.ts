@@ -141,16 +141,16 @@ function printAndVerify(att: AttestationFetchResponse): void {
   console.log("");
 
   if (hashMatch && signatureValid) {
-    console.log(pc.green(`  ✓  PASS — payload hash matches and signature verifies against the project key`));
+    console.log(pc.green(`  ✓  PASS - payload hash matches and signature verifies against the project key`));
     process.exitCode = 0;
   } else {
     if (!hashMatch) {
-      console.log(pc.red(`  ✗  FAIL — sha256(signedPayload) != payloadHash`));
+      console.log(pc.red(`  ✗  FAIL - sha256(signedPayload) != payloadHash`));
       console.log(pc.dim(`    expected: ${expectedHash}`));
       console.log(pc.dim(`    received: ${att.payloadHash}`));
     }
     if (!signatureValid) {
-      console.log(pc.red(`  ✗  FAIL — signature did not verify against the project's public key`));
+      console.log(pc.red(`  ✗  FAIL - signature did not verify against the project's public key`));
     }
     process.exitCode = 1;
   }

@@ -25,7 +25,7 @@ export function startHeartbeatScheduler(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const heartbeat = heartbeatService(db as any);
 
-  // Reap orphaned runs at startup (no threshold — runningProcesses is empty).
+  // Reap orphaned runs at startup (no threshold - runningProcesses is empty).
   void heartbeat.reapOrphanedRuns().catch((err) => {
     logger.error({ err }, "startup reap of orphaned heartbeat runs failed");
   });

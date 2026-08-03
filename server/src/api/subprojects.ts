@@ -164,7 +164,7 @@ export function subprojectRoutes(db: Db) {
     }
     const resolvedProjectId = projectId || row.projectId;
     assertProjectAccess(req, resolvedProjectId);
-    // Use DB UUID — `id` param may be a urlKey/slug such as `main`; inArray(uuid, 'main') throws 22P02.
+    // Use DB UUID - `id` param may be a urlKey/slug such as `main`; inArray(uuid, 'main') throws 22P02.
     const [bundle] = await loadSubprojectBundle(db, resolvedProjectId, [row.id]);
     res.json(bundle ?? enrichSubproject(row));
   });

@@ -26,8 +26,8 @@ export const fixturesRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..
 
 /**
  * Loads a case's `options.json` (sibling of `input-repo/`, so never part of
- * the scanned tree); `{}` when absent. The options shape — and how relative
- * paths inside it resolve against the case directory — is adapter-specific,
+ * the scanned tree); `{}` when absent. The options shape - and how relative
+ * paths inside it resolve against the case directory - is adapter-specific,
  * so callers map the parsed value to a `RepoContext` themselves.
  */
 export function loadCaseOptions<T>(caseDir: string): T {

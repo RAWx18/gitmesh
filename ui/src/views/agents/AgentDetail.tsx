@@ -169,7 +169,7 @@ function runDurationSec(run: HeartbeatRun): number | null {
 function shortHash(id: string): string { return id.slice(0, 8); }
 
 function formatDurationCompact(sec: number | null): string {
-  if (sec === null) return "—";
+  if (sec === null) return "-";
   if (sec < 1) return "<1s";
   if (sec < 60) return `${sec}s`;
   const m = Math.floor(sec / 60);
@@ -395,7 +395,7 @@ export function AgentDetail() {
       )}
       {isPendingApproval && (
         <p className="px-4 py-2 text-[11px] font-mono uppercase tracking-[0.10em] text-[var(--verdict-pending)] border-b border-border">
-          worker awaiting maintainer attestation — invocation blocked
+          worker awaiting maintainer attestation - invocation blocked
         </p>
       )}
 
@@ -959,14 +959,14 @@ function RecentRunsTable({
                   </span>
                 </span>
                 <span className="text-right text-text-secondary">
-                  {m.totalTokens > 0 ? formatTokens(m.totalTokens) : "—"}
+                  {m.totalTokens > 0 ? formatTokens(m.totalTokens) : "-"}
                 </span>
                 <span>
                   <span
                     className="verdict-chip"
                     data-verdict={verdict === "allow" ? "attested" : verdict === "block" ? "block" : "pending"}
                   >
-                    {verdict === "allow" ? "ok" : verdict === "block" ? "fail" : "—"}
+                    {verdict === "allow" ? "ok" : verdict === "block" ? "fail" : "-"}
                   </span>
                 </span>
                 <span className="text-right">
@@ -978,7 +978,7 @@ function RecentRunsTable({
                       retry
                     </button>
                   ) : (
-                    <span className="text-text-tertiary">—</span>
+                    <span className="text-text-tertiary">-</span>
                   )}
                 </span>
               </div>
@@ -1036,7 +1036,7 @@ function ActiveSessionsAccordion({
                   <span className="text-foreground">{s.taskKey}</span>
                 </span>
                 <span className="text-text-secondary truncate">
-                  {s.sessionDisplayId ?? "—"}
+                  {s.sessionDisplayId ?? "-"}
                 </span>
                 <span className="text-text-tertiary">{relativeTime(s.updatedAt)}</span>
                 {lastRun ? (
@@ -1047,7 +1047,7 @@ function ActiveSessionsAccordion({
                     {shortHash(lastRun.id)}
                   </Link>
                 ) : (
-                  <span className="text-text-tertiary">—</span>
+                  <span className="text-text-tertiary">-</span>
                 )}
                 <button
                   className="text-text-tertiary hover:text-[var(--verdict-block)] uppercase tracking-[0.10em] text-[10px] text-right"
@@ -1102,7 +1102,7 @@ function ConfigurationFooter({
     { k: "url_key", v: <span className="font-mono">{agent.urlKey}</span> },
     { k: "adapter", v: <span>{adapterLabels[agent.adapterType] ?? agent.adapterType}{model ? ` · ${model}` : ""}</span> },
     { k: "heartbeat", v: <span>{hbLabel}</span> },
-    { k: "session_id", v: <span className="text-text-secondary">{runtimeState?.sessionDisplayId ?? runtimeState?.sessionId ?? "—"}</span> },
+    { k: "session_id", v: <span className="text-text-secondary">{runtimeState?.sessionDisplayId ?? runtimeState?.sessionId ?? "-"}</span> },
     {
       k: "reports_to",
       v: reportsToAgent
@@ -1512,12 +1512,12 @@ function Tracecard({
 
       {/* Sub-header: timing + metrics */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-x-4 gap-y-1 px-4 py-2 border-b border-border text-[11px] tabular-nums">
-        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">started</span> <span className="text-foreground">{startTime ?? "—"}</span></span>
-        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">ended</span> <span className="text-foreground">{endTime ?? "—"}</span></span>
+        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">started</span> <span className="text-foreground">{startTime ?? "-"}</span></span>
+        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">ended</span> <span className="text-foreground">{endTime ?? "-"}</span></span>
         <span><span className="text-text-tertiary uppercase tracking-[0.10em]">in</span> <span className="text-foreground">{formatTokens(m.input)}</span></span>
         <span><span className="text-text-tertiary uppercase tracking-[0.10em]">out</span> <span className="text-foreground">{formatTokens(m.output)}</span></span>
         <span><span className="text-text-tertiary uppercase tracking-[0.10em]">cached</span> <span className="text-foreground">{formatTokens(m.cached)}</span></span>
-        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">cost</span> <span className="text-foreground">{m.cost > 0 ? `$${m.cost.toFixed(4)}` : "—"}</span></span>
+        <span><span className="text-text-tertiary uppercase tracking-[0.10em]">cost</span> <span className="text-foreground">{m.cost > 0 ? `$${m.cost.toFixed(4)}` : "-"}</span></span>
       </div>
 
       {/* Errors / auth recovery */}
@@ -2409,7 +2409,7 @@ function KeysBlock({ agentId, projectId }: { agentId: string; projectId?: string
 
       {newToken && (
         <div className="border border-[var(--verdict-pending)] p-3 space-y-2 text-[11px]">
-          <p className="text-[var(--verdict-pending)] uppercase tracking-[0.10em]">key issued — copy now, will not be shown again</p>
+          <p className="text-[var(--verdict-pending)] uppercase tracking-[0.10em]">key issued - copy now, will not be shown again</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 bg-surface-2 px-2 py-1 font-mono text-[var(--verdict-allow)] truncate">
               {tokenVisible ? newToken : newToken.replace(/./g, "•")}

@@ -66,4 +66,4 @@ docker run --name gitmesh-agents \
   gitmesh-agents-local
 ```
 
-Without API keys, the app runs normally — adapter environment checks will surface missing prerequisites.
+Without API keys, the app runs normally - adapter environment checks will surface missing prerequisites.

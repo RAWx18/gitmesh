@@ -41,10 +41,10 @@ const PILLS: PillKey[] = [
 ];
 
 function fmtRelative(d: Date | string | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const t = typeof d === "string" ? new Date(d).getTime() : d.getTime();
   const diff = Date.now() - t;
-  if (Number.isNaN(diff)) return "—";
+  if (Number.isNaN(diff)) return "-";
   const s = Math.max(0, Math.floor(diff / 1000));
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
@@ -168,7 +168,7 @@ export function Issues() {
   // Subproject lookup
   const subprojectName = useCallback(
     (id: string | null): string => {
-      if (!id) return "—";
+      if (!id) return "-";
       const sp = subprojects?.find((s) => s.id === id);
       return sp?.name ?? id.slice(0, 6);
     },
@@ -470,7 +470,7 @@ export function Issues() {
           className="py-12 text-center text-xs text-text-tertiary"
           style={{ fontFamily: "var(--font-mono)" }}
         >
-          no issues match — try a different filter
+          no issues match - try a different filter
         </div>
       ) : (
         <div className="flex flex-col">
@@ -500,7 +500,7 @@ export function Issues() {
                   className="flex h-5 items-center gap-2 border-b border-border pl-2 text-[10px] tracking-[0.18em] text-text-tertiary"
                   style={{ textTransform: "uppercase" }}
                 >
-                  <span>{g.label || "—"}</span>
+                  <span>{g.label || "-"}</span>
                   <span>·</span>
                   <span className="tabular-nums">{g.rows.length}</span>
                 </div>
@@ -582,7 +582,7 @@ export function Issues() {
                     </span>
                     {/* Assignee */}
                     <span className="truncate text-[11px] text-text-tertiary">
-                      {assignee ? `@${assignee.name}` : "—"}
+                      {assignee ? `@${assignee.name}` : "-"}
                     </span>
                     {/* Subproject */}
                     <span className="truncate text-[11px] text-text-tertiary">

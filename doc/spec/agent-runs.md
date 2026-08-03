@@ -11,7 +11,7 @@ with current behaviour in code, this document is the target.
 
 ## TL;DR for reviewers
 
-- The agent-execution path is split across six cooperating components &mdash; an adapter registry, a wakeup coordinator, a run executor, a runtime-state store, a run-log store, and a realtime event hub.
+- The agent-execution path is split across six cooperating components - an adapter registry, a wakeup coordinator, a run executor, a runtime-state store, a run-log store, and a realtime event hub.
 - All adapters speak `agent-run/v1`. `claude_local` and `codex_local` ship as built-ins; `process` and `http` remain available unchanged.
 - Resumable session state lives per `(project, agent, adapter, task_key)` row, not on the agent itself.
 - Wakeups always pass through `enqueueWakeup({source, ...})`. Direct adapter invocation is forbidden.
@@ -74,9 +74,9 @@ The deltas this spec closes:
 
 ---
 
-## 4. Adapter protocol &mdash; `agent-run/v1`
+## 4. Adapter protocol - `agent-run/v1`
 
-All adapters &mdash; built-in or otherwise &mdash; conform to one TypeScript surface.
+All adapters - built-in or otherwise - conform to one TypeScript surface.
 Behaviour requirements live alongside the shapes.
 
 ### Top-level types
@@ -121,10 +121,10 @@ interface AdapterInvokeInput {
 
 Optional async sinks the adapter calls during execution:
 
-- `status({ message, color? })` &mdash; surface short progress text
-- `log({ stream, chunk })` &mdash; live log chunk for `stdout` / `stderr` / `system`
-- `usage(usage)` &mdash; emit a usage update mid-run
-- `event(eventType, payload)` &mdash; structured custom events
+- `status({ message, color? })`: surface short progress text
+- `log({ stream, chunk })`: live log chunk for `stdout` / `stderr` / `system`
+- `usage(usage)`: emit a usage update mid-run
+- `event(eventType, payload)`: structured custom events
 
 ### `AdapterInvokeResult`
 
@@ -148,11 +148,11 @@ interface AdapterInvokeResult {
 
 Each registered adapter exposes:
 
-- `type` &mdash; matches `agents.adapter_type`
-- `protocolVersion` &mdash; always `"agent-run/v1"`
-- `capabilities` &mdash; `{ resumableSession, statusUpdates, logStreaming, tokenUsage }`
-- `validateConfig(config)` &mdash; runs before save and before invoke
-- `invoke(input, hooks, signal)` &mdash; returns an `AdapterInvokeResult`
+- `type`: matches `agents.adapter_type`
+- `protocolVersion`: always `"agent-run/v1"`
+- `capabilities`: `{ resumableSession, statusUpdates, logStreaming, tokenUsage }`
+- `validateConfig(config)`: runs before save and before invoke
+- `invoke(input, hooks, signal)`: returns an `AdapterInvokeResult`
 
 ### Behaviour rules
 
@@ -174,8 +174,8 @@ The V1 adapter set is closed:
 
 | Adapter | Notes |
 |---------|-------|
-| `claude_local` | Typed wrapper around Claude CLI &mdash; not a thin `process` shim |
-| `codex_local` | Typed wrapper around Codex CLI &mdash; not a thin `process` shim |
+| `claude_local` | Typed wrapper around Claude CLI - not a thin `process` shim |
+| `codex_local` | Typed wrapper around Codex CLI - not a thin `process` shim |
 | `process` | Generic existing behaviour |
 | `http` | Generic existing behaviour |
 
@@ -208,10 +208,10 @@ enqueueWakeup({
 
 ### Trigger integration
 
-- Timer &mdash; a worker interval enqueues every agent whose timer is due.
-- Assignment &mdash; the issue assignment mutation enqueues the new assignee when `wakeOnAssignment` is true.
-- On-demand &mdash; the dedicated endpoint enqueues with `source = on_demand` and `triggerDetail` of `manual` or `ping`.
-- Automation &mdash; callback / system flows enqueue with `source = automation` and `triggerDetail` of `callback` or `system`.
+- Timer - a worker interval enqueues every agent whose timer is due.
+- Assignment - the issue assignment mutation enqueues the new assignee when `wakeOnAssignment` is true.
+- On-demand - the dedicated endpoint enqueues with `source = on_demand` and `triggerDetail` of `manual` or `ping`.
+- Automation - callback / system flows enqueue with `source = automation` and `triggerDetail` of `callback` or `system`.
 - Paused, terminated, and hard-budget-stopped agents do not receive new wakeups.
 
 ### Per-agent heartbeat policy
@@ -319,7 +319,7 @@ Append-only lightweight per-run timeline (no full stream chunks).
 
 Columns: `id` (bigserial pk), `project_id` fk, `run_id` fk, `agent_id` fk,
 `seq` int, `event_type` (`lifecycle` &#124; `status` &#124; `usage` &#124; `error` &#124; `structured`),
-`stream` (`system` &#124; `stdout` &#124; `stderr` &mdash; summarised events only),
+`stream` (`system` &#124; `stdout` &#124; `stderr`: summarised events only),
 `level` (`info` &#124; `warn` &#124; `error`), `color`, `message`, `payload` jsonb,
 `created_at`.
 
@@ -394,7 +394,7 @@ Rules:
 
 ---
 
-## 7. Built-in adapters &mdash; phase 1
+## 7. Built-in adapters - phase 1
 
 ### `claude-local`
 
@@ -493,8 +493,8 @@ Both local adapters must:
 
 ### Prompt fields
 
-`promptTemplate` is used on every wakeup &mdash; first run and resumed runs alike
-&mdash; and may include run source / reason pills.
+`promptTemplate` is used on every wakeup - first run and resumed runs alike
+and may include run source / reason pills.
 
 ### UI requirements
 
@@ -537,8 +537,8 @@ Auth: operator session or project-bound agent API key.
 - `agent.status.changed`
 - `heartbeat.run.queued`
 - `heartbeat.run.started`
-- `heartbeat.run.status` &mdash; short colour + message updates
-- `heartbeat.run.log` &mdash; optional live chunks; full persistence stays in `RunLogStore`
+- `heartbeat.run.status`: short colour + message updates
+- `heartbeat.run.log`: optional live chunks; full persistence stays in `RunLogStore`
 - `heartbeat.run.finished`
 - `issue.updated`
 - `issue.comment.created`
@@ -615,12 +615,12 @@ Every wakeup or run state mutation writes one of:
 
 | Phase | Output |
 |-------|--------|
-| 1 &mdash; contracts & schema | New tables / columns (`agent_runtime_state`, `agent_wakeup_requests`, `heartbeat_run_events`, `heartbeat_runs.log_*`); `RunLogStore` interface and config wiring; shared types / constants / validators; existing routes stay functional during migration |
-| 2 &mdash; wakeup coordinator | DB-backed wakeup queue; convert invoke / wake routes to enqueue with `source = on_demand`; worker loop to claim and execute |
-| 3 &mdash; local adapters | `claude-local` and `codex-local`; session-id and token-usage parsing; cancel / timeout / grace |
-| 4 &mdash; realtime push | Project websocket hub; publish run / agent / issue events; UI subscribes and invalidates |
-| 5 &mdash; prompt pills & config UX | Adapter-specific config editor; pill insertion + variable validation; sensitive-variable warnings + redaction |
-| 6 &mdash; hardening | Failure / restart recovery sweeps; metadata + full-log retention policies and pruning jobs; integration / e2e coverage for triggers and live updates |
+| 1 - contracts & schema | New tables / columns (`agent_runtime_state`, `agent_wakeup_requests`, `heartbeat_run_events`, `heartbeat_runs.log_*`); `RunLogStore` interface and config wiring; shared types / constants / validators; existing routes stay functional during migration |
+| 2 - wakeup coordinator | DB-backed wakeup queue; convert invoke / wake routes to enqueue with `source = on_demand`; worker loop to claim and execute |
+| 3 - local adapters | `claude-local` and `codex-local`; session-id and token-usage parsing; cancel / timeout / grace |
+| 4 - realtime push | Project websocket hub; publish run / agent / issue events; UI subscribes and invalidates |
+| 5 - prompt pills & config UX | Adapter-specific config editor; pill insertion + variable validation; sensitive-variable warnings + redaction |
+| 6 - hardening | Failure / restart recovery sweeps; metadata + full-log retention policies and pruning jobs; integration / e2e coverage for triggers and live updates |
 
 ---
 
@@ -632,7 +632,7 @@ Every wakeup or run state mutation writes one of:
 - Timer, assignment, on-demand, and automation wakeups all enqueue through one coordinator.
 - Pause / terminate interrupts the running local process and prevents new wakeups.
 - The browser receives live websocket updates for run status / logs and task / agent changes.
-- Failed runs expose rich CLI diagnostics in the UI &mdash; excerpts immediately, full logs retrievable via `RunLogStore`.
+- Failed runs expose rich CLI diagnostics in the UI - excerpts immediately, full logs retrievable via `RunLogStore`.
 - Every action remains project-scoped and auditable.
 
 ---

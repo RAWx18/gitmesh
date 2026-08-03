@@ -39,7 +39,7 @@ for (const pkgPath of workspacePaths) {
 
   for (const [name, version] of Object.entries(deps)) {
     // Workspace packages are bundled by esbuild, so they need no dependency
-    // entry — except the ones esbuild leaves external, which are published
+    // entry - except the ones esbuild leaves external, which are published
     // separately and must resolve at runtime.
     const externalDir = externalWorkspacePackages.get(name);
     if (externalDir) {
@@ -64,7 +64,7 @@ const sortedOptDeps = Object.fromEntries(
   Object.entries(allOptionalDeps).sort(([a], [b]) => a.localeCompare(b)),
 );
 
-// Read the CLI package metadata — prefer the dev backup if it exists
+// Read the CLI package metadata - prefer the dev backup if it exists
 const devPkgPath = resolve(repoRoot, "cli/package.dev.json");
 const cliPkg = existsSync(devPkgPath)
   ? JSON.parse(readFileSync(devPkgPath, "utf8"))

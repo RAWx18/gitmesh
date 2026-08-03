@@ -77,7 +77,7 @@ export function AuditLog() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const navigate = useNavigate();
 
-  // NOTE: All hooks must be called unconditionally — see rules-of-hooks.
+  // NOTE: All hooks must be called unconditionally - see rules-of-hooks.
   // Early returns live below the hook block; new useState/useMemo/useEffect
   // additions must go *above* the early-return guards.
   const [activeOutcomes, setActiveOutcomes] = useState<Set<OutcomeKey>>(new Set());
@@ -318,7 +318,7 @@ export function AuditLog() {
     setter(next);
   };
 
-  // Pill renderer — mono, no rounded chips, no ring; underline-on-active.
+  // Pill renderer - mono, no rounded chips, no ring; underline-on-active.
   const Pill = ({
     label,
     count,
@@ -385,7 +385,7 @@ export function AuditLog() {
 
   return (
     <div className="flex flex-col gap-3 font-mono">
-      {/* Top strip — single mono line, three regions. */}
+      {/* Top strip - single mono line, three regions. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] leading-none border-b border-border pb-3">
         {/* Title + counts */}
         <div className="flex items-center gap-3">
@@ -417,13 +417,13 @@ export function AuditLog() {
 
         <div className="flex-1" />
 
-        {/* Verifiability strip — informational, single line, top-right. */}
+        {/* Verifiability strip - informational, single line, top-right. */}
         <span className="text-text-tertiary">
-          every signed row is verifiable — click the shield to copy a verify command.
+          every signed row is verifiable - click the shield to copy a verify command.
         </span>
       </div>
 
-      {/* Filter strip — mono input + tag-style pills. */}
+      {/* Filter strip - mono input + tag-style pills. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] leading-none">
         <div className="flex items-center gap-1.5">
           <span className="text-text-tertiary">&gt;</span>
@@ -491,7 +491,7 @@ export function AuditLog() {
         <p className="text-[11px] text-destructive font-mono">{error.message}</p>
       )}
 
-      {/* Hairline-row event stream — NO card wrapper. */}
+      {/* Hairline-row event stream - NO card wrapper. */}
       <div ref={rowsContainerRef} className="border-t border-border">
         {filtered && filtered.length === 0 && (
           <div className="py-6 text-[11px] text-text-tertiary font-mono">

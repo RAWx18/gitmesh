@@ -1,7 +1,7 @@
 metadata:
   slug: external-fork-warning
   title: External-fork PR review gate
-  whatItDoes: Flags PR reviews from forks for extra scrutiny — escalates to a human before any agent acts.
+  whatItDoes: Flags PR reviews from forks for extra scrutiny - escalates to a human before any agent acts.
   whatItProtects: Your project from drive-by forks that may include subtle malicious changes.
   whenToUse: When you accept PRs from forks (most public projects). Pair with `no-merge-without-approval`.
   auditExample: |

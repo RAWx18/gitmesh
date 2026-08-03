@@ -295,7 +295,7 @@ const spec: FormatterSpec<CursorContext> = {
       },
     },
 
-    // Legacy stream-json shapes — kept as separate events so the spec stays flat.
+    // Legacy stream-json shapes - kept as separate events so the spec stays flat.
     step_start: {
       handle(ctx, emit) {
         const sessionId = asString(ctx.parsed?.sessionID);

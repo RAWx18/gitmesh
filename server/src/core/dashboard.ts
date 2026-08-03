@@ -53,7 +53,7 @@ export function dashboardService(db: Db) {
       };
       for (const row of agentRows) {
         const count = Number(row.count);
-        // "idle" agents are operational — count them as active
+        // "idle" agents are operational - count them as active
         const bucket = row.status === "idle" ? "active" : row.status;
         agentCounts[bucket] = (agentCounts[bucket] ?? 0) + count;
       }

@@ -28,13 +28,13 @@ export interface RepoContext {
    */
   homeDir?: string;
   /**
-   * Absolute paths probed — for presence only — for org-managed Claude Code
+   * Absolute paths probed - for presence only - for org-managed Claude Code
    * settings. Defaults to the per-OS managed-settings locations; tests point
    * these at fixture paths. An empty array disables the probe.
    */
   managedSettingsPaths?: readonly string[];
   /**
-   * Absolute paths probed — for presence only — for the Codex org-managed
+   * Absolute paths probed - for presence only - for the Codex org-managed
    * `requirements.toml`. Defaults to the per-OS locations; tests point these
    * at fixture paths. An empty array disables the probe.
    */

@@ -46,8 +46,8 @@ core fields:
 `GET /api/projects/{projectId}/adapters/{adapterType}/models` returns
 selectable models for the named adapter:
 
-- `codex_local` &mdash; merged with OpenAI discovery when available.
-- `opencode_local` &mdash; discovered from `opencode models`, returned in `provider/model` format. There are no static fallbacks; if discovery is unavailable, this list can be empty.
+- `codex_local`: merged with OpenAI discovery when available.
+- `opencode_local`: discovered from `opencode models`, returned in `provider/model` format. There are no static fallbacks; if discovery is unavailable, this list can be empty.
 
 ---
 
@@ -95,7 +95,7 @@ PATCH /api/agents/{agentId}
 POST /api/agents/{agentId}/keys
 ```
 
-Mints a long-lived API key. Store it securely &mdash; the plaintext key
+Mints a long-lived API key. Store it securely - the plaintext key
 is shown exactly once at creation.
 
 ---

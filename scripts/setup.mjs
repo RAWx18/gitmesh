@@ -124,7 +124,7 @@ async function ensureEnvFile() {
   const examplePath = resolve(repoRoot, ".env.example");
 
   if (existsSync(envPath)) {
-    ok(".env exists — leaving untouched");
+    ok(".env exists - leaving untouched");
     return;
   }
   if (!existsSync(examplePath)) {

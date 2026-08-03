@@ -3,7 +3,7 @@
  *
  * Each adapter describes its config form as a `FieldSchema[]`. The renderer
  * walks the schema and binds every field to the unified `AdapterConfigFieldsProps`
- * (`isCreate`, `values`, `set`, `config`, `eff`, `mark`) — so adapter modules
+ * (`isCreate`, `values`, `set`, `config`, `eff`, `mark`) - so adapter modules
  * stop hand-rolling read/commit boilerplate per-field.
  *
  * Adding a new field is a one-liner in a schema array.

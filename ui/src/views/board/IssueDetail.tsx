@@ -125,7 +125,7 @@ function usageNumber(usage: Record<string, unknown> | null, ...keys: string[]) {
 }
 
 function shortHash(id: string | null | undefined): string {
-  if (!id) return "—";
+  if (!id) return "-";
   return id.slice(0, 8);
 }
 
@@ -682,7 +682,7 @@ export function IssueDetail() {
     markIssueRead.mutate(issue.id);
   }, [issue?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // The redesigned page renders its own inline sidekick — close any legacy panel.
+  // The redesigned page renders its own inline sidekick - close any legacy panel.
   useEffect(() => {
     closePanel();
     return () => closePanel();
@@ -1327,7 +1327,7 @@ function DescriptionRow({
             <MarkdownBody className="text-sm">{issue.description}</MarkdownBody>
           ) : (
             <p className="font-mono text-[11px] uppercase tracking-[0.10em] text-text-tertiary">
-              empty body — press [e] to edit
+              empty body - press [e] to edit
             </p>
           )}
         </div>
@@ -1347,7 +1347,7 @@ function CommentRow({ comment, author }: { comment: IssueComment; author: string
           <span className="font-mono text-[10px] uppercase tracking-[0.10em] text-foreground">
             {author}
           </span>
-          <span className="opacity-50">—</span>
+          <span className="opacity-50">-</span>
           <span className="font-mono text-[10px] uppercase tracking-[0.10em] text-text-tertiary">
             comment
           </span>
@@ -1370,7 +1370,7 @@ function ActivityRow({ event, agentMap }: { event: ActivityEvent; agentMap: Map<
           {timeOfDay(event.createdAt)}
         </span>
         <span className="text-foreground">{actorLabel(event, agentMap)}</span>
-        <span className="opacity-50">—</span>
+        <span className="opacity-50">-</span>
         <span className="text-text-secondary">{formatAction(event.action, event.details)}</span>
         {event.policyOutcome && (
           <VerdictChip
@@ -1398,7 +1398,7 @@ function RunRow({ run, agentMap }: { run: RunForIssue; agentMap: Map<string, Age
     run.startedAt && run.finishedAt
       ? Math.max(0, Math.round((new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime()) / 1000))
       : null;
-  const durLabel = dur === null ? "—" : dur < 60 ? `${dur}s` : `${Math.floor(dur / 60)}m${dur % 60 ? ` ${dur % 60}s` : ""}`;
+  const durLabel = dur === null ? "-" : dur < 60 ? `${dur}s` : `${Math.floor(dur / 60)}m${dur % 60 ? ` ${dur % 60}s` : ""}`;
   const barWidth = Math.min(80, Math.max(4, dur ? Math.log2(1 + dur) * 8 : 4));
   const usage = asRecord(run.usageJson);
   const result = asRecord(run.resultJson);
@@ -1412,7 +1412,7 @@ function RunRow({ run, agentMap }: { run: RunForIssue; agentMap: Map<string, Age
           {timeOfDay(run.createdAt)}
         </span>
         <span className="text-foreground">@{agent?.name ?? shortHash(run.agentId)}</span>
-        <span className="opacity-50">—</span>
+        <span className="opacity-50">-</span>
         <span className="text-text-secondary">run·{shortHash(run.runId)}</span>
         <VerdictChip verdict={verdict} label={run.status} />
         <span
@@ -1559,7 +1559,7 @@ function Sidekick({
         <InlinePicker
           value={issue.assigneeAgentId ?? null}
           options={assignableAgents.map((a) => ({ id: a.id, label: a.name }))}
-          emptyLabel="— unassigned"
+          emptyLabel="- unassigned"
           onChange={(id) =>
             onUpdate({
               assigneeAgentId: id,
@@ -1577,7 +1577,7 @@ function Sidekick({
                 ) : issue.assigneeUserId ? (
                   <span className="text-foreground">@maintainer</span>
                 ) : (
-                  <span className="text-text-tertiary">— unassigned</span>
+                  <span className="text-text-tertiary">- unassigned</span>
                 )}
               </span>
               <span className="opacity-50">▸</span>
@@ -1599,7 +1599,7 @@ function Sidekick({
       {/* LABELS */}
       <SidekickSection label="labels">
         {issueLabelIds.size === 0 && labelsCatalog.length === 0 ? (
-          <span className="text-text-tertiary">—</span>
+          <span className="text-text-tertiary">-</span>
         ) : (
           <Popover>
             <PopoverTrigger asChild>
@@ -1618,7 +1618,7 @@ function Sidekick({
                     </span>
                   ))}
                   {issueLabelIds.size === 0 && (
-                    <span className="text-text-tertiary">— none</span>
+                    <span className="text-text-tertiary">- none</span>
                   )}
                   {(issue.labels ?? []).length > 4 && (
                     <span className="text-text-tertiary">+{(issue.labels ?? []).length - 4}</span>
@@ -1674,7 +1674,7 @@ function Sidekick({
             <span className="opacity-50">▸</span>
           </Link>
         ) : (
-          <span className="text-text-tertiary">— none</span>
+          <span className="text-text-tertiary">- none</span>
         )}
         {childIssues.length > 0 && (
           <div className="mt-1.5 pt-1.5 border-t border-border space-y-0.5">
@@ -1701,7 +1701,7 @@ function Sidekick({
         <InlinePicker
           value={issue.projectId ?? null}
           options={projects.map((p) => ({ id: p.id, label: p.name }))}
-          emptyLabel="— none"
+          emptyLabel="- none"
           onChange={(id) => onUpdate({ projectId: id })}
           trigger={
             <button className="w-full flex items-center justify-between hover:text-foreground text-left">
@@ -1709,7 +1709,7 @@ function Sidekick({
                 {subproject ? (
                   <span className="text-foreground">subproject/{subproject.name}</span>
                 ) : (
-                  <span className="text-text-tertiary">— none</span>
+                  <span className="text-text-tertiary">- none</span>
                 )}
               </span>
               <span className="opacity-50">▸</span>
@@ -1724,13 +1724,13 @@ function Sidekick({
           <div className="flex items-center justify-between">
             <span className="text-text-secondary">checkout</span>
             <span className="text-foreground">
-              {issue.checkoutRunId ? `run·${shortHash(issue.checkoutRunId)}` : "—"}
+              {issue.checkoutRunId ? `run·${shortHash(issue.checkoutRunId)}` : "-"}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-text-secondary">locked</span>
             <span className="text-foreground tabular-nums">
-              {issue.executionLockedAt ? relativeTime(issue.executionLockedAt) : "—"}
+              {issue.executionLockedAt ? relativeTime(issue.executionLockedAt) : "-"}
             </span>
           </div>
           {costSummary.hasCost && (
@@ -1765,7 +1765,7 @@ function Sidekick({
             </p>
           )}
           {attachments.length === 0 && (
-            <span className="text-text-tertiary">— none</span>
+            <span className="text-text-tertiary">- none</span>
           )}
           {attachments.map((a) => (
             <div key={a.id} className="flex items-center gap-2">

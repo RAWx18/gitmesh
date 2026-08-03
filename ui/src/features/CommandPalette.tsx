@@ -40,7 +40,7 @@ import { agentUrl, subprojectUrl } from "../lib/utils";
 import { NAV_GROUPS, labelForPath, type CatalogEntry } from "./command-catalog";
 
 // ---------------------------------------------------------------------------
-// Recent-pages helper — encapsulates the localStorage interaction.
+// Recent-pages helper - encapsulates the localStorage interaction.
 // ---------------------------------------------------------------------------
 
 const RECENT_STORAGE_KEY = "gitmesh.recentPages";

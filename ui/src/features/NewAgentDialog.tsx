@@ -133,7 +133,7 @@ function ChoiceStep({
           <Sparkles className="h-6 w-6 text-foreground" />
         </div>
         <p className="text-sm text-muted-foreground">
-          We recommend letting your lead triage agent handle agent setup — they know the project structure
+          We recommend letting your lead triage agent handle agent setup - they know the project structure
           and can configure reporting, permissions, and adapters.
         </p>
       </div>

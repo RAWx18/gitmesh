@@ -226,7 +226,7 @@ function BudgetBar({ spentCents, capCents }: { spentCents: number; capCents: num
   const W = 60;
   const H = 6;
   if (!capCents || capCents <= 0) {
-    // No cap — single tick mark
+    // No cap - single tick mark
     return (
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden style={{ display: "block" }}>
         <rect x={0} y={H / 2 - 0.5} width={W} height={1} fill="var(--border)" />
@@ -391,7 +391,7 @@ function RosterRow({
   const role = ROLE_LABELS[agent.role] ?? agent.role;
   const href = agentUrl(agent);
   const ref = agentRouteRef(agent);
-  const lastRun = agent.lastHeartbeatAt ? relativeTime(agent.lastHeartbeatAt) : "—";
+  const lastRun = agent.lastHeartbeatAt ? relativeTime(agent.lastHeartbeatAt) : "-";
 
   const handleRowClick = (e: React.MouseEvent) => {
     if (bulkSelecting) {
@@ -935,7 +935,7 @@ export function Agents() {
               color: "var(--text-tertiary)",
             }}
           >
-            no workers — onboard one to get started
+            no workers - onboard one to get started
           </div>
         ) : (
           <>
@@ -953,7 +953,7 @@ export function Agents() {
                   color: "var(--text-tertiary)",
                 }}
               >
-                no workers in this slice — try the all filter or onboard one
+                no workers in this slice - try the all filter or onboard one
               </div>
             ) : (
               visibleAgents.map((agent, idx) => (

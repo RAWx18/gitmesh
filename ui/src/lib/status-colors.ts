@@ -30,7 +30,7 @@ export interface PriorityTokens {
 }
 
 // ---------------------------------------------------------------------------
-// Reusable palette atoms — one source of truth for hue choices
+// Reusable palette atoms - one source of truth for hue choices
 // ---------------------------------------------------------------------------
 
 const ATOM = {
@@ -97,7 +97,7 @@ const ATOM = {
 } as const satisfies Record<string, StatusTokens>;
 
 // ---------------------------------------------------------------------------
-// Status registry — every known status maps to a single atom
+// Status registry - every known status maps to a single atom
 // ---------------------------------------------------------------------------
 
 const STATUS_REGISTRY = {
@@ -141,7 +141,7 @@ export type KnownStatus = keyof typeof STATUS_REGISTRY;
 
 const FALLBACK_STATUS_TOKENS: StatusTokens = ATOM.muted;
 
-/** Single helper — returns the full token bundle for any status string. */
+/** Single helper - returns the full token bundle for any status string. */
 export function getStatusTokens(status: string | null | undefined): StatusTokens {
   if (!status) return FALLBACK_STATUS_TOKENS;
   return (STATUS_REGISTRY as Record<string, StatusTokens>)[status] ?? FALLBACK_STATUS_TOKENS;
@@ -168,7 +168,7 @@ export function getPriorityTokens(priority: string | null | undefined): Priority
 }
 
 // ---------------------------------------------------------------------------
-// Backward-compat exports — derived from the registry so they never drift
+// Backward-compat exports - derived from the registry so they never drift
 // ---------------------------------------------------------------------------
 
 function project<K extends keyof StatusTokens>(field: K): Record<string, string> {

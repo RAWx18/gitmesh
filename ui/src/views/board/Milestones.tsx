@@ -19,10 +19,10 @@ function statusVerdict(status: string): Verdict {
 }
 
 function fmtRelative(d: Date | string | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const t = typeof d === "string" ? new Date(d).getTime() : d.getTime();
   const diff = Date.now() - t;
-  if (Number.isNaN(diff)) return "—";
+  if (Number.isNaN(diff)) return "-";
   const s = Math.max(0, Math.floor(diff / 1000));
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
@@ -225,8 +225,8 @@ export function Milestones() {
       ) : filtered.length === 0 ? (
         <div className="py-12 text-center text-xs text-text-tertiary">
           {allGoals.length === 0
-            ? "no milestones — press n to add"
-            : "no milestones match — try a different filter"}
+            ? "no milestones - press n to add"
+            : "no milestones match - try a different filter"}
         </div>
       ) : (
         <div className="flex flex-col">
@@ -306,7 +306,7 @@ export function Milestones() {
                 </span>
                 {/* Owner */}
                 <span className="truncate text-[11px] text-text-tertiary">
-                  {g.ownerAgentId ? `@${g.ownerAgentId.slice(0, 8)}` : "—"}
+                  {g.ownerAgentId ? `@${g.ownerAgentId.slice(0, 8)}` : "-"}
                 </span>
                 {/* Updated */}
                 <span className="text-right text-[11px] tabular-nums text-text-tertiary">

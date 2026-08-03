@@ -2,7 +2,7 @@
  * Attestation Routes
  *
  * Public verification endpoints. These routes deliberately do NOT call
- * `assertBoard()` / `assertProjectAccess()` — they expose only signed
+ * `assertBoard()` / `assertProjectAccess()`: they expose only signed
  * payloads + the project's public key. A consumer can verify the
  * signature with no GitMesh credentials, e.g. directly from a CI script.
  *

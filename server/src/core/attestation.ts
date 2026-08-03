@@ -162,7 +162,7 @@ export function attestationService(db: Db) {
   }
 
   function canonicalize(payload: AttestationPayload): string {
-    // Stable key order — JSON.stringify with explicit key list.
+    // Stable key order - JSON.stringify with explicit key list.
     const ordered: AttestationPayload = {
       activityId: payload.activityId,
       agentId: payload.agentId,
@@ -491,7 +491,7 @@ export function attestationService(db: Db) {
 
 /**
  * Pure verification helper. Used by both the server and the CLI's
- * `attest verify` subcommand — same code, no DB.
+ * `attest verify` subcommand - same code, no DB.
  */
 export function verifySignedPayload(
   signedPayload: string,

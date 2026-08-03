@@ -15,7 +15,7 @@ export const agentPolicies = pgTable(
     name: text("name").notNull(),
     /** Detailed description of what this policy does */
     description: text("description"),
-    /** Policy version — incremented on each update */
+    /** Policy version - incremented on each update */
     version: integer("version").notNull().default(1),
     /** Whether this policy is currently active */
     enabled: boolean("enabled").notNull().default(true),

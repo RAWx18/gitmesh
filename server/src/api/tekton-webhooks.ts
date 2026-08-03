@@ -5,7 +5,7 @@
  * Stores results, triggers agent wakeups, and enforces policy gates.
  *
  * Routes:
- * - POST /api/forge/webhook/tekton  — receive Tekton PipelineRun/TaskRun webhooks
+ * - POST /api/forge/webhook/tekton  - receive Tekton PipelineRun/TaskRun webhooks
  */
 
 import { Router } from "express";

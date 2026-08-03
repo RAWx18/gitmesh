@@ -6,7 +6,7 @@
  * - Detects CI/workflow file modifications that require approval
  * - Flags weak crypto and eval() usage
  *
- * All security actions require human approval — the agent never
+ * All security actions require human approval - the agent never
  * auto-remediates.
  *
  * Triggered on: pr_opened events + weekly scheduled heartbeat
@@ -55,25 +55,25 @@ const INSECURE_PATTERNS: Array<{ name: string; pattern: RegExp; severity: "criti
         name: "eval_usage",
         pattern: /\beval\s*\(/g,
         severity: "high",
-        message: "Usage of eval() detected — potential code injection vulnerability",
+        message: "Usage of eval() detected - potential code injection vulnerability",
     },
     {
         name: "weak_crypto_md5",
         pattern: /\b(createHash|digest)\s*\(\s*['"]md5['"]\s*\)/gi,
         severity: "high",
-        message: "MD5 hash detected — use SHA-256 or stronger",
+        message: "MD5 hash detected - use SHA-256 or stronger",
     },
     {
         name: "weak_crypto_sha1",
         pattern: /\b(createHash|digest)\s*\(\s*['"]sha1?['"]\s*\)/gi,
         severity: "medium",
-        message: "SHA-1 hash detected — use SHA-256 or stronger",
+        message: "SHA-1 hash detected - use SHA-256 or stronger",
     },
     {
         name: "insecure_http",
         pattern: /http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)/g,
         severity: "medium",
-        message: "Insecure HTTP URL detected — use HTTPS",
+        message: "Insecure HTTP URL detected - use HTTPS",
     },
     {
         name: "excessive_permissions",
@@ -85,7 +85,7 @@ const INSECURE_PATTERNS: Array<{ name: string; pattern: RegExp; severity: "criti
         name: "sql_injection_risk",
         pattern: /\$\{.*\}.*(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER)\b/gi,
         severity: "critical",
-        message: "Potential SQL injection — use parameterized queries",
+        message: "Potential SQL injection - use parameterized queries",
     },
 ];
 
@@ -146,7 +146,7 @@ function scanContent(content: string, filePath?: string): SecurityViolation[] {
         violations.push({
             checkName: "ci_file_modification",
             severity: "high",
-            message: `CI/workflow file modified: ${filePath} — requires maintainer approval`,
+            message: `CI/workflow file modified: ${filePath} - requires maintainer approval`,
             filePath,
             requiresApproval: true,
         });
@@ -205,7 +205,7 @@ function generateSummary(violations: SecurityViolation[]): string {
 export async function executeSecurity(context: SecurityContext): Promise<SecurityResult> {
     const { event } = context;
 
-    // Only scan PR events — scheduled scans are handled differently
+    // Only scan PR events - scheduled scans are handled differently
     if (!["pr_opened", "pr_comment"].includes(event.eventType)) {
         return {
             violations: [],

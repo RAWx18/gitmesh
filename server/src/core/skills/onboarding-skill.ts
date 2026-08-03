@@ -80,7 +80,7 @@ function generateWelcomeComment(event: ForgeEvent): string {
         `### ⏰ Review Timeline`,
         `- A maintainer will review your PR within **48 hours** on business days`,
         `- If you don't hear back, feel free to ping the thread`,
-        `- Reviews may request changes — this is normal and constructive!`,
+        `- Reviews may request changes - this is normal and constructive!`,
         ``,
         `### 📄 License`,
         `- By contributing, you agree that your contribution is licensed under the project's [LICENSE](${DOC_LINKS.LICENSE})`,
@@ -114,7 +114,7 @@ function suggestReviewer(event: ForgeEvent): string | null {
         return null;
     }
 
-    // Fall back to null — real implementation would parse CODEOWNERS
+    // Fall back to null - real implementation would parse CODEOWNERS
     return null;
 }
 

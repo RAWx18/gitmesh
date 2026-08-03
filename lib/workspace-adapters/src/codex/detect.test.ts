@@ -48,7 +48,7 @@ function makeRepo(files: Record<string, string>): { root: string; repo: RepoCont
 }
 
 describe("codex detect()", () => {
-  it("reports a CODEX_HOME hint when set — presence only, never the value", () => {
+  it("reports a CODEX_HOME hint when set - presence only, never the value", () => {
     const { root } = makeRepo({});
     const artifacts = detect({
       rootDir: root,

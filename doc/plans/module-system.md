@@ -2,7 +2,7 @@
 > GitMesh Agents context. Retained as the design reference for the module
 > + template + store system.
 
-# Module System &mdash; Design Reference
+# Module System - Design Reference
 
 GitMesh Agents extends without forking via two distinct, complementary
 artifacts:
@@ -10,19 +10,19 @@ artifacts:
 | Artifact | Carries code? | Purpose |
 |----------|---------------|---------|
 | **Module** | yes | Adds routes, UI pages, tables, services, hook handlers |
-| **Project Template** | no &mdash; JSON only | Bootstraps a new project's agents, goals, projects, issues |
+| **Project Template** | no - JSON only | Bootstraps a new project's agents, goals, projects, issues |
 
 Both are surfaced through the **Project Store** (browse / install / import).
 
 A small glossary upfront:
 
-- **Hook** &mdash; named event the core emits for modules to subscribe to.
-- **Slot** &mdash; exclusive category (only one active module per slot, e.g. `observability`).
-- **Project Store** &mdash; registry that indexes modules + templates.
+- **Hook**: named event the core emits for modules to subscribe to.
+- **Slot**: exclusive category (only one active module per slot, e.g. `observability`).
+- **Project Store**: registry that indexes modules + templates.
 
 ---
 
-## Section 1 &mdash; Module shape
+## Section 1 - Module shape
 
 ### 1.1 Layout on disk
 
@@ -33,7 +33,7 @@ workspace package:
 modules/observability/
   gitmesh-agents.module.json     manifest (required)
   src/
-    index.ts                     entry point &mdash; default export = register()
+    index.ts                     entry point - default export = register()
     routes.ts                    Express router
     hooks.ts                     hook handlers
     schema.ts                    Drizzle table definitions (prefixed mod_<id>_)
@@ -150,7 +150,7 @@ monkey-patch core.
 
 ---
 
-## Section 2 &mdash; Hook system
+## Section 2 - Hook system
 
 ### 2.1 Catalogue of core hooks
 
@@ -197,9 +197,9 @@ class HookBus {
 ```
 
 If pre-commit validation is ever needed (e.g. veto a budget change),
-that's a separate middleware mechanism &mdash; **not** the hook bus.
+that's a separate middleware mechanism - **not** the hook bus.
 
-### 2.3 Worked example &mdash; the observability heartbeat handler
+### 2.3 Worked example - the observability heartbeat handler
 
 ```typescript
 // modules/observability/src/hooks.ts
@@ -231,7 +231,7 @@ neither knows nor cares.
 
 ---
 
-## Section 3 &mdash; Database & migrations
+## Section 3 - Database & migrations
 
 ### 3.1 Namespacing
 
@@ -274,7 +274,7 @@ tables NEVER reference module tables.
 
 ---
 
-## Section 4 &mdash; Loading, configuration, and lifecycle
+## Section 4 - Loading, configuration, and lifecycle
 
 ### 4.1 Boot sequence
 
@@ -323,12 +323,12 @@ When a module is disabled (set `enabled` &rarr; false):
 - Background services stop.
 - Routes unmount (return 404).
 - Hook handlers unsubscribe.
-- Tables are **not** dropped &mdash; data survives. Re-enabling resumes where
+- Tables are **not** dropped - data survives. Re-enabling resumes where
   it left off.
 
 ---
 
-## Section 5 &mdash; UI integration
+## Section 5 - UI integration
 
 ### 5.1 Shell responsibilities
 
@@ -398,7 +398,7 @@ Module UI fetches data exclusively from its own
 
 ---
 
-## Section 6 &mdash; Project Templates
+## Section 6 - Project Templates
 
 ### 6.1 Format
 
@@ -452,7 +452,7 @@ template JSON. This makes projects shareable and clonable.
 
 ---
 
-## Section 7 &mdash; Project Store
+## Section 7 - Project Store
 
 The Project Store is a registry for modules and templates. **V1** = a
 curated GitHub repo with a JSON index. Later it could become a hosted
@@ -495,9 +495,9 @@ pnpm gitmesh-agents store export                  # export current project as te
 
 ---
 
-## Section 8 &mdash; Module roadmap (candidate set)
+## Section 8 - Module roadmap (candidate set)
 
-### Tier 1 &mdash; build first (core extensions)
+### Tier 1 - build first (core extensions)
 
 | Module | Purpose | Key hooks |
 |--------|---------|-----------|
@@ -505,7 +505,7 @@ pnpm gitmesh-agents store export                  # export current project as te
 | **Revenue Tracking** | Stripe / crypto wallets, income, P&L vs. agent costs | `budget:spend_recorded` |
 | **Notifications** | Slack / Discord / email alerts on configurable triggers | All hooks (configurable) |
 
-### Tier 2 &mdash; high value
+### Tier 2 - high value
 
 | Module | Purpose | Key hooks |
 |--------|---------|-----------|
@@ -513,7 +513,7 @@ pnpm gitmesh-agents store export                  # export current project as te
 | **Workflow Automation** | If/then rules ("when issue done, create follow-up"; "when budget at 90%, pause agent") | `issue:status_changed`, `budget:threshold_crossed` |
 | **Knowledge Base** | Shared doc store, vector search, agent read/write of org knowledge | `agent:heartbeat` (context injection) |
 
-### Tier 3 &mdash; nice to have
+### Tier 3 - nice to have
 
 | Module | Purpose | Key hooks |
 |--------|---------|-----------|
@@ -523,30 +523,30 @@ pnpm gitmesh-agents store export                  # export current project as te
 
 ---
 
-## Section 9 &mdash; Implementation plan
+## Section 9 - Implementation plan
 
-### Phase 1 &mdash; core infrastructure
+### Phase 1 - core infrastructure
 
 In `@gitmesh/server`:
 
-1. `HookBus` &mdash; emitter with `register()` and `emit()`, `Promise.allSettled` semantics.
-2. Module loader &mdash; scans `modules/`, validates manifests, calls `register(api)`.
-3. Module API object &mdash; `registerRoutes()`, `on()`, `registerService()`, scoped logger, core read access.
-4. Module config &mdash; `gitmesh-agents.config.json` with per-module config and env-var interpolation.
-5. Module migration runner &mdash; extends `db:migrate` to discover and run module migrations.
+1. `HookBus`: emitter with `register()` and `emit()`, `Promise.allSettled` semantics.
+2. Module loader - scans `modules/`, validates manifests, calls `register(api)`.
+3. Module API object - `registerRoutes()`, `on()`, `registerService()`, scoped logger, core read access.
+4. Module config - `gitmesh-agents.config.json` with per-module config and env-var interpolation.
+5. Module migration runner - extends `db:migrate` to discover and run module migrations.
 6. Emit hooks from existing core CRUD operations.
 
 In `@gitmesh/agents-ui`:
 
-7. Module page loader &mdash; reads manifests, generates lazy routes.
-8. Dashboard widget slots &mdash; render module-contributed widgets on the Dashboard page.
-9. Sidebar extension &mdash; dynamically add module nav items.
+7. Module page loader - reads manifests, generates lazy routes.
+8. Dashboard widget slots - render module-contributed widgets on the Dashboard page.
+9. Sidebar extension - dynamically add module nav items.
 
 New package:
 
-10. `@gitmesh/module-sdk` &mdash; TypeScript types for `ModuleAPI`, `HookEvent`, `HookHandler`, manifest schema.
+10. `@gitmesh/module-sdk`: TypeScript types for `ModuleAPI`, `HookEvent`, `HookHandler`, manifest schema.
 
-### Phase 2 &mdash; first module (observability)
+### Phase 2 - first module (observability)
 
 11. Build `modules/observability` as the reference implementation.
 12. Token metrics table + migration.
@@ -554,13 +554,13 @@ New package:
 14. Dashboard widget showing burn rate.
 15. API routes for querying metrics.
 
-### Phase 3 &mdash; templates
+### Phase 3 - templates
 
 16. `POST /api/templates/import`.
 17. `GET /api/templates/export`.
 18. First template: "Startup in a Box".
 
-### Phase 4 &mdash; Project Store
+### Phase 4 - Project Store
 
 19. GitHub-based store index.
 20. CLI commands for browse / install / import.
@@ -568,12 +568,12 @@ New package:
 
 ---
 
-## Section 10 &mdash; Design principles
+## Section 10 - Design principles
 
 The seven invariants that govern this whole system. All code reviews
 against module-system changes go through this list.
 
-1. **Modules extend, never patch.** New routes, tables, hooks &mdash; never modifying core.
+1. **Modules extend, never patch.** New routes, tables, hooks - never modifying core.
 2. **Hooks are post-commit, fire-and-forget.** Module failures must never break core operations.
 3. **One-way dependency.** Modules depend on core; core never depends on modules. Module tables may FK to core tables, never the reverse.
 4. **Declarative manifest, imperative registration.** Static metadata in JSON (validatable without running code); runtime behaviour registered via the API.

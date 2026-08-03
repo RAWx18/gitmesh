@@ -3,7 +3,7 @@ import { renderAdapterSchema, type FieldSchema } from "../_shared/adapter-form";
 import { Field } from "../../components/agent-config-primitives";
 
 /**
- * Gateway adapter config — declarative schema with two custom slots
+ * Gateway adapter config - declarative schema with two custom slots
  * (gateway-token secret routing through `headers`, and the static
  * "Device auth" copy block).
  *

@@ -1,7 +1,7 @@
 > **Historical plan.** Superseded by `IMPLEMENTATION.md` for current
 > GitMesh Agents context.
 
-# Humans, Permissions, and Onboarding &mdash; Plan
+# Humans, Permissions, and Onboarding - Plan
 
 **Status** Draft &middot; **Owners** Server + UI + Shared + DB &middot; **Drafted** 2026-02-21
 
@@ -10,7 +10,7 @@
 ## Why this exists
 
 V1 was designed for a single operator. We need first-class human users
-and permissions while keeping two coexisting deployment shapes &mdash; an
+and permissions while keeping two coexisting deployment shapes - an
 instant local mode (`npx gitmesh-agents run` and you're in) and a safe
 cloud mode where authentication is mandatory.
 
@@ -84,9 +84,9 @@ later without changing membership or permission semantics.
 
 A single resolved actor per request:
 
-- `user` &mdash; authenticated human
-- `agent` &mdash; API key
-- `local_board_implicit` &mdash; only valid in `local_trusted`
+- `user`: authenticated human
+- `agent`: API key
+- `local_board_implicit`: only valid in `local_trusted`
 
 Resolution rules:
 
@@ -100,7 +100,7 @@ Resolution rules:
 ## First-admin bootstrap
 
 Cloud deployments need a safe, explicit way to plant the first human
-admin. `local_trusted` does not need this &mdash; the implicit local
+admin. `local_trusted` does not need this - the implicit local
 instance admin already exists.
 
 Flow:
@@ -133,13 +133,13 @@ field (or companion table) for admin rights.
 `project_id`, `principal_type` (`user` &#124; `agent`), `principal_id`,
 `status` (`pending` &#124; `active` &#124; `suspended`), role metadata.
 Stores effective access state for both humans and agents. **Many-to-many**
-&mdash; one principal can belong to multiple projects.
+one principal can belong to multiple projects.
 
 #### `invites`
 
 `project_id`, `invite_type` (`project_join` &#124; `bootstrap_ceo`), token
 hash, `expires_at`, `invited_by`, `revoked_at`, `accepted_at`.
-One-time share link &mdash; no pre-bound invite email.
+One-time share link - no pre-bound invite email.
 `allowed_join_types` (`human` &#124; `agent` &#124; `both`) gates which
 paths a `project_join` link permits.
 Optional defaults payload keyed by join type:
@@ -152,7 +152,7 @@ Optional defaults payload keyed by join type:
 `project_id`, `principal_type` (`user` &#124; `agent`), `principal_id`,
 `permission_key`. Explicit grants such as `agents:create`. Includes a
 scope payload for chain-of-command limits. **Normalised table**, not a
-JSON blob &mdash; for auditable grant / revoke history.
+JSON blob - for auditable grant / revoke history.
 
 #### `join_requests`
 
@@ -192,8 +192,8 @@ separate authz codepath.
 
 ### Role layers
 
-- `instance_admin` &mdash; deployment-wide admin; can access and manage all projects + user-project access mapping.
-- `project_member` &mdash; project-scoped permissions only.
+- `instance_admin`: deployment-wide admin; can access and manage all projects + user-project access mapping.
+- `project_member`: project-scoped permissions only.
 
 ### Initial grant set
 
@@ -236,7 +236,7 @@ Steps:
 2. System produces an invite URL with a one-time token.
 3. The invite landing page presents two paths: `Join as human` or `Join as agent` (filtered by `allowed_join_types`).
 4. The requester picks a path and submits the required data.
-5. Submission consumes the token and creates a `pending_approval` join request &mdash; **no access yet**.
+5. Submission consumes the token and creates a `pending_approval` join request - **no access yet**.
 6. The join request captures review metadata: human &rarr; authenticated email; agent &rarr; proposed metadata; both &rarr; source IP.
 7. A project admin / instance admin reviews and approves or rejects.
 8. On approval:
@@ -260,7 +260,7 @@ Security rules:
 
 - Join requests generate inbox alerts for eligible approvers (`joins:approve` or admin).
 - Alerts appear in both the global / project inbox feed and the dedicated pending-approvals UI.
-- Alerts include inline approve / reject actions &mdash; no context switch required.
+- Alerts include inline approve / reject actions - no context switch required.
 - Alert payload must include: requester email when `request_type=human`, source IP, request type.
 
 ### Human inbox + agent &rarr; human delegation
@@ -318,7 +318,7 @@ Security rules:
 - A local implicit operator user is auto-provisioned for audit attribution.
 - The local operator can use instance settings and project settings as effective instance admin.
 - Invite, join-approval, and permission-management UI is available in local mode.
-- Agent onboarding is expected in local mode &mdash; including creating invite links and approving join requests.
+- Agent onboarding is expected in local mode - including creating invite links and approving join requests.
 - Public / untrusted network ingress is out of scope for V1 local mode.
 
 ## Cloud agents in this model
@@ -343,7 +343,7 @@ V1 approach:
 
 ## Implementation phasing
 
-### Phase 1 &mdash; Mode and guardrails
+### Phase 1 - Mode and guardrails
 
 - Explicit deployment-mode config (`local_trusted` &#124; `cloud_hosted`).
 - Startup safety checks; health visibility.
@@ -351,7 +351,7 @@ V1 approach:
 - Bootstrap status signal in health / config (`ready` &#124; `bootstrap_pending`).
 - Minimal instance settings API / CLI surface and read-only UI indicators.
 
-### Phase 2 &mdash; Human identity & memberships
+### Phase 2 - Human identity & memberships
 
 - Schema + migrations for users / memberships / invites.
 - Auth middleware for cloud mode.
@@ -360,7 +360,7 @@ V1 approach:
 - First-admin bootstrap invite command + onboard integration.
 - One-time share-link invite acceptance flow with `pending_approval` join requests.
 
-### Phase 3 &mdash; Permissions & assignment scope
+### Phase 3 - Permissions & assignment scope
 
 - Shared principal grant model + enforcement helpers.
 - Chain-of-command scope checks for assignment APIs.
@@ -368,7 +368,7 @@ V1 approach:
 - Instance-admin promotion / demotion + global project-access management APIs.
 - `joins:approve` permission checks for human + agent join approvals.
 
-### Phase 4 &mdash; Invite workflow
+### Phase 4 - Invite workflow
 
 - Unified `project_join` create / landing / accept / revoke endpoints.
 - Join request approve / reject endpoints with review metadata.
@@ -377,13 +377,13 @@ V1 approach:
 - Inbox alert generation for pending join requests.
 - Invite + approval UX is enabled in **both** modes.
 
-### Phase 5 &mdash; Human inbox + assignment updates
+### Phase 5 - Human inbox + assignment updates
 
 - Extend issue assignee model for human users.
 - Inbox API + UI: task assignments, pending join-approval alerts with inline approve / reject.
 - Agent &rarr; human assignment flow with policy checks.
 
-### Phase 6 &mdash; Agent self-join + token claim
+### Phase 6 - Agent self-join + token claim
 
 - Agent join path on unified invite landing page.
 - Capture agent join requests + admin approval flow.
@@ -402,7 +402,7 @@ V1 approach:
 7. `pnpm gitmesh-agents onboard` outputs an admin onboarding invite URL when bootstrap is pending.
 8. One `project_join` link supports both human and agent onboarding via join-type selection on the landing page.
 9. Invite delivery in V1 is copy-link only (no built-in email delivery).
-10. Share-link acceptance creates a pending join request &mdash; it does not grant immediate access.
+10. Share-link acceptance creates a pending join request - it does not grant immediate access.
 11. Pending join requests appear as inbox alerts with inline approve / reject actions.
 12. The admin review view includes join metadata before decision (human email when applicable, source IP, agent metadata for agent requests).
 13. Only approved join requests unlock access:
@@ -425,11 +425,11 @@ V1 approach:
 
 ## V1 decisions (locked)
 
-1. `local_trusted` will not support login UX in V1 &mdash; implicit local operator actor only.
+1. `local_trusted` will not support login UX in V1 - implicit local operator actor only.
 2. Permissions use a normalised shared table (`principal_permission_grants`) with scoped grants.
-3. Invite delivery is copy-link only in V1 &mdash; no built-in email.
+3. Invite delivery is copy-link only in V1 - no built-in email.
 4. Bootstrap invite creation requires local shell access only (CLI path; **no** HTTP bootstrap endpoint).
-5. Approval review shows source IP only &mdash; no GeoIP / country lookup in V1.
+5. Approval review shows source IP only - no GeoIP / country lookup in V1.
 6. Agent API-key lifetime is indefinite by default in V1, with explicit revoke / regenerate controls.
 7. Local mode keeps full admin / settings / invite capabilities through the implicit local instance-admin actor.
-8. Public / untrusted ingress for local mode is out of scope for V1 &mdash; no `--dangerous-agent-ingress` in V1.
+8. Public / untrusted ingress for local mode is out of scope for V1 - no `--dangerous-agent-ingress` in V1.

@@ -53,7 +53,7 @@ Headers: X-GitMesh Agents-Run-Id: {runId}
 { "agentId": "{yourId}", "expectedStatuses": ["todo", "backlog", "blocked"] }
 ```
 
-If already checked out by you, this succeeds. If another agent owns it: `409 Conflict` — stop and pick a different task. **Never retry a 409.**
+If already checked out by you, this succeeds. If another agent owns it: `409 Conflict`: stop and pick a different task. **Never retry a 409.**
 
 ### Step 6: Understand Context
 
@@ -99,9 +99,9 @@ Always set `parentId` and `milestoneId` on subtasks.
 
 ## Critical Rules
 
-- **Always checkout** before working — never PATCH to `in_progress` manually
-- **Never retry a 409** — the task belongs to someone else
+- **Always checkout** before working - never PATCH to `in_progress` manually
+- **Never retry a 409**: the task belongs to someone else
 - **Always comment** on in-progress work before exiting a heartbeat
 - **Always set parentId** on subtasks
-- **Never cancel cross-team tasks** — reassign to your manager
-- **Escalate when stuck** — use your chain of command
+- **Never cancel cross-team tasks**: reassign to your manager
+- **Escalate when stuck**: use your chain of command

@@ -1,5 +1,5 @@
 /**
- * `context` subcommands — manage CLI context profiles.
+ * `context` subcommands - manage CLI context profiles.
  *
  * These commands intentionally don't use `defineClientCommand` (they don't
  * talk to the API), but they share the same option-spec idiom via

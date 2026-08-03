@@ -10,7 +10,7 @@ pnpm dev
 # → API + UI at http://localhost:3100
 ```
 
-GitMesh Agents runs without setting up PostgreSQL manually — the dev server boots an embedded PostgreSQL into `~/.gitmesh-agents/instances/default/db`. The default mode is `local_trusted`.
+GitMesh Agents runs without setting up PostgreSQL manually - the dev server boots an embedded PostgreSQL into `~/.gitmesh-agents/instances/default/db`. The default mode is `local_trusted`.
 
 ## Requirements
 
@@ -20,7 +20,7 @@ GitMesh Agents runs without setting up PostgreSQL manually — the dev server bo
 | pnpm | 9+ | |
 | Docker | optional | only for the no-local-Node path and Gateway smoke harnesses |
 
-The repo follows a **lockfile-not-in-PRs** policy: don't commit `pnpm-lock.yaml`. GitHub Actions owns it — pushes to `master` regenerate it with `pnpm install --lockfile-only --no-frozen-lockfile` and commit back, and PR CI runs `--frozen-lockfile` after that. Pull-request CI validates dependency resolution whenever a manifest changes.
+The repo follows a **lockfile-not-in-PRs** policy: don't commit `pnpm-lock.yaml`. GitHub Actions owns it - pushes to `master` regenerate it with `pnpm install --lockfile-only --no-frozen-lockfile` and commit back, and PR CI runs `--frozen-lockfile` after that. Pull-request CI validates dependency resolution whenever a manifest changes.
 
 ## Running locally
 
@@ -80,7 +80,7 @@ To reset state in a hurry: `rm -rf ~/.gitmesh-agents/instances/default/db && pnp
 
 ## Configuration reference
 
-Most knobs live in the CLI — `pnpm gitmesh-agents configure --section <name>` walks through interactive setup for `database`, `storage`, `secrets`, etc. Environment overrides are useful in CI/Docker.
+Most knobs live in the CLI - `pnpm gitmesh-agents configure --section <name>` walks through interactive setup for `database`, `storage`, `secrets`, etc. Environment overrides are useful in CI/Docker.
 
 | Variable | Effect |
 | --- | --- |
@@ -122,7 +122,7 @@ pnpm secrets:migrate-inline-env           # dry run
 pnpm secrets:migrate-inline-env --apply   # apply
 ```
 
-Strict mode makes inline secret env values an error rather than a warning — recommended for any non-local-trusted host.
+Strict mode makes inline secret env values an error rather than a warning - recommended for any non-local-trusted host.
 
 ### Claude proxy (dual-mode)
 

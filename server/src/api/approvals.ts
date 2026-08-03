@@ -121,7 +121,7 @@ export function approvalRoutes(db: Db) {
   router.post("/approvals/:id/approve", validate(resolveApprovalSchema), async (req, res) => {
     assertBoard(req);
     const id = req.params.id as string;
-    // Always derive the decider from the authenticated session — never from the
+    // Always derive the decider from the authenticated session - never from the
     // request body. Trusting the body here would let any operator record a
     // fabricated userId in approvals.decided_by_user_id (the permanent audit record)
     // while logActivity correctly records req.actor.userId, creating an inconsistency.

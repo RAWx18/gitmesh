@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 
-const DEFAULT_AGENTS_YAML = `# .gitmesh/agents.yaml — Agent configuration for this project
+const DEFAULT_AGENTS_YAML = `# .gitmesh/agents.yaml - Agent configuration for this project
 # Docs: https://gitmesh.dev/docs/config
 version: 1
 
@@ -67,7 +67,7 @@ policy:
   overrides: []
 `;
 
-const DEFAULT_POLICY_YAML = `# .gitmesh/policy.yaml — Policy rules for agent governance
+const DEFAULT_POLICY_YAML = `# .gitmesh/policy.yaml - Policy rules for agent governance
 # Docs: https://gitmesh.dev/docs/policy
 version: "1"
 

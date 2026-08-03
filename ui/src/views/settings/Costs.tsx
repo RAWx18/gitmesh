@@ -140,7 +140,7 @@ export function Costs() {
       agentId: a.agentId,
       agentName: a.agentName ?? a.agentId,
       started: WINDOW_LABELS[win],
-      duration: runCount > 0 ? `${runCount} run${runCount === 1 ? "" : "s"}` : "—",
+      duration: runCount > 0 ? `${runCount} run${runCount === 1 ? "" : "s"}` : "-",
       model: a.subscriptionRunCount > 0 ? "subscription" : "api",
       inputTokens: a.inputTokens,
       outputTokens: a.outputTokens,
@@ -351,9 +351,9 @@ export function Costs() {
                   )}
                   aria-hidden="true"
                 >
-                  <span>{from ? new Date(from).toISOString().slice(5, 10) : "—"}</span>
+                  <span>{from ? new Date(from).toISOString().slice(5, 10) : "-"}</span>
                   <span>{WINDOW_LABELS[win]}</span>
-                  <span>{to ? new Date(to).toISOString().slice(5, 10) : "—"}</span>
+                  <span>{to ? new Date(to).toISOString().slice(5, 10) : "-"}</span>
                 </div>
               </button>
             );

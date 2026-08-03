@@ -96,7 +96,7 @@ function redactValue(value: unknown): unknown {
       // so they are safe to keep verbatim even at sensitive keys.
       return value;
     case "plain_binding":
-      // plain bindings wrap a literal value — keep the wrapper, redact the inner value.
+      // plain bindings wrap a literal value - keep the wrapper, redact the inner value.
       return { type: "plain", value: REDACTED_EVENT_VALUE };
     default:
       return REDACTED_EVENT_VALUE;

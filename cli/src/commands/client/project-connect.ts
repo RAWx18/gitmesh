@@ -33,9 +33,9 @@ export function registerProjectConnectCommand(program: Command): void {
   const cmd = target
     .command("connect")
     .description("Connect a project to its forge in one step (OAuth + webhook + default policies + triage agent + skill install)")
-    .argument("[repo-url]", "Repository URL — https://github.com/owner/repo, git@github.com:owner/repo.git, or owner/repo. If omitted, falls back to --owner/--repo flags.")
-    .option("--owner <owner>", "(legacy) repository owner — used only if <repo-url> is omitted")
-    .option("--repo <repo>", "(legacy) repository name — used only if <repo-url> is omitted")
+    .argument("[repo-url]", "Repository URL - https://github.com/owner/repo, git@github.com:owner/repo.git, or owner/repo. If omitted, falls back to --owner/--repo flags.")
+    .option("--owner <owner>", "(legacy) repository owner - used only if <repo-url> is omitted")
+    .option("--repo <repo>", "(legacy) repository name - used only if <repo-url> is omitted")
     .option("--provider <provider>", "(legacy) forge provider when using --owner/--repo", "github")
     .option("--name <name>", "Override the auto-derived project name")
     .option("--no-agent", "Skip creating the default triage agent")

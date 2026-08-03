@@ -7,12 +7,12 @@ import { join } from "node:path";
  * Every detector and emitter ships fixtures laid out as
  * `fixtures/<adapter>/<case>/{input-repo/, expected/}`. A runner produces
  * output files from `input-repo/` and this harness compares them against
- * `expected/` **byte-exactly** — no newline, encoding, or whitespace
+ * `expected/` **byte-exactly**: no newline, encoding, or whitespace
  * normalization of any kind, matching the determinism rule (same inputs →
  * byte-identical outputs).
  *
  * Limitations, by design: expected trees contain regular files only
- * (symlinks throw — git checkouts differ across platforms), and empty
+ * (symlinks throw - git checkouts differ across platforms), and empty
  * directories are ignored (git cannot represent them).
  */
 
@@ -51,7 +51,7 @@ export type GoldenDifference =
 
 export interface GoldenResult {
   ok: boolean;
-  /** Sorted by path, then kind — deterministic across runs. */
+  /** Sorted by path, then kind - deterministic across runs. */
   differences: GoldenDifference[];
 }
 
@@ -131,7 +131,7 @@ export async function assertGoldenCase(
         case "unexpected":
           return `  unexpected: ${d.path} (produced but not expected)`;
         case "content":
-          return `  differs:    ${d.path} at byte ${d.firstDiffByte} — ${d.detail}`;
+          return `  differs:    ${d.path} at byte ${d.firstDiffByte} - ${d.detail}`;
       }
     });
     throw new Error(
@@ -141,7 +141,7 @@ export async function assertGoldenCase(
 }
 
 /**
- * Reads a directory tree as runner outputs — for runners that write into a
+ * Reads a directory tree as runner outputs - for runners that write into a
  * scratch directory (or identity checks over `input-repo/` itself).
  */
 export function readTreeAsGoldenOutputs(rootDir: string): GoldenOutputFile[] {

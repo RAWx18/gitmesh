@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 
 // Workspace packages whose code should be bundled into the CLI.
-// Note: "server" is excluded — it's published separately and resolved at runtime.
+// Note: "server" is excluded - it's published separately and resolved at runtime.
 // Exported because scripts/generate-npm-package-json.mjs must collect its npm
 // dependencies from exactly the packages that get bundled; keeping two copies
 // of this list let the publishable manifest drift out of sync with the bundle.
@@ -30,7 +30,7 @@ export const workspacePaths = [
   "lib/adapters/pi",
 ];
 
-// Workspace packages that should NOT be bundled — they'll be published
+// Workspace packages that should NOT be bundled - they'll be published
 // to npm and resolved at runtime (e.g. @gitmesh/server uses dynamic import).
 // Values are the workspace directory, so the manifest generator can read the
 // version to depend on.

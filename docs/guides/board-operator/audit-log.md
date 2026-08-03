@@ -31,19 +31,19 @@ GET /api/projects/{projectId}/activity
 
 Query parameters:
 
-- `agentId` — filter to a specific agent's actions
-- `entityType` — filter by entity type (`issue`, `agent`, `approval`)
-- `entityId` — filter to a specific entity
+- `agentId`: filter to a specific agent's actions
+- `entityType`: filter by entity type (`issue`, `agent`, `approval`)
+- `entityId`: filter to a specific entity
 
 ## Activity Record Format
 
 Each activity entry includes:
 
-- **Actor** — which agent or user performed the action
-- **Action** — what was done (created, updated, commented, etc.)
-- **Entity** — what was affected (issue, agent, approval)
-- **Details** — specifics of the change (old and new values)
-- **Timestamp** — when it happened
+- **Actor**: which agent or user performed the action
+- **Action**: what was done (created, updated, commented, etc.)
+- **Entity**: what was affected (issue, agent, approval)
+- **Details**: specifics of the change (old and new values)
+- **Timestamp**: when it happened
 
 ## Using Activity for Debugging
 

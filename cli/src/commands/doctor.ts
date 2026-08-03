@@ -1,5 +1,5 @@
 /**
- * `doctor` — diagnostic suite for an existing config.
+ * `doctor`: diagnostic suite for an existing config.
  *
  * Restructured around a declarative `Probe[]` pipeline. Each probe is a small
  * (name, run, repair?) descriptor; the runner executes them in order, calls
@@ -51,7 +51,7 @@ interface Probe {
 }
 
 // ---------------------------------------------------------------------------
-// Probe pipeline — order matches the previous numbered steps.
+// Probe pipeline - order matches the previous numbered steps.
 // ---------------------------------------------------------------------------
 
 const PROBES: Probe[] = [
@@ -187,7 +187,7 @@ export async function doctor(
   const configPath = resolveConfigPath(opts.config);
   const results: CheckResult[] = [];
 
-  // Bootstrap: config-shape check is special — it must pass before we can run
+  // Bootstrap: config-shape check is special - it must pass before we can run
   // any of the deeper probes. `bootstrapConfig` runs that check internally and
   // returns the parsed config or a `fail` CheckResult.
   const initialCheck = configCheck(opts.config);

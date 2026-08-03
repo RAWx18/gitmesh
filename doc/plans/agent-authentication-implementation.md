@@ -1,6 +1,6 @@
 > Historical plan. Superseded by IMPLEMENTATION.md for GitMesh Agents context.
 
-# Agent Authentication — P0 Local Adapter JWT Implementation
+# Agent Authentication - P0 Local Adapter JWT Implementation
 
 ## Scope
 

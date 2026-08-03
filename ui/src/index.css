@@ -1,5 +1,5 @@
 /*
- * GitMesh — Forge Instrumentation Console
+ * GitMesh - Forge Instrumentation Console
  *
  * Design language:
  *   - No paper-warm cream, no copper, no editorial serif in the app shell.
@@ -52,7 +52,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  /* GitMesh signal palette — referenced directly by the new shell. */
+  /* GitMesh signal palette - referenced directly by the new shell. */
   --color-verdict-allow: var(--verdict-allow);
   --color-verdict-block: var(--verdict-block);
   --color-verdict-pending: var(--verdict-pending);
@@ -136,7 +136,7 @@
 }
 
 .dark {
-  /* ── Dark default — deep ink, signal-cyan accent ─────────────────────── */
+  /* ── Dark default - deep ink, signal-cyan accent ─────────────────────── */
   color-scheme: dark;
   --background: oklch(0.135 0.012 250);
   --foreground: oklch(0.95 0.006 240);
@@ -210,7 +210,7 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* In-app headings are mono — instrumentation, not editorial. */
+  /* In-app headings are mono - instrumentation, not editorial. */
   #main-content :where(h1, h2, h3),
   .gitmesh-display {
     font-family: var(--font-display);
@@ -289,7 +289,7 @@
   position: relative;
   background: var(--surface-1);
   border-right: 1px solid var(--border);
-  /* Match timeline list: px-4 + w-7 node rail — line through dot centers */
+  /* Match timeline list: px-4 + w-7 node rail - line through dot centers */
   --mesh-spine-pad-x: 1rem;
   --mesh-spine-node-rail: 1.75rem;
 }

@@ -24,7 +24,7 @@ pnpm dev
 
 This starts the API server and UI at [http://localhost:3100](http://localhost:3100).
 
-No external database required — GitMesh Agents uses an embedded PostgreSQL instance by default.
+No external database required - GitMesh Agents uses an embedded PostgreSQL instance by default.
 
 ## One-Command Bootstrap
 
@@ -43,7 +43,7 @@ Once GitMesh Agents is running:
 3. Create an admin agent and configure its adapter
 4. Build out the org chart with more agents
 5. Set budgets and assign initial tasks
-6. Hit go — agents start their heartbeats and the project runs
+6. Hit go - agents start their heartbeats and the project runs
 
 <Card title="Core Concepts" href="/start/core-concepts">
   Learn the key concepts behind GitMesh Agents

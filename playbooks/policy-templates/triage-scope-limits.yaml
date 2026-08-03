@@ -1,7 +1,7 @@
 metadata:
   slug: triage-scope-limits
   title: Triage scope limits
-  whatItDoes: Restricts triage agents to labeling and routing only — no merges, file edits, or pushes.
+  whatItDoes: Restricts triage agents to labeling and routing only - no merges, file edits, or pushes.
   whatItProtects: Your scope discipline. A triage agent that can also merge starts to look like a single point of failure.
   whenToUse: When you have a triage agent enabled. Pair with `no-merge-without-approval` for defence in depth.
   auditExample: |
@@ -12,7 +12,7 @@ metadata:
   defaultEnabled: false
 policy:
   name: _starter_triage-scope-limits
-  description: Triage agents are limited to labeling and routing — block merges, edits, and pushes
+  description: Triage agents are limited to labeling and routing - block merges, edits, and pushes
   actionPattern:
     - "merge_pr"
     - "file_edit"

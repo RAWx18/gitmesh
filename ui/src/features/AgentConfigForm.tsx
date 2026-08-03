@@ -232,7 +232,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     }
     if (overlay.adapterType !== undefined) {
       patch.adapterType = overlay.adapterType;
-      // When adapter type changes, send only the new config — don't merge
+      // When adapter type changes, send only the new config - don't merge
       // with old config since old adapter fields are meaningless for the new type
       patch.adapterConfig = overlay.adapterConfig;
     } else if (Object.keys(overlay.adapterConfig).length > 0) {
@@ -306,7 +306,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     models,
   };
 
-  // Section toggle state — advanced always starts collapsed
+  // Section toggle state - advanced always starts collapsed
   const [runPolicyAdvancedOpen, setRunPolicyAdvancedOpen] = useState(false);
   // Popover states
   const [modelOpen, setModelOpen] = useState(false);
@@ -561,7 +561,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             </Field>
           )}
 
-          {/* Prompt template (create mode only — edit mode shows this in Identity) */}
+          {/* Prompt template (create mode only - edit mode shows this in Identity) */}
           {isLocal && isCreate && (
             <Field label="Prompt Template" hint={help.promptTemplate}>
               <MarkdownEditor

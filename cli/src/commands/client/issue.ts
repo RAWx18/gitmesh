@@ -28,7 +28,7 @@ import {
 import type { BaseClientOptions } from "./common.js";
 
 // ---------------------------------------------------------------------------
-// Option shapes — kept narrow so the type-system catches typos in spec bodies
+// Option shapes - kept narrow so the type-system catches typos in spec bodies
 // ---------------------------------------------------------------------------
 
 interface IssueListOpts extends BaseClientOptions {

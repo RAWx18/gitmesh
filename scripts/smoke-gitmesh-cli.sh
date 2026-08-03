@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# smoke-gitmesh-cli.sh — clean-install smoke test for the gitmesh-cli package
+# smoke-gitmesh-cli.sh - clean-install smoke test for the gitmesh-cli package
 # (pivot T0.6).
 #
 # Builds packages/gitmesh-cli, packs the exact tarball `npm publish` would

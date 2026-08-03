@@ -138,7 +138,7 @@ function generateChangelog(
     date: string,
 ): string {
     const lines: string[] = [
-        `## [${version}] — ${date}`,
+        `## [${version}] - ${date}`,
         ``,
     ];
 
@@ -241,7 +241,7 @@ export async function executeRelease(context: ReleaseContext): Promise<ReleaseRe
     // Group commits
     const commitGroups = groupCommits(commits);
 
-    // Current version — in a real implementation, read from package.json
+    // Current version - in a real implementation, read from package.json
     const currentVersion = (payload.currentVersion as string) ?? "0.1.0";
     const suggestedVersion = suggestVersionBump(currentVersion, commits);
 

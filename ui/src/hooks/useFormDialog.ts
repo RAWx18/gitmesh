@@ -1,5 +1,5 @@
 /**
- * `useFormDialog` — generic dialog/form state hook.
+ * `useFormDialog`: generic dialog/form state hook.
  *
  * Every dialog feature (NewMilestone, NewAgent, NewIssue, …) was repeating
  * the same shape: open/close from `useDialog()`, a draft state record,
@@ -19,13 +19,13 @@ import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 export interface UseFormDialogConfig<TDraft extends object> {
   /** is the dialog open? */
   open: boolean;
-  /** close handler — called by hook on submit success or external close */
+  /** close handler - called by hook on submit success or external close */
   onClose: () => void;
   /** initial draft when dialog opens */
   initial: TDraft;
-  /** validation — return falsy to block submit */
+  /** validation - return falsy to block submit */
   validate?: (draft: TDraft) => boolean;
-  /** submit — return a promise; on resolve the dialog closes + draft resets */
+  /** submit - return a promise; on resolve the dialog closes + draft resets */
   onSubmit: (draft: TDraft) => Promise<unknown>;
   /** auto-reset draft when dialog re-opens */
   resetOnOpen?: boolean;
@@ -44,7 +44,7 @@ export interface UseFormDialogResult<TDraft extends object> {
   canSubmit: boolean;
   /** wrap to bind to dialog `onOpenChange` */
   handleOpenChange: (next: boolean) => void;
-  /** keyboard handler — submits on Cmd/Ctrl+Enter */
+  /** keyboard handler - submits on Cmd/Ctrl+Enter */
   handleKeyDown: (e: KeyboardEvent) => void;
 }
 

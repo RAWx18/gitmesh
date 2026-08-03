@@ -7,7 +7,7 @@
  * - Suggests response templates for common categories
  * - Tracks engagement metrics
  *
- * The agent never auto-responds without approval — it only summarizes
+ * The agent never auto-responds without approval - it only summarizes
  * and suggests.
  *
  * Triggered on: issue_opened, issue_comment events + scheduled heartbeat

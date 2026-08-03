@@ -2,7 +2,7 @@ import type { ServerAdapterModule } from "../types.js";
 import { execute } from "./execute.js";
 import { testEnvironment } from "./test.js";
 
-/** Process adapter — spawns a child process per agent run. */
+/** Process adapter - spawns a child process per agent run. */
 export const processAdapter: ServerAdapterModule = {
   type: "process",
   execute,

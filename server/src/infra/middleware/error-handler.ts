@@ -48,9 +48,9 @@ function attachErrorContext(res: Response, err: unknown, snapshot: ErrorSnapshot
  * Global Express error handler for the GitMesh Agents API server.
  *
  * Handles three error categories:
- * 1. HttpError — application-level errors (4xx/5xx), returned as JSON
- * 2. ZodError — request validation failures, returned as JSON with issue details
- * 3. Unknown errors — treated as internal server errors (500), details are captured
+ * 1. HttpError - application-level errors (4xx/5xx), returned as JSON
+ * 2. ZodError - request validation failures, returned as JSON with issue details
+ * 3. Unknown errors - treated as internal server errors (500), details are captured
  *    for logging but sanitized in the client response
  */
 export function errorHandler(
@@ -62,7 +62,7 @@ export function errorHandler(
   // Application errors with explicit HTTP status
   if (err instanceof HttpError) {
     if (err.status >= 500) {
-      // Only attach full context for 5xx — 4xx are client-visible and should not leak internals.
+      // Only attach full context for 5xx - 4xx are client-visible and should not leak internals.
       // The logger middleware reads __errorContext + err to enrich pino HTTP logs.
       attachErrorContext(
         res,
@@ -90,7 +90,7 @@ export function errorHandler(
     return;
   }
 
-  // Unknown error — treat as internal server error
+  // Unknown error - treat as internal server error
   const rootCause = err instanceof Error ? err : new Error(String(err));
   const errorDetails: ErrorDetails = {
     message: rootCause.message,

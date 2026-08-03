@@ -83,7 +83,7 @@ export function makeAgent(overrides: Partial<AgentRowShape> = {}): AgentRowShape
   };
 }
 
-/** Build a small fleet of agents with sequential names — useful for collision tests. */
+/** Build a small fleet of agents with sequential names - useful for collision tests. */
 export function makeAgentFleet(
   count: number,
   baseName: string,

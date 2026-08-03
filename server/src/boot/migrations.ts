@@ -34,7 +34,7 @@ function formatPendingMigrationSummary(migrations: string[]): string {
 
 async function promptApplyMigrations(migrations: string[]): Promise<boolean> {
   if (process.env.GITMESH_MIGRATION_AUTO_APPLY === "true") return true;
-  // "never" means do not interactively prompt — still apply pending migrations
+  // "never" means do not interactively prompt - still apply pending migrations
   // so startup does not leave the DB behind schema (TTY dev with .env was
   // skipping before this fix).
   if (process.env.GITMESH_MIGRATION_PROMPT === "never") return true;

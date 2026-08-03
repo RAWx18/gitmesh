@@ -73,16 +73,16 @@ Expected: `adapterType=gateway`, `tokenLen >= 16`, `hasDeviceKey=true`, `disable
 
 ## Verification Test Cases
 
-### Case A — Manual Issue
+### Case A - Manual Issue
 - Create an issue assigned to the gateway agent.
 - Instructions: "post comment `CASE_A_OK_<timestamp>` and mark done."
 - Verify: issue status → `done`, comment exists.
 
-### Case B — Message Tool
+### Case B - Message Tool
 - Create an issue; instructions: "send `CASE_B_OK_<timestamp>` to main chat, comment same marker, mark done."
 - Verify: marker comment on issue + marker in agent chat.
 
-### Case C — New Session Memory
+### Case C - New Session Memory
 - Start a new session in the agent.
 - Ask it to create a new issue with title `CASE_C_CREATED_<timestamp>`.
 - Verify: issue appears in GitMesh Agents UI.

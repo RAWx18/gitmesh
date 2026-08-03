@@ -55,7 +55,7 @@ export const httpLogger = pinoHttp({
   customErrorMessage(req, res, err) {
     const ctx = (res as any).__errorContext;
     const errMsg = ctx?.error?.message || err?.message || (res as any).err?.message || "unknown error";
-    return `${req.method} ${req.url} ${res.statusCode} — ${errMsg}`;
+    return `${req.method} ${req.url} ${res.statusCode} - ${errMsg}`;
   },
   customProps(req, res) {
     if (res.statusCode >= 400) {

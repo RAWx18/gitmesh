@@ -3,7 +3,7 @@ title: Connecting to GitHub
 summary: Link your GitMesh Agents project to a GitHub repository
 ---
 
-> **Phase 1** — This feature is under active development.
+> **Phase 1**: This feature is under active development.
 
 This guide will cover:
 

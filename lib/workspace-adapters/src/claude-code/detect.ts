@@ -13,15 +13,15 @@ import {
 import type { DetectedArtifact, RepoContext } from "../types.js";
 
 /**
- * `claude-code` detector (pivot T1.1) — inventories every Claude Code config
+ * `claude-code` detector (pivot T1.1) - inventories every Claude Code config
  * artifact in a repository per the §4.3 config-surface row.
  *
  * Pure, read-only file inspection: no writes, no network, deterministic
  * output (sorted, no wallclock, no absolute paths in results). Symlink-aware:
- * symlinked artifacts are inventoried with their literal target — a symlinked
- * CLAUDE.md is a healthy pattern (§10.4), never resolved away — symlinked
+ * symlinked artifacts are inventoried with their literal target - a symlinked
+ * CLAUDE.md is a healthy pattern (§10.4), never resolved away - symlinked
  * directories are traversed, and traversal is cycle-safe. Filesystem errors on
- * individual entries — an unreadable directory, a symlink cycle — are
+ * individual entries - an unreadable directory, a symlink cycle - are
  * contained: the entry is skipped or flagged `broken`, never fatal, so a
  * doctor scan survives any repository.
  */
@@ -115,7 +115,7 @@ export function detect(repo: RepoContext): ClaudeCodeArtifact[] {
     }
   }
 
-  // 5. Managed-settings presence probe: report presence only — never the
+  // 5. Managed-settings presence probe: report presence only - never the
   //    location (machine-specific) and never the content.
   for (const probe of repo.managedSettingsPaths ?? defaultManagedSettingsPaths()) {
     if (safeStat(probe) !== undefined) {
@@ -160,7 +160,7 @@ function collectMarkdownTree(
 }
 
 /**
- * Inventories `.claude/skills/<name>/SKILL.md` — one artifact per skill; a
+ * Inventories `.claude/skills/<name>/SKILL.md`: one artifact per skill; a
  * skill's other resource files belong to the skill, not the inventory.
  */
 function collectSkills(root: string, out: ClaudeCodeArtifact[]): void {

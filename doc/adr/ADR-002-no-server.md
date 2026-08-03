@@ -7,7 +7,7 @@
 ## Context
 
 The pre-pivot product required a server, a Postgres database, webhooks, an
-agents.yaml, and an MCP endpoint before delivering any value — five adoption
+agents.yaml, and an MCP endpoint before delivering any value - five adoption
 cliffs, and the empirical result was zero retained users (pivot §2.1). The
 pivot's entire adoption thesis is `npx gitmesh doctor` delivering value in
 under two minutes with zero risk.
@@ -24,7 +24,7 @@ The Agent Workspace Compiler is **files in, files out**:
 - Determinism: same inputs → byte-identical outputs. No timestamps,
   wallclock values, or nondeterministic ordering in emitted files.
 - Nothing in `lib/workspace-core` or the workspace adapter packages may
-  import from `server/**`, Drizzle, or Postgres client libraries — enforced
+  import from `server/**`, Drizzle, or Postgres client libraries - enforced
   since T0.4 by the ESLint boundary rule (`eslint.config.mjs`) in CI, with
   guard tests in `scripts/__tests__/import-boundaries.test.ts`.
 

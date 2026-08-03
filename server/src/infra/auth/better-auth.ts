@@ -71,9 +71,9 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?
   const effectiveTrustedOrigins = trustedOrigins ?? deriveAuthTrustedOrigins(config);
 
   // GitHub OAuth scopes:
-  //   read:user / user:email — populate the local user profile
-  //   repo                   — list private repos and read repo content (for cloning + agent ops)
-  //   admin:repo_hook        — register webhooks on connected repos
+  //   read:user / user:email - populate the local user profile
+  //   repo                   - list private repos and read repo content (for cloning + agent ops)
+  //   admin:repo_hook        - register webhooks on connected repos
   const socialProvidersConfig = config.gitHubClientId && config.gitHubClientSecret
     ? {
         socialProviders: {

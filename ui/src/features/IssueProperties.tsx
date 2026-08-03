@@ -434,7 +434,7 @@ export function IssueProperties({ issue, onUpdate, inline }: Props) {
   const queryClient = useQueryClient();
   const projectId = issue.projectId ?? selectedProjectId;
 
-  // Picker open/close state — keyed by picker name
+  // Picker open/close state - keyed by picker name
   const [pickerState, setPickerState] = useState({
     labels: false,
     assignee: false,

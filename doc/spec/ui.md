@@ -1,4 +1,4 @@
-# GitMesh Agents &mdash; UI Reference
+# GitMesh Agents - UI Reference
 
 > **Status** Draft &middot; **Last revised** 2026-02-17.
 >
@@ -12,10 +12,10 @@
 
 ## Contents
 
-1. Design language &mdash; voice, density, theme
-2. Visual tokens &mdash; colours, typography, icons
+1. Design language - voice, density, theme
+2. Visual tokens - colours, typography, icons
 3. Application shell
-4. Common navigation chrome &mdash; sidebar, breadcrumbs, search
+4. Common navigation chrome - sidebar, breadcrumbs, search
 5. Page index
 6. Issues
 7. Projects, Goals, Org Chart
@@ -24,7 +24,7 @@
 10. Approvals (contextual, not standalone)
 11. Costs
 12. Activity log
-13. Auxiliary surfaces &mdash; Cmd+K, keyboard, responsive, empty/error states
+13. Auxiliary surfaces - Cmd+K, keyboard, responsive, empty/error states
 14. Component library map
 15. URL routing table
 16. Implementation order
@@ -54,7 +54,7 @@ is built to be lived in:
 | Border | `hsl(220, 10%, 18%)` |
 | Text primary | `hsl(220, 10%, 90%)` |
 | Text secondary | `hsl(220, 10%, 55%)` |
-| Accent (interactive) | `hsl(220, 80%, 60%)` &mdash; muted blue |
+| Accent (interactive) | `hsl(220, 80%, 60%)`: muted blue |
 
 Status colours (consistent across every entity that has a status):
 
@@ -79,7 +79,7 @@ Priority indicators (always icons, never text alone):
 
 ### 2.2 Typography
 
-- Font: system stack &mdash; Inter when loaded, otherwise `-apple-system, BlinkMacSystemFont, 'Segoe UI'`.
+- Font: system stack - Inter when loaded, otherwise `-apple-system, BlinkMacSystemFont, 'Segoe UI'`.
 - Body: 13px / 1.5.
 - Labels and metadata: 11px / uppercase tracking.
 - Headings: 14&ndash;18px / semi-bold. Never all-caps.
@@ -100,7 +100,7 @@ optional right-hand properties panel (320px).
 - **Sidebar:** fixed, 240px. Collapsible to icon-only (48px) via toggle or shortcut.
 - **Breadcrumb bar:** spans full width above main + properties. Carries navigation path, entity actions, and view controls.
 - **Main content:** scrollable. Holds the primary view (list, detail, chart).
-- **Properties panel:** right-hand, 320px, **contextual to the selected entity**. Visible on detail views (issue, project, agent), hidden on list views and the dashboard. Resizable. Slides in/out as you move into and out of detail views &mdash; not a permanent sidebar.
+- **Properties panel:** right-hand, 320px, **contextual to the selected entity**. Visible on detail views (issue, project, agent), hidden on list views and the dashboard. Resizable. Slides in/out as you move into and out of detail views - not a permanent sidebar.
 
 ---
 
@@ -112,7 +112,7 @@ Primary navigation, grouped into collapsible sections.
 
 #### Project header (top, always visible)
 
-- Full-width project switcher button: project icon (first-letter avatar with project colour, or uploaded icon) &mdash; project name (truncated with ellipsis) &mdash; chevron-down.
+- Full-width project switcher button: project icon (first-letter avatar with project colour, or uploaded icon) - project name (truncated with ellipsis) - chevron-down.
 - Dropdown shows: list of projects with status dots (`green` = active, `yellow` = paused, `gray` = archived), search field at top, divider, `+ Create project` at the bottom.
 - Below the project name: icon-button row with **Search** (opens `Cmd+K`) and **New Issue** (opens the new-issue modal in the current project context).
 
@@ -211,9 +211,9 @@ Default for the **Issues** sidebar entry.
 Top toolbar:
 
 - Status tabs: `All Issues`, `Active` (todo + in_progress + in_review + blocked), `Backlog`. Each carries a status icon and a count. Active tab is filled.
-- Settings gear &mdash; configure issue display defaults and custom fields.
-- Filter button &mdash; reveals the filter bar (&sect;6.2).
-- Display dropdown &mdash; toggles grouping (status / priority / assignee / project / none) and layout (list / kanban).
+- Settings gear - configure issue display defaults and custom fields.
+- Filter button - reveals the filter bar (&sect;6.2).
+- Display dropdown - toggles grouping (status / priority / assignee / project / none) and layout (list / kanban).
 
 Grouping:
 
@@ -223,13 +223,13 @@ Grouping:
 
 Issue row layout (left to right):
 
-1. **Checkbox** &mdash; bulk-selection. Hidden until hover; appears left of the priority indicator.
-2. **Priority indicator** &mdash; always visible.
-3. **Issue key** &mdash; e.g. `CLIP-5`. Monospace, muted.
-4. **Status circle** &mdash; clickable; opens the inline status dropdown.
-5. **Title** &mdash; primary text, ellipsis on overflow.
-6. **Assignee** &mdash; agent avatar + name, right-aligned. Dashed circle placeholder when unassigned.
-7. **Date** &mdash; creation or target date, muted, far right.
+1. **Checkbox**: bulk-selection. Hidden until hover; appears left of the priority indicator.
+2. **Priority indicator**: always visible.
+3. **Issue key**: e.g. `CLIP-5`. Monospace, muted.
+4. **Status circle**: clickable; opens the inline status dropdown.
+5. **Title**: primary text, ellipsis on overflow.
+6. **Assignee**: agent avatar + name, right-aligned. Dashed circle placeholder when unassigned.
+7. **Date**: creation or target date, muted, far right.
 
 Row interactions:
 
@@ -288,7 +288,7 @@ Right pane (Properties panel): label + editable value rows.
 | Created | Read-only timestamp |
 | Billing code | Text input |
 
-Below properties: divider, then **Activity** &mdash; compact timeline of
+Below properties: divider, then **Activity**: compact timeline of
 status / assignment changes and comments, with relative timestamps and
 a `See all` link.
 
@@ -297,7 +297,7 @@ a `See all` link.
 Triggered by the sidebar pencil, the `C` shortcut, or any `+` in the
 issue list.
 
-Top bar: breadcrumb showing project context &mdash; `New issue`; `Save as
+Top bar: breadcrumb showing project context - `New issue`; `Save as
 draft`; expand-to-page; close.
 
 Body: large title input (auto-focused) above an expandable markdown
@@ -384,7 +384,7 @@ panels.
 | Panel | Content |
 |-------|---------|
 | Recent Activity | Last ~10 activity log entries, compact timeline format |
-| Stale Tasks | Tasks in progress beyond a threshold without updates &mdash; key, title, assignee, time-since-update |
+| Stale Tasks | Tasks in progress beyond a threshold without updates - key, title, assignee, time-since-update |
 
 Every card / panel is clickable to navigate to its full page.
 
@@ -421,7 +421,7 @@ row to open detail.
 Tab row: Overview / Heartbeats / Issues / Costs.
 
 - **Overview (middle pane).** Agent name + role, capabilities description, adapter type + config summary, current task (when present), reports-to (clickable), direct reports list.
-- **Heartbeats tab.** Table of heartbeat runs &mdash; time, source (manual / scheduler), status, duration, error if any. `Invoke` button at the top.
+- **Heartbeats tab.** Table of heartbeat runs - time, source (manual / scheduler), status, duration, error if any. `Invoke` button at the top.
 - **Issues tab.** Issues assigned to this agent.
 - **Costs tab.** Cost breakdown by model and by time range, with a budget progress bar.
 - **Right pane (properties).** Status, Role, Title, Reports To, Adapter Type, Context Mode, Budget (monthly), Spent (monthly), Last Heartbeat.
@@ -441,7 +441,7 @@ Where they appear:
 |---------|------|
 | Inbox | **Primary.** Pending approvals at the top with inline approve/reject |
 | Dashboard | "Pending Approvals" metric card with count, links to inbox |
-| Entity detail pages | Contextual banners (e.g. agent detail: `Enabled via approval — requested by admin on Feb 15` with a link to the approval record). An agent in `pending` status can show `Pending approval — requested by admin` with inline approve/reject. |
+| Entity detail pages | Contextual banners (e.g. agent detail: `Enabled via approval - requested by admin on Feb 15` with a link to the approval record). An agent in `pending` status can show `Pending approval - requested by admin` with inline approve/reject. |
 | Activity log | Approval events (created / approved / rejected) appear in the timeline like any other event. |
 
 ### 10.1 Approvals list page (`/approvals`)
@@ -455,8 +455,8 @@ title / summary, requester, relative time.
 
 Three-pane layout. The middle pane renders the payload by type:
 
-- **`enable_agent`** &mdash; preview of the agent that will be created: name, role, title, reports-to, capabilities, adapter config, budget.
-- **`approve_admin_strategy`** &mdash; the strategy text, proposed goal breakdown, initial task structure.
+- **`enable_agent`**: preview of the agent that will be created: name, role, title, reports-to, capabilities, adapter config, budget.
+- **`approve_admin_strategy`**: the strategy text, proposed goal breakdown, initial task structure.
 
 For pending approvals, the action region sits at the very top of the
 middle pane: an optional decision-note field plus prominent `[&times; Reject]`
@@ -471,9 +471,9 @@ Decided at, Decision note. Activity timeline below.
 
 Cost dashboard, scoped to the current month by default.
 
-- Top: project-wide budget progress bar &mdash; large, prominent, MTD spend / budget cap with a horizontal progress meter.
+- Top: project-wide budget progress bar - large, prominent, MTD spend / budget cap with a horizontal progress meter.
 - Two side-by-side breakdown tables: **By Agent** and **By Project**. Each row is entity name + spend.
-- Bottom: recent cost events table &mdash; agent, provider/model, token counts (in / out), cost, relative timestamp.
+- Bottom: recent cost events table - agent, provider/model, token counts (in / out), cost, relative timestamp.
 
 ---
 
@@ -518,16 +518,16 @@ Filters: actor type (agent / user / system), entity type (issue / agent
 | `1024&ndash;1400px` | Sidebar collapses to icons; properties panel via toggle |
 | `<1024px` | Sidebar hidden (hamburger menu); properties panel via toggle / tab |
 
-The properties panel is always dismissible &mdash; it must never block the
+The properties panel is always dismissible - it must never block the
 main content.
 
 ### 13.3 Empty states
 
 Every list view must have a thoughtful empty state. Examples:
 
-- No issues &mdash; `No issues yet. Create your first issue to start tracking work.` &middot; `[Create issue]`.
-- No agents &mdash; `No agents in this project. Create an agent to start building your team.` &middot; `[Create agent]`.
-- No project selected &mdash; `Select a project to get started.` &middot; project switcher or `[Create project]`.
+- No issues - `No issues yet. Create your first issue to start tracking work.` &middot; `[Create issue]`.
+- No agents - `No agents in this project. Create an agent to start building your team.` &middot; `[Create agent]`.
+- No project selected - `Select a project to get started.` &middot; project switcher or `[Create project]`.
 
 Empty states use a muted line-art illustration (no cartoons) and exactly
 one CTA.
@@ -592,8 +592,8 @@ below is implicitly project-scoped.
 
 | Phase | Deliverables |
 |-------|--------------|
-| 1 &mdash; Shell & navigation | Sidebar redesign (groups, icons, project switcher, badges); breadcrumb bar component; three-pane layout system; `Cmd+K` search modal; install `lucide-react` |
-| 2 &mdash; Issue management (core) | Issue list view with grouping, filtering, status circles; issue detail (three-pane with properties); new issue modal; comments; bulk selection + actions; kanban operator view |
-| 3 &mdash; Entity detail views | Project list + detail; goal hierarchy; agent list + detail |
-| 4 &mdash; Project-level views | Inbox with inline approval actions (primary approval UX); dashboard with metric cards; org chart; cost dashboard; activity log with filtering; approvals list page (accessed via Inbox `See all`, not the sidebar) |
-| 5 &mdash; Polish | Keyboard shortcuts; responsive behaviour; empty states + loading skeletons; error handling and toasts |
+| 1 - Shell & navigation | Sidebar redesign (groups, icons, project switcher, badges); breadcrumb bar component; three-pane layout system; `Cmd+K` search modal; install `lucide-react` |
+| 2 - Issue management (core) | Issue list view with grouping, filtering, status circles; issue detail (three-pane with properties); new issue modal; comments; bulk selection + actions; kanban operator view |
+| 3 - Entity detail views | Project list + detail; goal hierarchy; agent list + detail |
+| 4 - Project-level views | Inbox with inline approval actions (primary approval UX); dashboard with metric cards; org chart; cost dashboard; activity log with filtering; approvals list page (accessed via Inbox `See all`, not the sidebar) |
+| 5 - Polish | Keyboard shortcuts; responsive behaviour; empty states + loading skeletons; error handling and toasts |

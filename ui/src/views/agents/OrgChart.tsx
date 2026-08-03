@@ -401,7 +401,7 @@ export function OrgChart() {
     return afterCollapse.filter((r) => includeIds.has(r.node.id));
   }, [allRows, collapsed, filter, agentMap]);
 
-  // Import / Export company actions — exposed from the top mono toolbar.
+  // Import / Export company actions - exposed from the top mono toolbar.
   const handleExport = useCallback(() => {
     const blob = new Blob([JSON.stringify(orgTree ?? [], null, 2)], {
       type: "application/json",
@@ -490,7 +490,7 @@ export function OrgChart() {
 
         <span style={{ color: "var(--text-tertiary)" }}>│</span>
 
-        {/* Filter input — focus with `f` */}
+        {/* Filter input - focus with `f` */}
         <label
           className="flex items-center gap-2 text-[11px]"
           style={{ color: "var(--text-tertiary)" }}
@@ -531,7 +531,7 @@ export function OrgChart() {
             className="px-4 py-8 text-sm"
             style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}
           >
-            no workers — <span style={{ color: "var(--foreground)" }}>mesh</span> is empty
+            no workers - <span style={{ color: "var(--foreground)" }}>mesh</span> is empty
           </div>
         ) : visibleRows.length === 0 ? (
           <div

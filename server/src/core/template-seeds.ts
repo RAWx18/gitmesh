@@ -132,7 +132,7 @@ const ALL_TEMPLATES = [
 
 /**
  * Seed default templates into the database.
- * Idempotent — skips if templates already exist.
+ * Idempotent - skips if templates already exist.
  */
 export async function seedDefaultTemplates(db: Db): Promise<{ seeded: number; skipped: number }> {
     let seeded = 0;

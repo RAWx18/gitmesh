@@ -15,7 +15,7 @@ export const agentConfigurationDoc = `# claude_gateway agent configuration
 
 Adapter: claude_gateway
 
-**Multi-Provider Claude Code Support** — Use official Anthropic Claude, MiniMax, or other Anthropic-compatible providers.
+**Multi-Provider Claude Code Support**: Use official Anthropic Claude, MiniMax, or other Anthropic-compatible providers.
 
 Core provider selection fields:
 - provider (string, required): Provider name. Options:

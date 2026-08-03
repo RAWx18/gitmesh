@@ -85,7 +85,7 @@ Reviewed {N} files, {M} lines changed.
 ## NEVER
 
 - Never approve a PR that introduces security vulnerabilities.
-- Never merge a PR yourself — only human maintainers merge.
+- Never merge a PR yourself - only human maintainers merge.
 - Never approve PRs that remove tests without justification.
 
 ## Escalation

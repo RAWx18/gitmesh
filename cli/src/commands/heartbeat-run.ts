@@ -1,5 +1,5 @@
 /**
- * `heartbeat run` — invoke a single agent heartbeat and stream its events
+ * `heartbeat run`: invoke a single agent heartbeat and stream its events
  * back to the operator.
  *
  * The previous shape interleaved option parsing, run-state mutation, and

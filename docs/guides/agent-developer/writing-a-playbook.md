@@ -24,7 +24,7 @@ playbooks/
 name: my-skill
 description: >
   Short description of what this playbook does and when to use it.
-  This acts as routing logic — the agent reads this to decide
+  This acts as routing logic - the agent reads this to decide
   whether to load the full playbook content.
 ---
 
@@ -35,8 +35,8 @@ Detailed instructions for the agent...
 
 ### Frontmatter Fields
 
-- **name** — unique identifier for the playbook (kebab-case)
-- **description** — routing description that tells the agent when to use this playbook. Write it as decision logic, not marketing copy.
+- **name**: unique identifier for the playbook (kebab-case)
+- **description**: routing description that tells the agent when to use this playbook. Write it as decision logic, not marketing copy.
 
 ## How Playbooks Work at Runtime
 
@@ -45,15 +45,15 @@ Detailed instructions for the agent...
 3. If relevant, agent loads the full playbook.md content
 4. Agent follows the instructions in the playbook
 
-This keeps the base prompt small — full playbook content is only loaded on demand.
+This keeps the base prompt small - full playbook content is only loaded on demand.
 
 ## Best Practices
 
-- **Write descriptions as routing logic** — include "use when" and "don't use when" guidance
-- **Be specific and actionable** — agents should be able to follow playbooks without ambiguity
-- **Include code examples** — concrete API calls and command examples are more reliable than prose
-- **Keep playbooks focused** — one playbook per concern; don't combine unrelated procedures
-- **Reference files sparingly** — put supporting detail in `references/` rather than bloating the main playbook.md
+- **Write descriptions as routing logic**: include "use when" and "don't use when" guidance
+- **Be specific and actionable**: agents should be able to follow playbooks without ambiguity
+- **Include code examples**: concrete API calls and command examples are more reliable than prose
+- **Keep playbooks focused**: one playbook per concern; don't combine unrelated procedures
+- **Reference files sparingly**: put supporting detail in `references/` rather than bloating the main playbook.md
 
 ## Playbook Injection
 

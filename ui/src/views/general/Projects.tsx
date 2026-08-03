@@ -63,11 +63,11 @@ export function Projects() {
 
   // The list itself is owned by `useProject()`; we only use the resource
   // hook for stats + inline edit/delete state. The `listKey` here is the
-  // canonical projects key — `usePagedResource` will invalidate it after
+  // canonical projects key - `usePagedResource` will invalidate it after
   // mutations (which prompts `useProject()` to refetch).
   // The list itself is owned by `useProject()`; we only use the resource
   // hook for stats + inline edit/delete state. `listEnabled: false` keeps
-  // the query inert here — the canonical key is still used for cache
+  // the query inert here - the canonical key is still used for cache
   // invalidation after rename/delete, which fans out to ProjectContext.
   const resource = usePagedResource<never, ProjectStatsMap>({
     listKey: queryKeys.projects.all,

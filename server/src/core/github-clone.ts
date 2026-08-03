@@ -4,7 +4,7 @@
  * When a project is connected to a GitHub repo, materializes the source on
  * disk so adapters (claude, codex, cursor, opencode, pi) actually have files
  * to operate on. The `connect-project` route used to update only metadata
- * (forgeOwner/forgeRepo) and start a periodic issue poll — agents would then
+ * (forgeOwner/forgeRepo) and start a periodic issue poll - agents would then
  * spawn in an empty fallback directory with no repo content.
  *
  * Repos are cloned to:
@@ -48,7 +48,7 @@ export function resolveProjectRepoCloneRoot(): string {
 
 export function resolveProjectRepoClonePath(projectId: string, repoName: string): string {
   assertSafeSegment(repoName, "repo name");
-  // projectId is a UUID — characters won't include path separators but assert
+  // projectId is a UUID - characters won't include path separators but assert
   // anyway to be defensive against future ID format changes.
   if (!/^[A-Za-z0-9._-]+$/.test(projectId)) {
     throw new Error(`Invalid project id for clone path: ${projectId}`);
@@ -149,7 +149,7 @@ export async function ensureRepoCloned(input: {
   await fs.mkdir(path.dirname(targetDir), { recursive: true });
 
   if (await isGitRepo(targetDir)) {
-    // Existing checkout — update remote URL (token may have rotated) and fetch.
+    // Existing checkout - update remote URL (token may have rotated) and fetch.
     try {
       await runGit(["remote", "set-url", "origin", authedUrl], { cwd: targetDir, timeoutMs: 30_000 });
       await runGit(["fetch", "--all", "--prune"], { cwd: targetDir, timeoutMs: 120_000 });
@@ -170,7 +170,7 @@ export async function ensureRepoCloned(input: {
 
   // Fresh clone.
   if (await pathExists(targetDir)) {
-    // Directory exists but is not a git repo — refuse to clobber.
+    // Directory exists but is not a git repo - refuse to clobber.
     return {
       cwd: targetDir,
       repoUrl: publicUrl,

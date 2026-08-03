@@ -84,13 +84,13 @@ export function composeGuards(...specs: GuardSpec[]): RequestHandler {
   };
 }
 
-/** Convenience — a guard that wants to run on mutating verbs only. */
+/** Convenience - a guard that wants to run on mutating verbs only. */
 export const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export function isMutating(req: Request): boolean {
   return mutatingMethods.has(req.method.toUpperCase());
 }
 
-/** Hint helper used by hostname / API paths — JSON for /api or json-accept, text otherwise. */
+/** Hint helper used by hostname / API paths - JSON for /api or json-accept, text otherwise. */
 export function negotiateContentType(req: Request): "json" | "text" {
   if (req.path.startsWith("/api")) return "json";
   if (req.accepts(["json", "html", "text"]) === "json") return "json";

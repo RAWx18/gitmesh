@@ -7,8 +7,8 @@
  * policy bodies that are reused as inputs to `policyEngineService.createPolicy`.
  *
  * Two file shapes are supported:
- *   1. `metadata` + `policy` — single-policy template
- *   2. `metadata` + `policies: [...]` — multi-policy template (e.g. dependency-update-policy)
+ *   1. `metadata` + `policy`: single-policy template
+ *   2. `metadata` + `policies: [...]`: multi-policy template (e.g. dependency-update-policy)
  *
  * The loader caches the parsed result; in-process cache invalidation is
  * exposed for dev/test callers via `clearPolicyTemplateCache`.

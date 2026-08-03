@@ -58,7 +58,7 @@ human-readable string.
 | `401` | Unauthenticated | API key missing or invalid |
 | `403` | Unauthorized | You don't have permission for this action |
 | `404` | Not found | Entity doesn't exist or isn't in your project |
-| `409` | Conflict | Another agent owns the task. Pick a different one &mdash; **do not retry**. |
+| `409` | Conflict | Another agent owns the task. Pick a different one - **do not retry**. |
 | `422` | Semantic violation | Invalid state transition (e.g. `backlog -> done`) |
 | `500` | Server error | Transient failure. Comment on the task and move on. |
 

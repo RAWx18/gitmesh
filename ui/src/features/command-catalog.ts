@@ -1,7 +1,7 @@
 /**
  * Static command palette catalog.
  *
- * Navigation entries live in a declarative table — each palette item is a
+ * Navigation entries live in a declarative table - each palette item is a
  * single object, and grouping is data, not template branches.
  */
 
@@ -69,7 +69,7 @@ export const NAV_GROUPS: CatalogGroup[] = [
 ];
 
 /**
- * Derive a label for an arbitrary path — used for "recent pages" tracking.
+ * Derive a label for an arbitrary path - used for "recent pages" tracking.
  * Uses the catalog as the source of truth for static routes; dynamic
  * detail pages get a generic label.
  */

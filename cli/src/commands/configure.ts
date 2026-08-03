@@ -1,5 +1,5 @@
 /**
- * `configure` — section-by-section reconfiguration of an existing config file.
+ * `configure`: section-by-section reconfiguration of an existing config file.
  *
  * Restructured around a small map of section handlers; the body of the loop
  * is now flat (look up handler, run it, persist) instead of a long
@@ -76,7 +76,7 @@ function defaultConfig(): GitmeshConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Section handlers — one per configurable area.
+// Section handlers - one per configurable area.
 // ---------------------------------------------------------------------------
 
 const SECTION_HANDLERS: Record<Section, SectionHandler> = {

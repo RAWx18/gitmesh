@@ -1,10 +1,10 @@
 /**
- * Dashboard — the "Mesh" view (forge instrumentation, not company dashboard).
+ * Dashboard - the "Mesh" view (forge instrumentation, not company dashboard).
  *
  * Intentional layout choices:
  *   - No four-up KPI band, no chart grid, no editorial hero header.
  *   - The persistent left MeshSpine carries the ledger; this main pane is
- *     for what's *running now* and what *needs the operator* — both
+ *     for what's *running now* and what *needs the operator* - both
  *     rendered as a Datadog-style trace waterfall + a single dense list.
  *   - Numbers are mono ticker cells. Chrome is hairlines, not cards.
  */
@@ -80,7 +80,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={Network}
-          message="GitMesh — forge instrumentation. Connect a repo to start the mesh."
+          message="GitMesh - forge instrumentation. Connect a repo to start the mesh."
           action="Get started"
           onAction={openOnboarding}
         />
@@ -121,7 +121,7 @@ export function Dashboard() {
 
       {data && (
         <>
-          {/* ── Header strip — mono, terminal-style ──────────────────────── */}
+          {/* ── Header strip - mono, terminal-style ──────────────────────── */}
           <header className="border-b border-border px-4 py-3 md:px-6">
             <div className="flex items-baseline justify-between gap-4">
               <div className="min-w-0">
@@ -186,7 +186,7 @@ export function Dashboard() {
                   budgetUtilization != null && budgetUtilization > 60 && budgetUtilization <= 85 && "text-[var(--verdict-pending)]",
                 )}
               >
-                {budgetUtilization != null ? `${budgetUtilization}%` : "—"}
+                {budgetUtilization != null ? `${budgetUtilization}%` : "-"}
               </span>
             </Link>
             <div className="gm-ticker-cell">
@@ -195,7 +195,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* ── Trace waterfall — running heartbeats ─────────────────────── */}
+          {/* ── Trace waterfall - running heartbeats ─────────────────────── */}
           <section className="border-b border-border">
             <header className="flex items-center justify-between px-4 py-2 md:px-6">
               <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">
@@ -241,7 +241,7 @@ export function Dashboard() {
             )}
           </section>
 
-          {/* ── Blocked + recent — two-column terminal lists ─────────────── */}
+          {/* ── Blocked + recent - two-column terminal lists ─────────────── */}
           <section className="grid grid-cols-1 gap-0 border-b border-border md:grid-cols-2">
             <div className="border-b border-border md:border-b-0 md:border-r md:border-border">
               <header className="flex items-center justify-between px-4 py-2 md:px-6">
@@ -294,7 +294,7 @@ export function Dashboard() {
               </header>
               {recentIssues.length === 0 ? (
                 <div className="px-4 py-6 md:px-6">
-                  <p className="font-mono text-[11px] text-text-tertiary">No tasks yet — press C to create one.</p>
+                  <p className="font-mono text-[11px] text-text-tertiary">No tasks yet - press C to create one.</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-border">

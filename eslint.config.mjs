@@ -8,7 +8,7 @@ import tseslint from "typescript-eslint";
  * workspace-compiler packages may depend on the legacy server runtime or any
  * database code path. `doctor` / `apply` / `check` are pure file operations.
  *
- * Scope is intentionally limited to the pivot packages — the legacy codebase
+ * Scope is intentionally limited to the pivot packages - the legacy codebase
  * (`server/`, `ui/`, `cli/` legacy commands, old `lib/*`) is frozen and not
  * linted. New per-agent adapter packages must be added to this list as they
  * land (E1+).
@@ -27,7 +27,7 @@ const RESTRICTED_IMPORT_PATTERNS = [
   {
     group: ["drizzle*", "drizzle*/**"],
     message:
-      "Pivot boundary (AGENTS.md hard rule 1): no Drizzle ORM in workspace-core/adapters — the new product has no database.",
+      "Pivot boundary (AGENTS.md hard rule 1): no Drizzle ORM in workspace-core/adapters - the new product has no database.",
   },
   {
     group: [
@@ -41,7 +41,7 @@ const RESTRICTED_IMPORT_PATTERNS = [
       "postgres-*/**",
     ],
     message:
-      "Pivot boundary (AGENTS.md hard rule 1): no Postgres client libraries in workspace-core/adapters — the new product has no database.",
+      "Pivot boundary (AGENTS.md hard rule 1): no Postgres client libraries in workspace-core/adapters - the new product has no database.",
   },
   {
     // `../**/data` catches relative escapes into lib/data without blocking a
@@ -71,9 +71,9 @@ const RESTRICTED_REQUIRE_SELECTORS = [
 
 export default tseslint.config(
   {
-    // `data/` holds local Postgres state (unreadable, legacy-only) — never
+    // `data/` holds local Postgres state (unreadable, legacy-only) - never
     // crawl it. Golden fixtures are test data modeling user repos (some will
-    // deliberately contain forbidden imports for GM risk rules to detect) —
+    // deliberately contain forbidden imports for GM risk rules to detect) -
     // they are compared byte-exactly, never executed, and must not be linted.
     ignores: [
       "**/dist/**",

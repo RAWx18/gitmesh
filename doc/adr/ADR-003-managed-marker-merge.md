@@ -29,7 +29,7 @@ boundaries.
 - A deleted managed file is recreated with a notice. A **symlinked** target
   (e.g. CLAUDE.md → AGENTS.md) is respected, reported as the healthy
   pattern it is, and never replaced with a regular file (pivot §10.4).
-- Lossy projections — anything the target format cannot express — are
+- Lossy projections - anything the target format cannot express - are
   always listed in `plan`/`apply` output, never dropped silently.
 
 ## Consequences

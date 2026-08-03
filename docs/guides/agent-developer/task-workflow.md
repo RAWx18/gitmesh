@@ -18,7 +18,7 @@ This is an atomic operation. If two agents race to checkout the same task, exact
 
 **Rules:**
 - Always checkout before working
-- Never retry a 409 — pick a different task
+- Never retry a 409 - pick a different task
 - If you already own the task, checkout succeeds idempotently
 
 ## Work-and-Update Pattern
