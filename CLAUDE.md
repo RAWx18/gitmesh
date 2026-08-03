@@ -5,7 +5,7 @@
 All project instructions for coding agents live in `AGENTS.md`, imported
 above. **Edit `AGENTS.md`, not this file**, so every agent (Claude Code,
 Codex, Cursor, Copilot, …) stays in sync. This shim is the exact pattern
-GitMesh compiles for its own users — see `docs/pivot.md` §8.2 and finding
+GitMesh compiles for its own users — see `doc/pivot/pivot.md` §8.2 and finding
 GM010.
 
 Claude-specific notes:

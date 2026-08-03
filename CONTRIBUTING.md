@@ -9,9 +9,10 @@ This document describes the minimal rules and workflow for contributing to GitMe
 All commits **must** be signed off using the Developer Certificate of Origin (DCO).
 
 Create a signed commit:
+
 ```bash
 git commit -s -m "your commit message"
-````
+```
 
 Fix a missing sign-off on the last commit:
 
