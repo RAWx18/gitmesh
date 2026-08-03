@@ -1,8 +1,8 @@
-# Spec &mdash; Agent Configuration & Activity UI
+# Spec - Agent Configuration & Activity UI
 
 > Three operator-facing surfaces for `/agents`: a creation dialog, a
 > detailed per-agent page, and an upgraded list page. All run against
-> existing backend endpoints &mdash; no new server work is required.
+> existing backend endpoints - no new server work is required.
 
 ## What this spec covers
 
@@ -18,16 +18,16 @@ hierarchy, and inspect runtime activity (run history, live logs, costs).
 
 The three surfaces, in build order:
 
-1. **Creation Dialog** &mdash; the "New Agent" flow.
-2. **Detail Page** &mdash; configuration, activity, and logs.
-3. **List Page** &mdash; quality-of-life improvements.
+1. **Creation Dialog**: the "New Agent" flow.
+2. **Detail Page**: configuration, activity, and logs.
+3. **List Page**: quality-of-life improvements.
 
 A single component inventory and a single API surface section close out
 the spec.
 
 ---
 
-## Surface 1 &mdash; Creation Dialog
+## Surface 1 - Creation Dialog
 
 Follows the existing `NewIssueDialog` / `NewProjectDialog` pattern: a
 `Dialog` component with expand / minimise toggle, project badge
@@ -37,11 +37,11 @@ breadcrumb, and `Cmd+Enter` to submit.
 
 | Field | Control | Required | Default | Notes |
 |-------|---------|----------|---------|-------|
-| Name | Text input (large, auto-focused) | yes | &mdash; | e.g. "Alice", "Build Bot" |
-| Title | Text input (subtitle style) | no | &mdash; | e.g. "Triage Lead", "PR Reviewer" |
+| Name | Text input (large, auto-focused) | yes | - | e.g. "Alice", "Build Bot" |
+| Title | Text input (subtitle style) | no | - | e.g. "Triage Lead", "PR Reviewer" |
 | Role | Chip popover (select) | no | `general` | Values from `AGENT_ROLES`: `triage`, `pr_review`, `docs`, `security`, `community`, `onboarding`, `release`, `general` |
-| Reports To | Chip popover (agent select) | conditional | &mdash; | Dropdown of existing agents in the project. **First agent**: role auto-set to `triage`, Reports To greyed out. Otherwise required unless role is `triage`. |
-| Capabilities | Text input | no | &mdash; | Free-text description |
+| Reports To | Chip popover (agent select) | conditional | - | Dropdown of existing agents in the project. **First agent**: role auto-set to `triage`, Reports To greyed out. Otherwise required unless role is `triage`. |
+| Capabilities | Text input | no | - | Free-text description |
 
 ### Adapter (collapsible, default open)
 
@@ -50,10 +50,10 @@ Common fields:
 | Field | Control | Default | Notes |
 |-------|---------|---------|-------|
 | Adapter Type | Chip popover (select) | `claude_local` | One of `claude_local`, `codex_local`, `process`, `http` |
-| Test environment | Button | &mdash; | Runs adapter-specific diagnostics; returns pass/warn/fail checks for the current unsaved config |
-| CWD | Text input | &mdash; | Working directory for local adapters |
-| Prompt Template | Textarea | &mdash; | Supports `{{ agent.id }}`, `{{ agent.name }}`, &hellip; |
-| Model | Text input | &mdash; | Optional model override |
+| Test environment | Button | - | Runs adapter-specific diagnostics; returns pass/warn/fail checks for the current unsaved config |
+| CWD | Text input | - | Working directory for local adapters |
+| Prompt Template | Textarea | - | Supports `{{ agent.id }}`, `{{ agent.name }}`, &hellip; |
+| Model | Text input | - | Optional model override |
 
 Adapter-specific fields toggle visibility based on Adapter Type:
 
@@ -63,11 +63,11 @@ Adapter-specific fields toggle visibility based on Adapter Type:
 | `claude_local` | Skip Permissions | Toggle | `true` |
 | `codex_local` | Search | Toggle | `false` |
 | `codex_local` | Bypass Sandbox | Toggle | `true` |
-| `process` | Command | Text input | &mdash; |
-| `process` | Args | Text input (comma-separated) | &mdash; |
-| `http` | URL | Text input | &mdash; |
+| `process` | Command | Text input | - |
+| `process` | Args | Text input (comma-separated) | - |
+| `http` | URL | Text input | - |
 | `http` | Method | Select | `POST` |
-| `http` | Headers | Key-value pairs | &mdash; |
+| `http` | Headers | Key-value pairs | - |
 
 ### Runtime (collapsible, default collapsed)
 
@@ -77,8 +77,8 @@ Adapter-specific fields toggle visibility based on Adapter Type:
 | Monthly Budget (cents) | Number input | `0` |
 | Timeout (sec) | Number input | `900` |
 | Grace Period (sec) | Number input | `15` |
-| Extra Args | Text input | &mdash; |
-| Env Vars | Key-value pair editor | &mdash; |
+| Extra Args | Text input | - |
+| Env Vars | Key-value pair editor | - |
 
 ### Heartbeat Policy (collapsible, default collapsed)
 
@@ -93,14 +93,14 @@ Adapter-specific fields toggle visibility based on Adapter Type:
 
 ### Behaviour
 
-- On submit, calls `agentsApi.create(projectId, data)` &mdash; identity fields go at the top level; adapter-specific fields go into `adapterConfig`; heartbeat / runtime go into `runtimeConfig`.
+- On submit, calls `agentsApi.create(projectId, data)`: identity fields go at the top level; adapter-specific fields go into `adapterConfig`; heartbeat / runtime go into `runtimeConfig`.
 - After creation, navigate to the new agent's detail page.
 - For the first agent in a project, pre-fill role as `triage` and disable Reports To.
 - Switching adapter type updates visible fields while preserving shared values (cwd, promptTemplate, &hellip;).
 
 ---
 
-## Surface 2 &mdash; Detail Page
+## Surface 2 - Detail Page
 
 Restructures the existing tabbed layout. Header stays (name, role,
 title, status badge, action buttons); tabs become richer.
@@ -124,28 +124,28 @@ Summary card lists:
 - Adapter type + model (when set);
 - Heartbeat interval (e.g. "every 5 min") or "Disabled";
 - Last heartbeat time (relative, e.g. "3 min ago");
-- Session status &mdash; `Active (session abc123…)` or `No session`;
+- Session status - `Active (session abc123…)` or `No session`;
 - Current month spend / budget with a progress bar.
 
 Org Position card lists:
 
-- Reports to &mdash; clickable agent name (links to their detail page);
-- Direct reports &mdash; clickable list of agents reporting to this one.
+- Reports to - clickable agent name (links to their detail page);
+- Direct reports - clickable list of agents reporting to this one.
 
 ### Tab: Configuration
 
 Editable form, same sections as the creation dialog but pre-populated.
-Inline editing &mdash; click a value, edit, press Enter or blur to save via
+Inline editing - click a value, edit, press Enter or blur to save via
 `agentsApi.update()`. Each section is a collapsible card. Saves happen
 **per field** (PATCH on blur / enter), not via a single form submit.
 Validation errors render inline.
 
 Sections:
 
-- Identity &mdash; name, title, role, reports to, capabilities.
-- Adapter Config &mdash; all adapter-specific fields for the active adapter.
-- Heartbeat Policy &mdash; enable / disable, interval, wake-on triggers, cooldown.
-- Runtime &mdash; context mode, budget, timeout, grace, env vars, extra args.
+- Identity - name, title, role, reports to, capabilities.
+- Adapter Config - all adapter-specific fields for the active adapter.
+- Heartbeat Policy - enable / disable, interval, wake-on triggers, cooldown.
+- Runtime - context mode, budget, timeout, grace, env vars, extra args.
 
 ### Tab: Runs
 
@@ -160,13 +160,13 @@ Run row layout:
 
 Per-row fields:
 
-- Status icon &mdash; green check (succeeded), red X (failed), yellow spinner (running), gray clock (queued), orange timeout, slash (cancelled).
-- Run ID &mdash; first 8 chars.
-- Invocation source chip &mdash; `timer` / `assignment` / `on_demand` / `automation`.
+- Status icon - green check (succeeded), red X (failed), yellow spinner (running), gray clock (queued), orange timeout, slash (cancelled).
+- Run ID - first 8 chars.
+- Invocation source chip - `timer` / `assignment` / `on_demand` / `automation`.
 - Relative timestamp.
 - Token usage summary (input + output total).
 - Cost.
-- Result summary &mdash; first line of the result (or error).
+- Result summary - first line of the result (or error).
 
 Clicking a run opens an inline accordion (or a slide-over panel) with:
 
@@ -196,12 +196,12 @@ to issue detail.
 
 Expand the existing costs tab:
 
-- Cumulative totals from `agent_runtime_state` &mdash; total input tokens, total output tokens, total cached tokens, total cost.
+- Cumulative totals from `agent_runtime_state`: total input tokens, total output tokens, total cached tokens, total cost.
 - Monthly budget progress bar (current-month spend vs. budget).
-- Per-run cost table &mdash; date, run id, tokens in / out / cached, cost. Sortable by date or cost.
+- Per-run cost table - date, run id, tokens in / out / cached, cost. Sortable by date or cost.
 - Stretch: a simple bar chart of daily spend over the last 30 days.
 
-### Right sidebar &mdash; Properties Panel
+### Right sidebar - Properties Panel
 
 Existing `AgentProperties` panel continues with quick-glance info. Add:
 
@@ -211,7 +211,7 @@ Existing `AgentProperties` panel continues with quick-glance info. Add:
 
 ---
 
-## Surface 3 &mdash; List Page
+## Surface 3 - List Page
 
 ### Today
 
@@ -292,12 +292,12 @@ All endpoints already exist. No new server work needed for V1.
 
 The first five steps are the core; the rest are polish.
 
-1. **New Agent Dialog** &mdash; unblocks UI-driven agent creation.
-2. **Agents List improvements** &mdash; New Agent button, tab filters, adapter chip, running indicator.
-3. **Agent Detail: Configuration tab** &mdash; editable adapter / heartbeat / runtime config.
-4. **Agent Detail: Runs tab** &mdash; run history list with status, tokens, cost.
-5. **Agent Detail: Run Detail + Log Viewer** &mdash; expandable run detail with streaming logs.
-6. **Agent Detail: Overview tab** &mdash; summary card + org position.
-7. **Agent Detail: Costs tab** &mdash; expanded cost breakdown.
-8. **Org Chart view** &mdash; tree visualisation on the list page.
-9. **Properties panel updates** &mdash; session ID + last error.
+1. **New Agent Dialog**: unblocks UI-driven agent creation.
+2. **Agents List improvements**: New Agent button, tab filters, adapter chip, running indicator.
+3. **Agent Detail: Configuration tab**: editable adapter / heartbeat / runtime config.
+4. **Agent Detail: Runs tab**: run history list with status, tokens, cost.
+5. **Agent Detail: Run Detail + Log Viewer**: expandable run detail with streaming logs.
+6. **Agent Detail: Overview tab**: summary card + org position.
+7. **Agent Detail: Costs tab**: expanded cost breakdown.
+8. **Org Chart view**: tree visualisation on the list page.
+9. **Properties panel updates**: session ID + last error.
