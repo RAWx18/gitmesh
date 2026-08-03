@@ -10,7 +10,7 @@ drizzle/meta/
 .vite/
 coverage/
 .DS_Store
-# Runtime / Docker volume dir at repo root only (do not use `data/` — that ignores `lib/data/`)
+# Runtime / Docker volume dir at repo root only (do not use `data/`: that ignores `lib/data/`)
 /data/
 .gitmesh/
 .pnpm-store/
@@ -29,6 +29,11 @@ packages/db/seed-*.mjs
 
 # npm publish build artifacts
 cli/package.dev.json
+# release.sh copies these into packages so they ship in the tarball, then deletes
+# them. The tracked sources are /playbooks/ and /ui/ at the repo root.
+/server/ui-dist/
+/server/playbooks/
+/lib/adapters/*/playbooks/
 
 # Build artifacts in src directories (tsc emits next to sources when run
 # without the package tsconfig, which is never what we want committed).
@@ -41,6 +46,10 @@ lib/**/src/**/*.js.map
 !lib/**/src/**/*.d.ts
 lib/**/src/**/*.d.ts.map
 tmp/
+
+# Python bytecode (.github/scripts/governance_engine.py)
+__pycache__/
+*.pyc
 
 # Editor / tool temp files
 *.tmp
