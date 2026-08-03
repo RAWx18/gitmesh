@@ -7,6 +7,7 @@ export default defineConfig({
       "lib/workspace-core",
       "lib/workspace-adapters",
       "lib/adapters/opencode",
+      "lib/adapters/pi",
       "server",
       "ui",
       "cli",
