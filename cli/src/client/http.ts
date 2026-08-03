@@ -53,7 +53,7 @@ interface PreparedRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Request builder — pure, no I/O
+// Request builder - pure, no I/O
 // ---------------------------------------------------------------------------
 
 interface BuilderContext {
@@ -94,7 +94,7 @@ function buildHeaders(
     merged["x-gitmesh-agents-run-id"] = ctx.runId;
   }
 
-  // Keep verb-specific cleanup contained — GET/DELETE never carry a content-type.
+  // Keep verb-specific cleanup contained - GET/DELETE never carry a content-type.
   if (!hasBody && (method === "GET" || method === "DELETE")) {
     delete merged["content-type"];
   }
@@ -211,22 +211,22 @@ export class GitmeshApiClient {
     this.runId = opts.runId?.trim() || undefined;
   }
 
-  /** GET — body is never sent. */
+  /** GET - body is never sent. */
   get<T>(path: string, opts?: RequestOptions): Promise<T | null> {
     return this.send<T>(prepareRequest(this.context(), "GET", path, undefined, opts));
   }
 
-  /** POST — JSON-encodes object bodies, leaves strings alone. */
+  /** POST - JSON-encodes object bodies, leaves strings alone. */
   post<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T | null> {
     return this.send<T>(prepareRequest(this.context(), "POST", path, body, opts));
   }
 
-  /** PATCH — same JSON convention as POST. */
+  /** PATCH - same JSON convention as POST. */
   patch<T>(path: string, body?: unknown, opts?: RequestOptions): Promise<T | null> {
     return this.send<T>(prepareRequest(this.context(), "PATCH", path, body, opts));
   }
 
-  /** DELETE — body is never sent. */
+  /** DELETE - body is never sent. */
   delete<T>(path: string, opts?: RequestOptions): Promise<T | null> {
     return this.send<T>(prepareRequest(this.context(), "DELETE", path, undefined, opts));
   }

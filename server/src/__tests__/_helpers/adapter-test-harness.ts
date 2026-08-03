@@ -2,9 +2,9 @@
  * Declarative test harness for adapter suites. Tests are expressed as a list
  * of scenarios consumed by `it.each`. Three scenario shapes:
  *
- *   1. `parser`    — pure stdin/stdout transforms (parse JSONL etc.).
- *   2. `cli`       — capture `console.log` while invoking a printer.
- *   3. `assertion` — escape hatch for one-off checks.
+ *   1. `parser`: pure stdin/stdout transforms (parse JSONL etc.).
+ *   2. `cli`: capture `console.log` while invoking a printer.
+ *   3. `assertion`: escape hatch for one-off checks.
  *
  * `execute` and `testEnvironment` flows have their own scenario builders
  * below; they need more I/O setup than a single generic shape allows.

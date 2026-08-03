@@ -1,5 +1,5 @@
 /**
- * @gitmesh/adapter-cursor-local — public entry point.
+ * @gitmesh/adapter-cursor-local - public entry point.
  *
  * The model catalogue is expressed as a structured family list (not a
  * flat mirror of an external file). The set of model

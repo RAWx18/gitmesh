@@ -1,20 +1,20 @@
 /**
- * GlyphRail — 48px thin navigation rail.
+ * GlyphRail - 48px thin navigation rail.
  *
  * Replaces the wide 224px sidebar pattern common in generic admin UIs.
  * The rail is glyph-only, with hover tooltips. Vocabulary is intentionally
  * GitMesh-specific:
  *
- *   Mesh    — the live forge graph (formerly "Dashboard")
- *   Signal  — items that need attention (formerly "Inbox")
- *   Gate    — approvals (formerly "Approvals")
- *   Issues / PRs / Milestones — work surfaces
- *   Workers — agent fleet (formerly "Agents")
- *   Rules   — policies
- *   Registry— policy + project templates
- *   Ledger  — audit log + attestations
- *   Costs   — cost & budget
- *   Org     — org chart
+ *   Mesh    - the live forge graph (formerly "Dashboard")
+ *   Signal  - items that need attention (formerly "Inbox")
+ *   Gate    - approvals (formerly "Approvals")
+ *   Issues / PRs / Milestones - work surfaces
+ *   Workers - agent fleet (formerly "Agents")
+ *   Rules   - policies
+ *   Registry- policy + project templates
+ *   Ledger  - audit log + attestations
+ *   Costs   - cost & budget
+ *   Org     - org chart
  *   Settings
  *
  * Sub-navigation lives in a command palette (⌘K) or in-page tabs, not in
@@ -119,7 +119,7 @@ export function GlyphRail() {
           <span
             className="font-mono text-[11px] font-bold tracking-tighter"
             style={{ color: "var(--verdict-attested)" }}
-            title="GitMesh — Forge Instrumentation"
+            title="GitMesh - Forge Instrumentation"
           >
             GM
           </span>

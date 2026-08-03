@@ -1,5 +1,5 @@
 /*
- * NewIssueDialog — Top-docked CLI command bar.
+ * NewIssueDialog - Top-docked CLI command bar.
  *
  * This is NOT a centered modal. It is a thin mono command bar
  * that slides down from the top of the viewport, parsing inline flag tokens
@@ -158,7 +158,7 @@ function renderTokenizedOverlay(input: string, tokens: ParsedToken[]) {
   return parts;
 }
 
-// Reused inline styles — keep mono everywhere, avoid Tailwind for var() refs.
+// Reused inline styles - keep mono everywhere, avoid Tailwind for var() refs.
 const FONT_MONO = { fontFamily: "var(--font-mono)" } as const;
 const TINY_LABEL = { color: "var(--text-tertiary)", ...FONT_MONO } as const;
 const DASH_INPUT = {
@@ -423,7 +423,7 @@ export function NewIssueDialog() {
     if (inferredSubprojectId) {
       body.subprojectId = inferredSubprojectId;
     }
-    // Labels are kept on the draft for now — server expects UUIDs (labelIds),
+    // Labels are kept on the draft for now - server expects UUIDs (labelIds),
     // not free-text labels, so we surface them visually but do not submit them.
     createIssue.mutate({
       projectId: effectiveProjectId,
@@ -513,7 +513,7 @@ export function NewIssueDialog() {
 
   // ── Derived ────────────────────────────────────────────────────────────
   const canSubmit = parsed.title.trim().length > 0 && !!effectiveProjectId && !createIssue.isPending;
-  const projectShort = (dialogProject?.name ?? "—").slice(0, 3).toUpperCase();
+  const projectShort = (dialogProject?.name ?? "-").slice(0, 3).toUpperCase();
   const overlayParts = renderTokenizedOverlay(command, parsed.tokens);
 
   // Resolve display strings for the chip selectors.
@@ -536,7 +536,7 @@ export function NewIssueDialog() {
       role="dialog"
       onKeyDown={handleSheetKeyDown}
     >
-      {/* Subtle dim — far below modal-overlay strength. */}
+      {/* Subtle dim - far below modal-overlay strength. */}
       <div
         className="absolute inset-0 pointer-events-auto"
         style={{ background: "rgba(0,0,0,0.12)" }}
@@ -634,9 +634,9 @@ export function NewIssueDialog() {
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 text-[12px]">
               <ChipSelect label="status" value={status} options={STATUS_VALUES.map((v) => ({ value: v, label: v.replace("_", " ") }))} onChange={setStatus} />
-              <ChipSelect label="priority" value={inferredPriority} options={[{ value: "", label: "—" }, ...PRIORITY_VALUES.map((v) => ({ value: v, label: v }))]} onChange={setOverridePriority} />
-              <ChipSelect label="for" value={inferredAssigneeId} options={[{ value: "", label: "—" }, ...((agents ?? []).filter((a) => a.status !== "terminated").map((a) => ({ value: a.id, label: a.name })))]} onChange={setOverrideAssigneeId} />
-              <ChipSelect label="in" value={inferredSubprojectId} options={[{ value: "", label: "—" }, ...orderedSubprojects.map((sp) => ({ value: sp.id, label: sp.name }))]} onChange={setOverrideSubprojectId} />
+              <ChipSelect label="priority" value={inferredPriority} options={[{ value: "", label: "-" }, ...PRIORITY_VALUES.map((v) => ({ value: v, label: v }))]} onChange={setOverridePriority} />
+              <ChipSelect label="for" value={inferredAssigneeId} options={[{ value: "", label: "-" }, ...((agents ?? []).filter((a) => a.status !== "terminated").map((a) => ({ value: a.id, label: a.name })))]} onChange={setOverrideAssigneeId} />
+              <ChipSelect label="in" value={inferredSubprojectId} options={[{ value: "", label: "-" }, ...orderedSubprojects.map((sp) => ({ value: sp.id, label: sp.name }))]} onChange={setOverrideSubprojectId} />
 
               <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-[10px] uppercase tracking-widest" style={TINY_LABEL}>labels</span>

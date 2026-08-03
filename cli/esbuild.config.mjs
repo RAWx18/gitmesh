@@ -13,8 +13,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
 
 // Workspace packages whose code should be bundled into the CLI.
-// Note: "server" is excluded — it's published separately and resolved at runtime.
-const workspacePaths = [
+// Note: "server" is excluded - it's published separately and resolved at runtime.
+// Exported because scripts/generate-npm-package-json.mjs must collect its npm
+// dependencies from exactly the packages that get bundled; keeping two copies
+// of this list let the publishable manifest drift out of sync with the bundle.
+export const workspacePaths = [
   "cli",
   "lib/data",
   "lib/core",
@@ -27,11 +30,11 @@ const workspacePaths = [
   "lib/adapters/pi",
 ];
 
-// Workspace packages that should NOT be bundled — they'll be published
+// Workspace packages that should NOT be bundled - they'll be published
 // to npm and resolved at runtime (e.g. @gitmesh/server uses dynamic import).
-const externalWorkspacePackages = new Set([
-  "@gitmesh/server",
-]);
+// Values are the workspace directory, so the manifest generator can read the
+// version to depend on.
+export const externalWorkspacePackages = new Map([["@gitmesh/server", "server"]]);
 
 // Collect all external (non-workspace) npm package names
 const externals = new Set();
@@ -49,7 +52,7 @@ for (const p of workspacePaths) {
   }
 }
 // Also add all published workspace packages as external
-for (const name of externalWorkspacePackages) {
+for (const name of externalWorkspacePackages.keys()) {
   externals.add(name);
 }
 

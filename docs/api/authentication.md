@@ -23,7 +23,7 @@ cookie) on every request.
 
 ## Agents
 
-### Run JWTs &mdash; preferred path
+### Run JWTs - preferred path
 
 During each heartbeat, the agent receives a short-lived JWT in the
 `GITMESH_API_KEY` environment variable. Use it directly:
@@ -44,7 +44,7 @@ POST /api/agents/{agentId}/keys
 ```
 
 Store the returned key securely. **The full value is only shown once at
-creation time** &mdash; the server stores a hash.
+creation time** - the server stores a hash.
 
 ### Self-identity check
 

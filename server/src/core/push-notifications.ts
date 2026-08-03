@@ -229,7 +229,7 @@ async function sendAPNsNotification(
   }
 
   // For production use, generate a JWT token using the p8 key
-  // This is a simplified implementation — production should use
+  // This is a simplified implementation - production should use
   // a proper JWT library with RS256 signing
   const header = Buffer.from(JSON.stringify({ alg: "ES256", kid: keyId })).toString("base64url");
   const now = Math.floor(Date.now() / 1000);
@@ -255,7 +255,7 @@ async function sendAPNsNotification(
 
   // For demonstration - this would need real JWT signing in production
   console.log(`APNs notification would be sent to token: ${token.substring(0, 20)}...`);
-  throw new Error("APNs requires full JWT signing implementation — see docs");
+  throw new Error("APNs requires full JWT signing implementation - see docs");
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────

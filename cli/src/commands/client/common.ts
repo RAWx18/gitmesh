@@ -177,7 +177,7 @@ export function clientContext(
   };
 }
 
-/** Backwards-compatible alias for `clientContext` — kept for callers/tests. */
+/** Backwards-compatible alias for `clientContext`: kept for callers/tests. */
 export function resolveCommandContext(
   options: BaseClientOptions,
   opts?: ResolveOptions,

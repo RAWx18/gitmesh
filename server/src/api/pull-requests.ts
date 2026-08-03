@@ -93,7 +93,7 @@ export function pullRequestRoutes(db: Db) {
     assertProjectAccess(req, row.projectId);
 
     // Fetch linked issues (issues that reference this PR in description or are child issues)
-    // For now, fetch all issues in the same project that have a forgePrNumber — this gives
+    // For now, fetch all issues in the same project that have a forgePrNumber - this gives
     // us all PRs, and the UI can link issues to PRs via labels or a separate linking table.
     // A proper implementation would use a dedicated pr_issues junction table.
     const linkedIssueRows = await db
@@ -188,7 +188,7 @@ export function pullRequestRoutes(db: Db) {
       await forgeSync.updateForgeIssueState(row.projectId, id, "closed", actor.agentId ?? undefined);
 
       if (action === "merge") {
-        // Note: GitHub doesn't have a direct "merge" API state — this is handled by the forge.
+        // Note: GitHub doesn't have a direct "merge" API state - this is handled by the forge.
         // For now, update the local state to merged.
         await db
           .update(issues)

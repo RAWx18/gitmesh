@@ -14,20 +14,20 @@ description: >
 
 This guide is split into:
 
-- **Section A &mdash; Foundations.** What the system is, what it's built on, and the tokens you draw from.
-- **Section B &mdash; Building blocks.** Components, when to make new ones, how to compose them.
-- **Section C &mdash; Working in the codebase.** File conventions, the showcase page, common mistakes.
+- **Section A - Foundations.** What the system is, what it's built on, and the tokens you draw from.
+- **Section B - Building blocks.** Components, when to make new ones, how to compose them.
+- **Section C - Working in the codebase.** File conventions, the showcase page, common mistakes.
 
 Use this skill alongside `frontend-design` (visual polish) and
 `web-design-guidelines` (web best practices).
 
 ---
 
-## Section A &mdash; Foundations
+## Section A - Foundations
 
 ### A.1 Stance
 
-GitMesh Agents is a professional control plane &mdash; dense, keyboard-driven,
+GitMesh Agents is a professional control plane - dense, keyboard-driven,
 dark-themed by default. Every pixel earns its place.
 
 The five non-negotiable principles:
@@ -36,7 +36,7 @@ The five non-negotiable principles:
 2. **Keyboard-first.** Global shortcuts (`Cmd+K`, `C`, `[`, `]`). Power users rarely touch the mouse.
 3. **Contextual, not modal.** Inline editing over dialogs. Dropdowns over page navigations.
 4. **Dark-themed by default.** Neutral grays (OKLCH), not pure black. Accent colour reserved for status / priority. Text is the primary visual element.
-5. **Component-driven.** Reusable components capture conventions. Build at the right abstraction &mdash; not too granular, not monolithic.
+5. **Component-driven.** Reusable components capture conventions. Build at the right abstraction - not too granular, not monolithic.
 
 ### A.2 Stack
 
@@ -56,7 +56,7 @@ Path aliases live in `ui/components.json`: `@/components`,
 ### A.3 Tokens
 
 All tokens are CSS variables in `ui/src/index.css`. Both light and dark
-themes use OKLCH. **Never use raw hex / rgb values &mdash; always use a
+themes use OKLCH. **Never use raw hex / rgb values - always use a
 semantic token.**
 
 #### Colour tokens
@@ -79,18 +79,18 @@ semantic token.**
 
 A single base `--radius` (0.625rem) drives a small ladder:
 
-- `rounded-sm` &mdash; small inputs, pills
-- `rounded-md` &mdash; buttons, inputs, small components
-- `rounded-lg` &mdash; cards, dialogs
-- `rounded-xl` &mdash; card containers, large components
-- `rounded-full` &mdash; badges, avatars, status dots
+- `rounded-sm`: small inputs, pills
+- `rounded-md`: buttons, inputs, small components
+- `rounded-lg`: cards, dialogs
+- `rounded-xl`: card containers, large components
+- `rounded-full`: badges, avatars, status dots
 
 Hard ceiling: `rounded-xl` (except `rounded-full`). No `rounded-2xl`.
 
 #### Shadows
 
 Minimal: `shadow-xs` for outline buttons, `shadow-sm` for cards. Nothing
-heavier &mdash; no `shadow-md` and up.
+heavier - no `shadow-md` and up.
 
 ### A.4 Typography scale
 
@@ -140,21 +140,21 @@ Inline agent status dots: `running` (cyan, `animate-pulse`), `active`
 
 Three-zone shell defined in `Layout.tsx`:
 
-- **Sidebar** &mdash; `w-60`, collapsible, hosts `ProjectSwitcher` and `SidebarSections`.
-- **Main content** &mdash; `flex-1`, scrollable.
-- **Properties panel** &mdash; `w-80`, only shown on detail views, hidden on lists.
+- **Sidebar**: `w-60`, collapsible, hosts `ProjectSwitcher` and `SidebarSections`.
+- **Main content**: `flex-1`, scrollable.
+- **Properties panel**: `w-80`, only shown on detail views, hidden on lists.
 
 ---
 
-## Section B &mdash; Building blocks
+## Section B - Building blocks
 
 ### B.1 Component hierarchy
 
 Three tiers, in order of growing app-specificity:
 
-1. **shadcn/ui primitives** &mdash; `ui/src/components/ui/`. Button, Card, Input, Badge, Dialog, Tabs, etc. **Do not modify these directly &mdash; extend through composition.**
-2. **Custom composites** &mdash; `ui/src/components/`. StatusBadge, EntityRow, MetricCard, etc. These encode GitMesh-specific design language.
-3. **Pages** &mdash; `ui/src/pages/`. Compose primitives + composites into routes.
+1. **shadcn/ui primitives**: `ui/src/components/ui/`. Button, Card, Input, Badge, Dialog, Tabs, etc. **Do not modify these directly - extend through composition.**
+2. **Custom composites**: `ui/src/components/`. StatusBadge, EntityRow, MetricCard, etc. These encode GitMesh-specific design language.
+3. **Pages**: `ui/src/pages/`. Compose primitives + composites into routes.
 
 The complete inventory lives in
 [`references/component-index.md`](references/component-index.md). Treat
@@ -171,7 +171,7 @@ Make a new component when:
 **Don't** make a component for:
 
 - one-off layouts specific to a single page;
-- simple className combinations &mdash; use Tailwind directly;
+- simple className combinations - use Tailwind directly;
 - thin wrappers that add no semantic value.
 
 ### B.3 Composition patterns
@@ -268,12 +268,12 @@ streaming.
 | Active nav item | `bg-accent text-accent-foreground` |
 | Focus | `focus-visible:ring-ring focus-visible:ring-[3px]` |
 | Disabled | `disabled:opacity-50 disabled:pointer-events-none` |
-| Inline editing | Use the `InlineEditor` component &mdash; click to edit, `Enter` saves, `Escape` cancels |
+| Inline editing | Use the `InlineEditor` component - click to edit, `Enter` saves, `Escape` cancels |
 | Popover selectors | `StatusIcon` and `PriorityIcon` use Radix Popover for inline selection. Match this pattern for any clickable property that opens a picker. |
 
 ---
 
-## Section C &mdash; Working in the codebase
+## Section C - Working in the codebase
 
 ### C.1 File conventions
 
@@ -335,6 +335,6 @@ then primitives, then composites, then patterns.
 - Hardcoding status colours instead of using `StatusBadge` / `StatusIcon`.
 - Building one-off styled elements when a reusable component already exists.
 - Shipping a new component without updating the `/design-guide` page.
-- Using `shadow-md` or heavier &mdash; keep shadows at `xs` / `sm` only.
-- Using `rounded-2xl` or larger &mdash; the cap is `rounded-xl` (except `rounded-full` for pills and dots).
-- Forgetting dark mode &mdash; always use semantic tokens; never hardcode light or dark values.
+- Using `shadow-md` or heavier - keep shadows at `xs` / `sm` only.
+- Using `rounded-2xl` or larger - the cap is `rounded-xl` (except `rounded-full` for pills and dots).
+- Forgetting dark mode - always use semantic tokens; never hardcode light or dark values.

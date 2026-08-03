@@ -1,5 +1,5 @@
 /**
- * `allowed-hostname` — append a hostname to the auth allowlist.
+ * `allowed-hostname`: append a hostname to the auth allowlist.
  *
  * Restructured around a small `applyAllowedHostname` pure helper so the
  * top-level command body is just a sequence of load → mutate → save → report

@@ -1,7 +1,7 @@
 > **Historical plan.** Superseded by `IMPLEMENTATION.md` for current
 > GitMesh Agents context.
 
-# Plan &mdash; admin-led Agent Creation & Enabling Governance (V1.1)
+# Plan - admin-led Agent Creation & Enabling Governance (V1.1)
 
 **Status** Proposed &middot; **Owners** Product + Server + UI + Skills &middot; **Drafted** 2026-02-19
 
@@ -34,7 +34,7 @@ its own).
 | `enable_agent` semantics | Agent created **only** on approval; no pre-created limbo agent |
 | Agent permissions | None |
 | Project setting "needs operator approval" | Doesn't exist |
-| Approval threads | None &mdash; no comments, no revision-requested state |
+| Approval threads | None - no comments, no revision-requested state |
 | Inbox / Approvals UI | Approve / reject only; no approval detail route |
 | Adapter config | Free-form JSON; no reflection endpoint |
 
@@ -45,7 +45,7 @@ its own).
 ### 2.1 Project setting
 
 `requireBoardApprovalForNewAgents` (boolean). Default `true`. Editable
-only in project advanced settings &mdash; **not** the onboarding /
+only in project advanced settings - **not** the onboarding /
 project-creation flow.
 
 ### 2.2 Agent permission model
@@ -97,7 +97,7 @@ Approval remains the central governance record. Extensions:
 - New status: `revision_requested`.
 - Enable approval payload must contain `agentId`, `requestedByAgentId`, `requestedConfigurationSnapshot`.
 
-### 3.4 New table &mdash; `approval_comments`
+### 3.4 New table - `approval_comments`
 
 Threaded discussion on each approval. Columns: `id`, `project_id`,
 `approval_id`, `author_agent_id`, `author_user_id`, `body`, timestamps.
@@ -170,8 +170,8 @@ response payload.
 
 ### 4.6 Reflection endpoints (plain text, for LLM consumption)
 
-- `GET /llms/agent-configuration.txt` &mdash; index: installed adapter list, per-adapter doc URLs, brief "how to enable" API sequence links.
-- `GET /llms/agent-configuration/:adapterType.txt` &mdash; per adapter: required / optional config keys, defaults, field descriptions, safety notes, example payloads.
+- `GET /llms/agent-configuration.txt`: index: installed adapter list, per-adapter doc URLs, brief "how to enable" API sequence links.
+- `GET /llms/agent-configuration/:adapterType.txt`: per adapter: required / optional config keys, defaults, field descriptions, safety notes, example payloads.
 
 Auth gate is the same as the config-read endpoints.
 
@@ -186,7 +186,7 @@ Adapter implementations to update: `lib/adapters/claude`,
 `lib/adapters/codex`, `server/src/adapters/registry.ts`.
 
 This is required so reflection is generated from installed adapters
-&mdash; not hardcoded.
+not hardcoded.
 
 ---
 
@@ -232,7 +232,7 @@ approval + comment history for audit.
 
 ---
 
-## 7. New skill &mdash; `gitmesh-agents-create-agent`
+## 7. New skill - `gitmesh-agents-create-agent`
 
 Files to add:
 
@@ -266,10 +266,10 @@ skill for enabling workflows.
 
 | Phase | Scope |
 |-------|-------|
-| 1 &mdash; Contracts & migration | DB schema (`projects`, `agents`, approvals status expansion, `approval_comments`); shared constants / types / validators; migration generation; typecheck |
-| 2 &mdash; Server authz & enable flow | Permission resolver + authz guards; `agent-enables` route; `pending_approval` enforcement across heartbeat / issue / key flows; approval revision + comment endpoints |
-| 3 &mdash; Reflection & config-read APIs | Adapter protocol docs support; `/llms/agent-configuration*.txt`; protected config-read endpoints with redaction |
-| 4 &mdash; UI & skilling | Project advanced setting UI; permission controls; approval detail with comments + revision flow; disapproved-agent delete flow; `gitmesh-agents-create-agent` skill + doc updates |
+| 1 - Contracts & migration | DB schema (`projects`, `agents`, approvals status expansion, `approval_comments`); shared constants / types / validators; migration generation; typecheck |
+| 2 - Server authz & enable flow | Permission resolver + authz guards; `agent-enables` route; `pending_approval` enforcement across heartbeat / issue / key flows; approval revision + comment endpoints |
+| 3 - Reflection & config-read APIs | Adapter protocol docs support; `/llms/agent-configuration*.txt`; protected config-read endpoints with redaction |
+| 4 - UI & skilling | Project advanced setting UI; permission controls; approval detail with comments + revision flow; disapproved-agent delete flow; `gitmesh-agents-create-agent` skill + doc updates |
 
 ---
 
@@ -309,6 +309,6 @@ skill for enabling workflows.
 
 ## 12. Open decisions (with default recommendations)
 
-1. Should the operator's direct-create route bypass the approval setting? **Recommendation: yes** &mdash; operator is the explicit governance override.
-2. Should non-authorized agents still see basic agent metadata? **Recommendation: yes** &mdash; name / role / status visible; configuration fields remain restricted.
+1. Should the operator's direct-create route bypass the approval setting? **Recommendation: yes**: operator is the explicit governance override.
+2. Should non-authorized agents still see basic agent metadata? **Recommendation: yes**: name / role / status visible; configuration fields remain restricted.
 3. On rejection, should the limbo agent stay `pending_approval` or move to `terminated`? **Recommendation: move to `terminated` on final reject;** keep an optional hard-delete action for cleanup.

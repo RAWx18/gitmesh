@@ -1,7 +1,7 @@
 {
   "name": "gitmesh-agents",
   "version": "0.3.0",
-  "description": "GitMesh Agents CLI — orchestrate AI agent teams to run a business",
+  "description": "GitMesh Agents CLI - orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {
     "gitmesh-agents": "./dist/index.js"

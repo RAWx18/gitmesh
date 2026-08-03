@@ -27,10 +27,10 @@ function statusVerdict(status: PullRequestStatus): Verdict {
 }
 
 function fmtRelative(d: Date | string | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const t = typeof d === "string" ? new Date(d).getTime() : d.getTime();
   const diff = Date.now() - t;
-  if (Number.isNaN(diff)) return "—";
+  if (Number.isNaN(diff)) return "-";
   const s = Math.max(0, Math.floor(diff / 1000));
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
@@ -246,7 +246,7 @@ export function PRs() {
           style={{ fontFamily: "var(--font-mono)" }}
         >
           {filterText
-            ? "no prs match — try a different filter"
+            ? "no prs match - try a different filter"
             : statusFilter === "open"
               ? "no open pull requests"
               : `no ${statusFilter} pull requests`}
@@ -293,7 +293,7 @@ export function PRs() {
                   ? pr.authorUserId === "local-board"
                     ? "@maintainer"
                     : `@${pr.authorUserId.slice(0, 10)}`
-                  : "—";
+                  : "-";
             return (
               <div
                 key={pr.id}

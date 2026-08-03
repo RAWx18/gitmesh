@@ -33,7 +33,7 @@
   },
   "files": [
     "dist",
-    "skills"
+    "playbooks"
   ],
   "scripts": {
     "build": "tsc",
@@ -41,8 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gitmesh/adapter-sdk": "workspace:*",
-    "picocolors": "^1.1.1"
+    "@gitmesh/adapter-sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

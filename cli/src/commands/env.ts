@@ -1,5 +1,5 @@
 /**
- * `env` — print deployment environment variables.
+ * `env`: print deployment environment variables.
  *
  * Restructured around a declarative `EnvDescriptor` table: every variable is
  * described once (key, required-ness, where the value comes from, note), and
@@ -118,7 +118,7 @@ function resolveAgentJwt(configPath: string): { value: string; source: EnvSource
 }
 
 // ---------------------------------------------------------------------------
-// Row table — declarative description of every env variable we surface.
+// Row table - declarative description of every env variable we surface.
 // ---------------------------------------------------------------------------
 
 function collectDeploymentEnvRows(

@@ -4,9 +4,13 @@
  *
  * Reads the dev package.json (which has workspace:* refs) and produces
  * a publishable package.json in cli/ with:
- *   - workspace:* dependencies removed
- *   - all external dependencies from workspace packages inlined
+ *   - workspace:* dependencies of bundled packages removed
+ *   - all external npm dependencies from those packages inlined
+ *   - workspace packages esbuild leaves external kept as versioned deps
  *   - proper metadata for npm
+ *
+ * The bundled/external package lists come from cli/esbuild.config.mjs so the
+ * manifest always describes the bundle that was actually built.
  *
  * Reads from cli/package.dev.json if it exists (build already ran),
  * otherwise from cli/package.json.
@@ -15,6 +19,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { externalWorkspacePackages, workspacePaths } from "../cli/esbuild.config.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -22,25 +27,6 @@ const repoRoot = resolve(__dirname, "..");
 function readPkg(relativePath) {
   return JSON.parse(readFileSync(resolve(repoRoot, relativePath, "package.json"), "utf8"));
 }
-
-// Read all workspace packages that are BUNDLED into the CLI.
-// Note: "server" is excluded — it's published separately as a dependency.
-const workspacePaths = [
-  "cli",
-  "lib/data",
-  "lib/core",
-  "lib/adapter-sdk",
-  "lib/adapters/claude",
-  "lib/adapters/codex",
-  "lib/adapters/opencode",
-  "lib/adapters/gateway",
-];
-
-// Workspace packages that are NOT bundled and must stay as npm dependencies.
-// These get published separately via Changesets and resolved at runtime.
-const externalWorkspacePackages = new Set([
-  "@gitmesh/agents-server",
-]);
 
 // Collect all external dependencies from all workspace packages
 const allDeps = {};
@@ -52,14 +38,15 @@ for (const pkgPath of workspacePaths) {
   const optDeps = pkg.optionalDependencies || {};
 
   for (const [name, version] of Object.entries(deps)) {
-    if (name.startsWith("@gitmesh/") && !externalWorkspacePackages.has(name)) continue;
-    // For external workspace packages, read their version directly
-    if (externalWorkspacePackages.has(name)) {
-      const pkgDirMap = { "@gitmesh/agents-server": "server" };
-      const wsPkg = readPkg(pkgDirMap[name]);
-      allDeps[name] = `^${wsPkg.version}`;
+    // Workspace packages are bundled by esbuild, so they need no dependency
+    // entry - except the ones esbuild leaves external, which are published
+    // separately and must resolve at runtime.
+    const externalDir = externalWorkspacePackages.get(name);
+    if (externalDir) {
+      allDeps[name] = `^${readPkg(externalDir).version}`;
       continue;
     }
+    if (name.startsWith("@gitmesh/")) continue;
     // Keep the more specific (pinned) version if conflict
     if (!allDeps[name] || !version.startsWith("^")) {
       allDeps[name] = version;
@@ -77,7 +64,7 @@ const sortedOptDeps = Object.fromEntries(
   Object.entries(allOptionalDeps).sort(([a], [b]) => a.localeCompare(b)),
 );
 
-// Read the CLI package metadata — prefer the dev backup if it exists
+// Read the CLI package metadata - prefer the dev backup if it exists
 const devPkgPath = resolve(repoRoot, "cli/package.dev.json");
 const cliPkg = existsSync(devPkgPath)
   ? JSON.parse(readFileSync(devPkgPath, "utf8"))

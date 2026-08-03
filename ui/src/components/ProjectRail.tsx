@@ -262,7 +262,7 @@ export function ProjectRail() {
 
   return (
     <div className="flex flex-col items-center w-[72px] shrink-0 h-full bg-sidebar border-r border-sidebar-border">
-      {/* GitMesh icon — brand mark */}
+      {/* GitMesh icon - brand mark */}
       <div className="flex items-center justify-center h-12 w-full shrink-0 border-b border-sidebar-border">
         <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
           <Workflow className="h-5 w-5 text-primary" />

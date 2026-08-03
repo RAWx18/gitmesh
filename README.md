@@ -5,11 +5,10 @@
    <img src="public/dark_logo.png" alt="GitMesh Logo" width="250">
 </picture>
 
-# GitMesh Community Edition
+# GitMesh
 
 [![OpenSource License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/LF-Decentralized-Trust-labs/gitmesh.svg?style=for-the-badge&logo=git)](https://github.com/LF-Decentralized-Trust-labs/gitmesh/graphs/contributors)
-[![Alpha Release](https://img.shields.io/badge/Status-Alpha%20Version-yellow.svg?style=for-the-badge)](#)
 [![OpenSSF Best Practices](https://img.shields.io/badge/OpenSSF-Silver%20Best%20Practices-silver.svg?style=for-the-badge&logo=opensourceinitiative)](https://www.bestpractices.dev/projects/10972)
 <img src="public/mossp.png" alt="Mintlify Open Source Program" width="180" style="border-radius: 12px;" />
 
@@ -21,26 +20,26 @@
 
 ## What is GitMesh?
 
-**GitMesh Community Edition** is an open-source multi-agent orchestration runtime and governed MCP server purpose-built for open source projects. It enables AI agent teams — Triage, PR Review, Docs, Security, Community, Onboarding, and Release — to handle maintainer work autonomously, with every connected tool (Claude Code, Copilot, Cursor, Codex, Gemini CLI, and more) governed by a single maintainer-defined Policy-as-Code layer via OPA.
+**GitMesh** is an open-source multi-agent orchestration runtime and governed MCP server for open source projects. It runs AI agent teams (Triage, PR Review, Docs, Security, Community, Onboarding, and Release) against your repository, with every connected tool (Claude Code, Copilot, Cursor, Codex, Gemini CLI, and others) governed by a single maintainer-defined Policy-as-Code layer via OPA.
 
-Built on a proven orchestration engine with atomic task checkout, persistent agent context, heartbeat scheduling, and budget enforcement, GitMesh extends this foundation with native GitHub/GitLab integration and distributes governance through MCP and ACP compatibility with every major AI coding tool. Any project can adopt it with one YAML file and one CI step.
+The orchestration engine provides atomic task checkout, persistent agent context, heartbeat scheduling, and budget enforcement. Governance is distributed over MCP and ACP, so any compatible tool is covered. Adoption requires one YAML file and one CI step.
 
 ### Core Capabilities
 
-- **Multi-Agent Orchestration** — Pre-defined OSS agent roles (Triage, PR Review, Docs, Security, Community, Onboarding, Release) with configurable heartbeat schedules, token budgets, and permission scopes
-- **Policy-as-Code via OPA** — Maintainers define governance rules in simple YAML that auto-compiles to Rego. No agent merges a PR, modifies CI/CD files, or publishes a security advisory without human approval
-- **GitHub/GitLab Native Sync** — Bidirectional issue and PR synchronization via webhooks. Agent actions (label, comment, review) push directly to the forge
-- **MCP Server** — Any MCP-compatible IDE (VS Code, Cursor, JetBrains) connects once and every AI tool is automatically governed by the project's policy
-- **ACP Orchestrator** — JSON-RPC 2.0 agent-to-agent coordination. Multiple agents work simultaneously without conflicts, double work, or runaway costs
-- **Immutable Audit Log** — Every action logged with actor, policy version, and outcome (allowed/blocked). Filterable and exportable as JSON/CSV
-- **Project Templates** — Pre-configured agent teams for CLI tools, JS libraries, DevOps projects, CNCF sandboxes, and solo maintainers. One-click adoption
+- **Multi-Agent Orchestration**: Pre-defined OSS agent roles (Triage, PR Review, Docs, Security, Community, Onboarding, Release) with configurable heartbeat schedules, token budgets, and permission scopes
+- **Policy-as-Code via OPA**: Maintainers define governance rules in simple YAML that auto-compiles to Rego. No agent merges a PR, modifies CI/CD files, or publishes a security advisory without human approval
+- **GitHub/GitLab Native Sync**: Bidirectional issue and PR synchronization via webhooks. Agent actions (label, comment, review) push directly to the forge
+- **MCP Server**: Any MCP-compatible IDE (VS Code, Cursor, JetBrains) connects once and every AI tool is automatically governed by the project's policy
+- **ACP Orchestrator**: JSON-RPC 2.0 agent-to-agent coordination. Multiple agents work simultaneously without conflicts, double work, or runaway costs
+- **Immutable Audit Log**: Every action logged with actor, policy version, and outcome (allowed/blocked). Filterable and exportable as JSON/CSV
+- **Project Templates**: Pre-configured agent teams for CLI tools, JS libraries, DevOps projects, CNCF sandboxes, and solo maintainers
 
 ### Three-View Dashboard
 
 | View | Purpose |
 |------|---------|
-| **Active Agents** | Agent status, budget consumption, current work. One-click pause, terminate, or reconfigure |
-| **Pending Approvals** | Mobile-first approval queue — merge PRs, CVE disclosures, issue closures. Clear in 5 minutes |
+| **Active Agents** | Agent status, budget consumption, current work. Pause, terminate, or reconfigure |
+| **Pending Approvals** | Mobile-first approval queue for merges, CVE disclosures, and issue closures |
 | **Audit Log** | Chronological action history with policy outcome filtering |
 
 ---
@@ -51,7 +50,7 @@ Built on a proven orchestration engine with atomic task checkout, persistent age
 
 - **Node.js 20+**
 - **pnpm 9+** (the setup script can install it via Corepack if missing)
-- **Docker** — optional; only required if you use Docker for PostgreSQL instead of the embedded database
+- **Docker**: optional, only needed if you run PostgreSQL in Docker instead of using the embedded database
 
 ### One-command setup (macOS / Linux / Windows)
 
@@ -78,7 +77,7 @@ node scripts/setup.mjs --with-docker-db # also start Docker Compose Postgres on 
 git clone https://github.com/LF-Decentralized-Trust-labs/gitmesh.git
 cd gitmesh
 pnpm install --no-frozen-lockfile   # first clone; CI uses frozen lockfile
-pnpm dev                            # API + UI — see below
+pnpm dev                            # API + UI, see below
 ```
 
 ### Database (embedded vs external)
@@ -102,7 +101,7 @@ GitMesh uses **PostgreSQL** (via Drizzle). For local development you have two co
 - If you copy `.env.example` to `.env` and **uncomment** a URL such as  
   `postgres://gitmesh:gitmesh@localhost:5433/gitmesh`, you must **run Postgres on that host and port** first (for example `pnpm db:up`, or `node scripts/setup.mjs --with-docker-db`). Otherwise the app will fail to connect (for example `ECONNREFUSED` on port 5433).
 
-Authoritative detail: **`doc/DEVELOPING.md`**, **`doc/DATABASE.md`**.
+Authoritative detail: [doc/SETUP.md](doc/SETUP.md), [doc/DEVELOPING.md](doc/DEVELOPING.md), [doc/DATABASE.md](doc/DATABASE.md).
 
 ### Start the platform
 
@@ -112,7 +111,7 @@ pnpm dev
 
 In development, the **API and the maintainer UI share one origin**:
 
-- **http://localhost:3100** — REST API (`/api/...`) and UI
+- **http://localhost:3100**: REST API (`/api/...`) and UI
 
 For a single run without file watching:
 
@@ -120,12 +119,12 @@ For a single run without file watching:
 pnpm dev:once
 ```
 
-Optional: `pnpm gitmesh-agents run` — onboarding, `doctor --repair`, and start when checks pass.
+Optional: `pnpm gitmesh-agents run`: onboarding, `doctor --repair`, and start when checks pass.
 
 ### Docker images
 
-- **`Dockerfile`** — production-style image; persistent state under `GITMESH_HOME` (volume `/gitmesh-agents`), embedded PostgreSQL by default in typical deployments. See **`doc/DOCKER.md`**.
-- **`Dockerfile.e2e`** — installs/runs `gitmesh-agents` from npm for E2E-style bootstrap inside a container.
+- **`Dockerfile`**: production-style image; persistent state under `GITMESH_HOME` (volume `/gitmesh-agents`), embedded PostgreSQL by default in typical deployments. See **`doc/DOCKER.md`**.
+- **`Dockerfile.e2e`**: installs/runs `gitmesh-agents` from npm for E2E-style bootstrap inside a container.
 
 ### Configuration
 
@@ -144,7 +143,7 @@ Deployment mode, auth, and GitHub integration are documented in **`.env.example`
 
 | Stage | What Happens | Time |
 |-------|-------------|------|
-| **1. Zero-config entry** | Add `gitmesh/agent-gate` to CI — contributions are policy-checked immediately | 5 min |
+| **1. Zero-config entry** | Add `gitmesh/agent-gate` to CI; contributions are policy-checked immediately | 5 min |
 | **2. First agent** | Add `.gitmesh/agents.yaml`, enable Triage Agent, approve onboarding | 15 min |
 | **3. Connect tools** | Each developer adds GitMesh MCP server URL to their IDE config once | 2 min/dev |
 | **4. Expand the team** | Enable PR Review, Docs, Security agents as the project grows | On demand |
@@ -152,22 +151,18 @@ Deployment mode, auth, and GitHub integration are documented in **`.env.example`
 
 ---
 
-## Join the Pack
-
-We believe the strongest solutions emerge from diverse perspectives working in concert. Whether you're fixing a bug, proposing a feature, or improving documentation, your contribution matters.
+## Contributing
 
 [![LFX Active Contributors](https://insights.linuxfoundation.org/api/badge/active-contributors?project=lf-decentralized-trust-labs&repos=https://github.com/LF-Decentralized-Trust-labs/gitmesh)](https://insights.linuxfoundation.org/project/lf-decentralized-trust-labs/repository/lf-decentralized-trust-labs-gitmesh)
-[![GitMesh CE Governance](https://img.shields.io/github/actions/workflow/status/LF-Decentralized-Trust-labs/gitmesh/gov-sync.yml?label=GitMesh%20CE%20Governance)](https://github.com/LF-Decentralized-Trust-labs/gitmesh/actions/workflows/gov-sync.yml)
-
-### Contribution Path
+[![Governance Sync](https://img.shields.io/github/actions/workflow/status/LF-Decentralized-Trust-labs/gitmesh/gov-sync.yml?label=Governance%20Sync)](https://github.com/LF-Decentralized-Trust-labs/gitmesh/actions/workflows/gov-sync.yml)
 
 1. Fork the repository
-2. Create your feature branch: `git checkout -b type/branch-name`
-3. Commit your changes with sign-off: `git commit -s -m 'Add innovative feature'`
-4. Push to your branch: `git push origin type/branch-name`
-5. Open a signed pull request
+2. Create a branch: `git checkout -b type/branch-name`
+3. Commit with sign-off (DCO is enforced): `git commit -s -m "feat: add ..."`
+4. Push the branch: `git push origin type/branch-name`
+5. Open a pull request
 
-Read our detailed [Contributing Guide](CONTRIBUTING.md) for best practices and guidelines.
+See the [Contributing Guide](CONTRIBUTING.md) for the full workflow.
 
 ---
 
@@ -226,25 +221,4 @@ Licensed under the **Apache License 2.0**. See the [`LICENSE`](LICENSE) file in 
 
 **A Lab under the [Linux Foundation Decentralized Trust](https://www.lfdecentralizedtrust.org/)**
 
----
-
-*GitMesh is a governed mesh for AI agents on your repo: policies define the boundaries, the runtime keeps work coordinated and auditable, and humans stay in charge when it matters—so open-source teams ship **clear, trusted software**, not runaway automation.*
-
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -108,7 +108,7 @@ export function costRoutes(db: Db) {
     // further restricts them to themselves or agents in their subordinate subtree.
     assertProjectAccess(req, agent.projectId);
 
-    // Gate 2: Spec §9.3 — "Set subordinate budget: yes (manager subtree only)" for agents.
+    // Gate 2: Spec §9.3 - "Set subordinate budget: yes (manager subtree only)" for agents.
     // An agent actor may only set the budget of:
     //   (a) itself, OR
     //   (b) an agent it directly or transitively manages (is in the chain-of-command).

@@ -182,7 +182,7 @@ GitMesh Agents already has a concrete workspace model:
 - the database contains `project_workspaces`
 - project routes already manage workspaces
 
-Plugins that need local tooling (file browsing, git, terminals, process tracking) can resolve workspace paths through the project workspace APIs and then operate on the filesystem, spawn processes, and run git commands directly. The host does not wrap these operations — plugins own their own implementations.
+Plugins that need local tooling (file browsing, git, terminals, process tracking) can resolve workspace paths through the project workspace APIs and then operate on the filesystem, spawn processes, and run git commands directly. The host does not wrap these operations - plugins own their own implementations.
 
 ## 8. Installation Model
 
@@ -352,9 +352,9 @@ Tool names are automatically namespaced by plugin ID at runtime (e.g. `linear:se
 
 When an agent invokes a plugin tool during a run, the host routes the call to the plugin worker via a `executeTool` RPC method:
 
-- `executeTool(input)` — receives tool name, parsed parameters, and run context (agent ID, run ID, project ID, project ID)
+- `executeTool(input)`: receives tool name, parsed parameters, and run context (agent ID, run ID, project ID, project ID)
 
-The worker executes the tool logic and returns a typed result. The host enforces capability gates — a plugin must declare `agent.tools.register` to contribute tools, and individual tools may require additional capabilities (e.g. `http.outbound` for tools that call external APIs).
+The worker executes the tool logic and returns a typed result. The host enforces capability gates - a plugin must declare `agent.tools.register` to contribute tools, and individual tools may require additional capabilities (e.g. `http.outbound` for tools that call external APIs).
 
 ### 11.3 Tool Availability
 
@@ -772,9 +772,9 @@ Plugins may provide an optional filter when subscribing to events. The filter is
 
 Supported filter fields:
 
-- `projectId` — only receive events for a specific project
-- `projectId` — only receive events for a specific project
-- `agentId` — only receive events for a specific agent
+- `projectId`: only receive events for a specific project
+- `projectId`: only receive events for a specific project
+- `agentId`: only receive events for a specific agent
 
 Filters are optional. If omitted, the plugin receives all events of the subscribed type. Filters may be combined (e.g. filter by both project and project).
 
@@ -793,7 +793,7 @@ ctx.events.on("plugin.@gitmesh-agents/plugin-git.push-detected", async (event) =
 Rules:
 
 - Plugin events require the `events.emit` capability.
-- Plugin events are not core domain events — they do not appear in the core activity log unless the emitting plugin explicitly logs them.
+- Plugin events are not core domain events - they do not appear in the core activity log unless the emitting plugin explicitly logs them.
 - Plugin events follow the same at-least-once delivery semantics as core events.
 - The host must not allow plugins to emit events in the core namespace (events without the `plugin.` prefix).
 
@@ -835,7 +835,7 @@ A plugin's `dist/ui/` directory contains a built React bundle. The host serves t
 
 **The host provides, the plugin renders:**
 
-1. The host defines **extension slots** — designated mount points in the UI where plugin components can appear (pages, tabs, widgets, sidebar entries, action bars).
+1. The host defines **extension slots**: designated mount points in the UI where plugin components can appear (pages, tabs, widgets, sidebar entries, action bars).
 2. The plugin's UI bundle exports named components for each slot it wants to fill.
 3. The host mounts the plugin component into the slot, passing it a **host bridge** object.
 4. The plugin component uses the bridge to fetch data from its own worker (via `getData`), call actions (via `performAction`), read host context (current project, project, entity), and use shared host UI primitives (design tokens, common components).
@@ -876,13 +876,13 @@ export function DashboardWidget({ context }: PluginWidgetProps) {
 **What the host controls:**
 
 - The host decides **where** plugin components appear (which slots exist and when they mount).
-- The host provides the **bridge** — plugin UI cannot make arbitrary network requests or access host internals directly.
-- The host enforces **capability gates** — if a plugin's worker does not have a capability, the bridge rejects the call even if the UI requests it.
+- The host provides the **bridge**: plugin UI cannot make arbitrary network requests or access host internals directly.
+- The host enforces **capability gates**: if a plugin's worker does not have a capability, the bridge rejects the call even if the UI requests it.
 - The host provides **design tokens and shared components** via `@gitmesh/plugin-sdk/ui` so plugins can match the host's visual language without being forced to.
 
 **What the plugin controls:**
 
-- The plugin decides **how** to render its data — it owns its React components, layout, interactions, and state management.
+- The plugin decides **how** to render its data - it owns its React components, layout, interactions, and state management.
 - The plugin decides **what data** to fetch and **what actions** to expose.
 - The plugin can use any React patterns (hooks, context, third-party component libraries) inside its bundle.
 
@@ -906,7 +906,7 @@ Isolation rules:
 - Plugin bundles must not import from host internals. They may only import from `@gitmesh/plugin-sdk/ui` and their own dependencies.
 - Plugin bundles must not access `window.fetch` or `XMLHttpRequest` directly for host API calls. All host communication goes through the bridge.
 - The host may enforce Content Security Policy rules that restrict plugin network access to the bridge endpoint only.
-- Plugin bundles must be statically analyzable — no dynamic `import()` of URLs outside the plugin's own bundle.
+- Plugin bundles must be statically analyzable - no dynamic `import()` of URLs outside the plugin's own bundle.
 
 If stronger isolation is needed later, the host can move to iframe-based mounting for untrusted plugins without changing the plugin's source code (the bridge API stays the same).
 
@@ -1008,11 +1008,11 @@ interface PluginBridgeError {
 
 Error codes:
 
-- `WORKER_UNAVAILABLE` — the plugin worker is not running (crashed, shutting down, not yet started)
-- `CAPABILITY_DENIED` — the plugin does not have the required capability for this operation
-- `WORKER_ERROR` — the worker returned an error from its `getData` or `performAction` handler
-- `TIMEOUT` — the worker did not respond within the configured timeout
-- `UNKNOWN` — unexpected bridge-level failure
+- `WORKER_UNAVAILABLE`: the plugin worker is not running (crashed, shutting down, not yet started)
+- `CAPABILITY_DENIED`: the plugin does not have the required capability for this operation
+- `WORKER_ERROR`: the worker returned an error from its `getData` or `performAction` handler
+- `TIMEOUT`: the worker did not respond within the configured timeout
+- `UNKNOWN`: unexpected bridge-level failure
 
 The `@gitmesh/plugin-sdk/ui` subpath should also export an `ErrorBoundary` component that plugin authors can use to catch rendering errors without crashing the host page.
 
@@ -1027,7 +1027,7 @@ The auto-generated form supports:
 - arrays rendered as repeatable field groups with add/remove controls
 - secret ref fields: any schema property annotated with `"format": "secret-ref"` renders as a secret picker that resolves through the GitMesh Agents secret provider system rather than a plain text input
 - validation messages derived from schema constraints (`required`, `minLength`, `pattern`, `minimum`, etc.)
-- a "Test Connection" action if the plugin declares a `validateConfig` RPC method — the host calls it and displays the result inline
+- a "Test Connection" action if the plugin declares a `validateConfig` RPC method - the host calls it and displays the result inline
 
 For plugins that need richer settings UX beyond what JSON Schema can express, the plugin may declare a `settingsPage` slot in `ui.slots`. When present, the host renders the plugin's own React component instead of the auto-generated form. The plugin component communicates with its worker through the standard bridge to read and write config.
 
@@ -1039,7 +1039,7 @@ Plugins that need filesystem, git, terminal, or process operations implement tho
 
 The host provides workspace metadata through `ctx.projects` (list workspaces, get primary workspace, resolve workspace from issue or agent/run). Plugins use this metadata to resolve local paths and then operate on the filesystem, spawn processes, shell out to `git`, or open PTY sessions using standard Node APIs or any libraries they choose.
 
-This keeps the host lean — it does not need to maintain a parallel API surface for every OS-level operation a plugin might need. Plugins own their own logic for file browsing, git workflows, terminal sessions, and process management.
+This keeps the host lean - it does not need to maintain a parallel API surface for every OS-level operation a plugin might need. Plugins own their own logic for file browsing, git workflows, terminal sessions, and process management.
 
 ## 21. Persistence And Postgres
 
@@ -1315,7 +1315,7 @@ When upgrading a plugin:
 
 Plugin install, uninstall, upgrade, and config changes **must** take effect without restarting the GitMesh Agents server. This is a normative requirement, not optional.
 
-The architecture already supports this — plugins run as out-of-process workers with dynamic ESM imports, IPC bridges, and host-managed routing tables. This section makes the requirement explicit so implementations do not regress.
+The architecture already supports this - plugins run as out-of-process workers with dynamic ESM imports, IPC bridges, and host-managed routing tables. This section makes the requirement explicit so implementations do not regress.
 
 #### 25.4.1 Hot Install
 
@@ -1344,7 +1344,7 @@ No server restart is needed.
 
 When a plugin is upgraded at runtime:
 
-1. The host follows the upgrade lifecycle (Section 25.3) — shut down old worker, start new worker.
+1. The host follows the upgrade lifecycle (Section 25.3) - shut down old worker, start new worker.
 2. If the new version changes event subscriptions, job schedules, webhook endpoints, or agent tools, the host atomically swaps the old registrations for the new ones.
 3. If the new version ships an updated UI bundle, the host invalidates any cached bundle assets and notifies the frontend to reload plugin UI components. Active users see the updated UI on next navigation or via a live refresh notification.
 4. If the manifest `apiVersion` is unchanged and no new capabilities are added, the upgrade completes without operator interaction.
@@ -1405,10 +1405,10 @@ The plugin settings page must show:
 
 The host should emit internal events when plugin health degrades. These use the `plugin.*` namespace (not core domain events) and do not appear in the core activity log:
 
-- `plugin.health.degraded` — worker reporting errors or failing health checks
-- `plugin.health.recovered` — worker recovered from error state
-- `plugin.worker.crashed` — worker process exited unexpectedly
-- `plugin.worker.restarted` — worker restarted after crash
+- `plugin.health.degraded`: worker reporting errors or failing health checks
+- `plugin.health.recovered`: worker recovered from error state
+- `plugin.worker.crashed`: worker process exited unexpectedly
+- `plugin.worker.restarted`: worker restarted after crash
 
 These events can be consumed by other plugins (e.g. a notification plugin) or surfaced in the dashboard.
 
@@ -1498,14 +1498,14 @@ This spec directly supports the following plugin types:
 
 The host publishes a single SDK package for plugin authors:
 
-- `@gitmesh/plugin-sdk` — the complete plugin SDK
+- `@gitmesh/plugin-sdk`: the complete plugin SDK
 
 The package uses subpath exports to separate worker and UI concerns:
 
-- `@gitmesh/plugin-sdk` — worker-side SDK (context, events, state, tools, logger, `definePlugin`, `z`)
-- `@gitmesh/plugin-sdk/ui` — frontend SDK (bridge hooks, shared components, design tokens)
+- `@gitmesh/plugin-sdk`: worker-side SDK (context, events, state, tools, logger, `definePlugin`, `z`)
+- `@gitmesh/plugin-sdk/ui`: frontend SDK (bridge hooks, shared components, design tokens)
 
-A single package simplifies dependency management for plugin authors — one dependency, one version, one changelog. The subpath exports keep bundle separation clean: worker code imports from the root, UI code imports from `/ui`. Build tools tree-shake accordingly so the worker bundle does not include React components and the UI bundle does not include worker-only code.
+A single package simplifies dependency management for plugin authors - one dependency, one version, one changelog. The subpath exports keep bundle separation clean: worker code imports from the root, UI code imports from `/ui`. Build tools tree-shake accordingly so the worker bundle does not include React components and the UI bundle does not include worker-only code.
 
 Versioning rules:
 
@@ -1583,7 +1583,7 @@ This phase is enough for:
 - git workflow
 - process/server tracking
 
-Workspace plugins (file browser, terminal, git, process tracking) do not require additional host APIs — they resolve workspace paths through `ctx.projects` and handle filesystem, git, PTY, and process operations directly.
+Workspace plugins (file browser, terminal, git, process tracking) do not require additional host APIs - they resolve workspace paths through `ctx.projects` and handle filesystem, git, PTY, and process operations directly.
 
 ## Phase 2
 
@@ -1609,7 +1609,7 @@ GitMesh Agents should implement:
 - plugins own their local tooling logic (filesystem, git, terminal, processes) directly
 - generic extension tables for most plugin state
 - graceful shutdown, uninstall data lifecycle, and plugin observability
-- hot plugin lifecycle — install, uninstall, upgrade, and config changes without server restart
+- hot plugin lifecycle - install, uninstall, upgrade, and config changes without server restart
 - SDK versioning with multi-version host support and a clear deprecation policy
 - test harness and starter template for low authoring friction
 - strict preservation of core governance and audit rules

@@ -1,5 +1,5 @@
 /**
- * `db:backup` — one-shot manual database backup.
+ * `db:backup`: one-shot manual database backup.
  *
  * Restructured into a small set of pure resolvers + a thin imperative driver,
  * instead of the original interleaved option-parsing + side-effect block.

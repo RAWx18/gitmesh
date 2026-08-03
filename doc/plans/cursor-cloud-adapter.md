@@ -2,7 +2,7 @@
 > GitMesh Agents context. Retained as the V1 design reference for the
 > Cursor Cloud adapter.
 
-# Cursor Cloud Adapter &mdash; V1 Design
+# Cursor Cloud Adapter - V1 Design
 
 ## Why this adapter is different
 
@@ -21,7 +21,7 @@ References (all upstream Cursor docs):
 ## Five V1 decisions, up front
 
 1. Cursor API auth = `Authorization: Bearer <CURSOR_API_KEY>`.
-2. The callback URL must be publicly reachable from Cursor VMs &mdash; Tailscale URL locally; public server URL in prod.
+2. The callback URL must be publicly reachable from Cursor VMs - Tailscale URL locally; public server URL in prod.
 3. Agent &rarr; GitMesh callback auth uses a **bootstrap exchange flow**. No long-lived GitMesh key in the prompt.
 4. Webhooks are V1 primary. Polling is the fallback.
 5. Skills are fetched on demand from GitMesh endpoints. The full playbook is **not** inlined into the prompt.
@@ -44,14 +44,14 @@ Core endpoints used by the adapter:
 | `/v0/agents/{id}/stop` | POST | Stop / pause running agent |
 | `/v0/models` | GET | Recommended model list |
 | `/v0/me` | GET | API key metadata |
-| `/v0/repositories` | GET | Accessible repos &mdash; **strictly rate-limited** |
+| `/v0/repositories` | GET | Accessible repos - **strictly rate-limited** |
 
 ### Status mapping (adapter policy)
 
-- `CREATING`, `RUNNING` &mdash; non-terminal
-- `FINISHED` &mdash; success terminal
-- `ERROR` &mdash; failure terminal
-- Unknown non-active &mdash; treat as failure terminal; preserve raw status in `resultJson`
+- `CREATING`, `RUNNING`: non-terminal
+- `FINISHED`: success terminal
+- `ERROR`: failure terminal
+- Unknown non-active - treat as failure terminal; preserve raw status in `resultJson`
 
 ### Webhook facts
 
@@ -139,19 +139,19 @@ V1 config fields:
 
 | Field | Required? | Default | Notes |
 |-------|-----------|---------|-------|
-| `repository` | yes | &mdash; | GitHub repo URL |
+| `repository` | yes | - | GitHub repo URL |
 | `ref` | optional | `main` | |
 | `model` | optional | empty | Empty = auto |
 | `autoCreatePr` | optional | `false` | |
-| `branchName` | optional | &mdash; | |
-| `promptTemplate` | yes | &mdash; | |
+| `branchName` | optional | - | |
+| `promptTemplate` | yes | - | |
 | `pollIntervalSec` | optional | `10` | |
 | `timeoutSec` | optional | `0` | |
 | `graceSec` | optional | `20` | |
 | `gitmesh-agentsPublicUrl` | optional | falls back to `GITMESH_PUBLIC_URL` env | |
 | `enableWebhooks` | optional | `true` | |
-| `env.CURSOR_API_KEY` | yes | &mdash; | secret_ref preferred |
-| `env.CURSOR_WEBHOOK_SECRET` | yes when webhooks on | &mdash; | min length 32 |
+| `env.CURSOR_API_KEY` | yes | - | secret_ref preferred |
+| `env.CURSOR_WEBHOOK_SECRET` | yes when webhooks on | - | min length 32 |
 
 > Important: do **not** stash the Cursor key in a top-level `apiKey` field.
 > Use `adapterConfig.env` so the existing secret-reference resolution flow
@@ -304,7 +304,7 @@ Checks:
 6. Webhook secret present and length-valid when webhooks are enabled.
 
 Repository-access verification via `/v0/repositories` should be optional
-because of the strict rate limits &mdash; only when an explicit
+because of the strict rate limits - only when an explicit
 `verifyRepositoryAccess` option is set, and only as a `warn`-level check.
 
 ---
@@ -345,7 +345,7 @@ Adapter package registration:
 - `ui/src/adapters/registry.ts`
 - `cli/src/adapters/registry.ts`
 
-Shared contract updates (required &mdash; without them, create / edit flows
+Shared contract updates (required - without them, create / edit flows
 will reject the new adapter even with the package code in place):
 
 - Add `cursor_cloud` to `lib/core/src/constants.ts` (`AGENT_ADAPTER_TYPES`).
@@ -363,7 +363,7 @@ will reject the new adapter even with the package code in place):
 Long-polling HTTP adapters need run cancellation. V1 requirement:
 
 - Register a cancellation handler per running adapter invocation.
-- `cancelRun` invokes that handler &mdash; abort fetch / poll loop, plus an optional Cursor stop call.
+- `cancelRun` invokes that handler - abort fetch / poll loop, plus an optional Cursor stop call.
 
 The current process-only cancellation maps are not enough by themselves
 for Cursor.
@@ -406,15 +406,15 @@ for Cursor.
 
 ### Adapter package
 
-- [ ] `lib/adapters/cursor-cloud/package.json` &mdash; exports wired
+- [ ] `lib/adapters/cursor-cloud/package.json`: exports wired
 - [ ] `lib/adapters/cursor-cloud/tsconfig.json`
-- [ ] `src/index.ts` &mdash; metadata + configuration doc
-- [ ] `src/api.ts` &mdash; bearer-auth client + typed errors
-- [ ] `src/server/execute.ts` &mdash; hybrid webhook / poll orchestration
-- [ ] `src/server/parse.ts` &mdash; stream parser + not-found detection
-- [ ] `src/server/test.ts` &mdash; env diagnostics
-- [ ] `src/server/webhook.ts` &mdash; signature verification + payload helpers
-- [ ] `src/server/index.ts` &mdash; exports + session codec
+- [ ] `src/index.ts`: metadata + configuration doc
+- [ ] `src/api.ts`: bearer-auth client + typed errors
+- [ ] `src/server/execute.ts`: hybrid webhook / poll orchestration
+- [ ] `src/server/parse.ts`: stream parser + not-found detection
+- [ ] `src/server/test.ts`: env diagnostics
+- [ ] `src/server/webhook.ts`: signature verification + payload helpers
+- [ ] `src/server/index.ts`: exports + session codec
 - [ ] `src/ui/parse-stdout.ts`
 - [ ] `src/ui/build-config.ts`
 - [ ] `src/ui/index.ts`

@@ -1,4 +1,4 @@
-# Triage agent — tools and templates
+# Triage agent - tools and templates
 
 ## GitMesh API
 

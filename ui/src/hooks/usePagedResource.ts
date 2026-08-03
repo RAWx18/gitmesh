@@ -1,5 +1,5 @@
 /**
- * `usePagedResource` — generic data-binding hook for list views.
+ * `usePagedResource`: generic data-binding hook for list views.
  *
  * GitMesh list views were each repeating the same pattern: a primary
  * `useQuery` for the list, a secondary `useQuery` for stats/aggregates,
@@ -7,7 +7,7 @@
  * imperative state for inline-edit / confirm-delete UI.
  *
  * This hook collapses that into a single descriptor. Views become
- * pure render functions over the returned bag — no boilerplate.
+ * pure render functions over the returned bag - no boilerplate.
  *
  * (Different surface than upstream's repeated `useQuery + useMutation +
  * useState` boilerplate per page.)
@@ -27,17 +27,17 @@ export interface PagedResourceConfig<TItem, TStats = unknown> {
   /** fetch the list */
   listFn: () => Promise<TItem[]>;
   /**
-   * If false, the list query is not active — useful when another
+   * If false, the list query is not active - useful when another
    * provider (e.g. a context) already owns the canonical query. The
    * hook still uses `listKey` for cache invalidation after mutations.
    */
   listEnabled?: boolean;
-  /** optional secondary query — e.g. per-row stats */
+  /** optional secondary query - e.g. per-row stats */
   statsKey?: QueryKey;
   statsFn?: () => Promise<TStats>;
-  /** rename mutation — invalidates list on success */
+  /** rename mutation - invalidates list on success */
   renameFn?: (input: { id: string; name: string }) => Promise<unknown>;
-  /** delete mutation — invalidates list + stats on success */
+  /** delete mutation - invalidates list + stats on success */
   removeFn?: (id: string) => Promise<unknown>;
   /** extra keys to invalidate after mutations (e.g. legacy aliases) */
   extraInvalidate?: QueryKey[];

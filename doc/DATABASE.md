@@ -2,7 +2,7 @@
 
 GitMesh Agents uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team/). There are three ways to run the database, from simplest to most production-ready.
 
-## 1. Embedded PostgreSQL — zero config
+## 1. Embedded PostgreSQL - zero config
 
 If you don't set `DATABASE_URL`, the server automatically starts an embedded PostgreSQL instance and manages a local data directory.
 
@@ -66,13 +66,13 @@ For production, use a hosted PostgreSQL provider. [Supabase](https://supabase.co
 
 Supabase offers two connection modes:
 
-**Direct connection** (port 5432) — use for migrations and one-off scripts:
+**Direct connection** (port 5432) - use for migrations and one-off scripts:
 
 ```
 postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
 ```
 
-**Connection pooling via Supavisor** (port 6543) — use for the application:
+**Connection pooling via Supavisor** (port 6543) - use for the application:
 
 ```
 postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres

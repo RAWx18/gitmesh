@@ -25,7 +25,7 @@ export const activityAttestations = pgTable(
     signingKeyVersion: integer("signing_key_version").notNull(),
     /** Canonical JSON of (actionId, agentId, projectId, policyId, policyVersion, policyOutcome, timestamp, payloadHash) */
     signedPayload: text("signed_payload").notNull(),
-    /** sha256(signedPayload) — hex */
+    /** sha256(signedPayload) - hex */
     payloadHash: text("payload_hash").notNull(),
     /** base64url Ed25519 signature over the payload bytes */
     signature: text("signature").notNull(),

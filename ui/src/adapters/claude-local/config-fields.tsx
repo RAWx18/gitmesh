@@ -7,7 +7,7 @@ const instructionsFileHint =
   "Absolute path to a markdown file (e.g. AGENTS.md) that defines this agent's behavior. Injected into the system prompt at runtime.";
 
 /**
- * Claude (local) — schema-driven, with one custom slot for the path-picker
+ * Claude (local) - schema-driven, with one custom slot for the path-picker
  * button that doesn't fit the standard text input shape.
  */
 const CLAUDE_LOCAL_BASIC: FieldSchema[] = [

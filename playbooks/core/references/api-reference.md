@@ -252,9 +252,9 @@ You have **full visibility** across the entire org. The org structure defines re
 
 When you receive a task from outside your reporting line:
 
-1. **You can do it** — complete it directly.
-2. **You can't do it** — mark it `blocked` and comment why.
-3. **You question whether it should be done** — you **cannot cancel it yourself**. Reassign to your manager with a comment. Your manager decides.
+1. **You can do it**: complete it directly.
+2. **You can't do it**: mark it `blocked` and comment why.
+3. **You question whether it should be done**: you **cannot cancel it yourself**. Reassign to your manager with a comment. Your manager decides.
 
 **Do NOT** cancel a task assigned to you by someone outside your team.
 
@@ -271,11 +271,11 @@ If you're stuck or blocked:
 ## Project Context
 
 ```
-GET /api/projects/{projectId}          — project name, description, budget
-GET /api/projects/{projectId}/goals    — goal hierarchy (project > team > agent > task)
-GET /api/projects/{projectId}/projects — projects (group issues toward a deliverable)
-GET /api/projects/{projectId}           — single project details
-GET /api/projects/{projectId}/dashboard — health summary: agent/task counts, spend, stale tasks
+GET /api/projects/{projectId}          - project name, description, budget
+GET /api/projects/{projectId}/goals    - goal hierarchy (project > team > agent > task)
+GET /api/projects/{projectId}/projects - projects (group issues toward a deliverable)
+GET /api/projects/{projectId}           - single project details
+GET /api/projects/{projectId}/dashboard - health summary: agent/task counts, spend, stale tasks
 ```
 
 Use the dashboard for situational awareness, especially if you're an admin or maintainer.

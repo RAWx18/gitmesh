@@ -2,7 +2,7 @@ import type { ServerAdapterModule } from "../types.js";
 import { execute } from "./execute.js";
 import { testEnvironment } from "./test.js";
 
-/** HTTP adapter — invokes a remote endpoint per agent run. */
+/** HTTP adapter - invokes a remote endpoint per agent run. */
 export const httpAdapter: ServerAdapterModule = {
   type: "http",
   execute,

@@ -75,7 +75,7 @@ export function MobileBottomNav({ visible }: MobileBottomNavProps) {
         </svg>
       </button>
 
-      {/* Bottom tab bar — 4 columns */}
+      {/* Bottom tab bar - 4 columns */}
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-card/90 backdrop-blur-lg supports-[backdrop-filter]:bg-card/80 transition-transform duration-200 ease-out md:hidden pb-[env(safe-area-inset-bottom)]",

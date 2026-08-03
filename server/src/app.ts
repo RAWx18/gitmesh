@@ -116,7 +116,7 @@ export async function createApp(
   app.use(llmRoutes(db));
   app.use("/api", githubRoutes(db));
   app.use("/api", forgeSyncRoutes(db));
-  // Attestation endpoints are intentionally public — they expose only
+  // Attestation endpoints are intentionally public - they expose only
   // signed audit-fact payloads and the project's public key, so anyone
   // with the URL can verify a GitMesh attestation without credentials.
   app.use("/api", attestationRoutes(db));
@@ -141,7 +141,7 @@ export async function createApp(
   api.use(policyTemplateRoutes(db));
   api.use(agentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
-  // Template registry must mount before root projectRoutes — otherwise `GET /api/templates`
+  // Template registry must mount before root projectRoutes - otherwise `GET /api/templates`
   // is captured by `projectRoutes` `/:projectId` and "templates" is parsed as a UUID.
   api.use(templateRoutes(db));
   api.use(projectRoutes(db));

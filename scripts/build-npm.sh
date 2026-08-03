@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# build-npm.sh — Build the gitmesh-agents CLI package for npm publishing.
+# build-npm.sh - Build the gitmesh-agents CLI package for npm publishing.
 #
 # Uses esbuild to bundle all workspace code into a single file,
 # keeping external npm dependencies as regular package dependencies.

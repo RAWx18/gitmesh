@@ -3,7 +3,7 @@
 
 # Implementation Spec: Humans & Permissions (V1)
 
-**Status** Draft &middot; **Owners** Server + UI + CLI + DB + Shared &middot; **Companion** [`doc/plan/humans-and-permissions.md`](./humans-and-permissions.md) &middot; **Drafted** 2026-02-21
+**Status** Draft &middot; **Owners** Server + UI + CLI + DB + Shared &middot; **Companion** [`doc/plans/humans-and-permissions.md`](./humans-and-permissions.md) &middot; **Drafted** 2026-02-21
 
 This is the engineering implementation contract. It translates the
 companion plan's product decisions into concrete schema, API,
@@ -20,13 +20,13 @@ They are non-negotiable here:
 | # | Decision |
 |---|----------|
 | 1 | Two deployment modes remain: `local_trusted`, `cloud_hosted` |
-| 2 | `local_trusted` &mdash; no login UX, implicit local instance admin actor, loopback-only bind, full admin/settings/invite/approval capabilities locally |
-| 3 | `cloud_hosted` &mdash; Better Auth for humans, email/password only, no email verification in V1 |
-| 4 | Permissions &mdash; one shared authz system for humans and agents; normalised grants table (`principal_permission_grants`); no separate "agent permissions engine" |
-| 5 | Invites &mdash; copy-link only (no outbound email); unified `project_join` link supports human or agent; acceptance creates `pending_approval` join request; no access until admin approval |
-| 6 | Join review metadata &mdash; source IP required; no GeoIP / country lookup in V1 |
-| 7 | Agent API keys &mdash; indefinite by default; hash at rest; display once on claim; revoke / regenerate supported |
-| 8 | Local ingress &mdash; public / untrusted ingress is out of scope for V1; no `--dangerous-agent-ingress` |
+| 2 | `local_trusted`: no login UX, implicit local instance admin actor, loopback-only bind, full admin/settings/invite/approval capabilities locally |
+| 3 | `cloud_hosted`: Better Auth for humans, email/password only, no email verification in V1 |
+| 4 | Permissions - one shared authz system for humans and agents; normalised grants table (`principal_permission_grants`); no separate "agent permissions engine" |
+| 5 | Invites - copy-link only (no outbound email); unified `project_join` link supports human or agent; acceptance creates `pending_approval` join request; no access until admin approval |
+| 6 | Join review metadata - source IP required; no GeoIP / country lookup in V1 |
+| 7 | Agent API keys - indefinite by default; hash at rest; display once on claim; revoke / regenerate supported |
+| 8 | Local ingress - public / untrusted ingress is out of scope for V1; no `--dangerous-agent-ingress` |
 
 ---
 
@@ -67,9 +67,9 @@ Startup guardrails:
 
 Replace implicit "operator" semantics with three explicit actor kinds:
 
-- `user` &mdash; session-authenticated human;
-- `agent` &mdash; bearer API key;
-- `local_implicit_admin` &mdash; only valid in `local_trusted`.
+- `user`: session-authenticated human;
+- `agent`: bearer API key;
+- `local_implicit_admin`: only valid in `local_trusted`.
 
 Implementation note: keep `req.actor` shape backward-compatible during
 migration via a normaliser helper. Only remove hard-coded `"operator"`
@@ -100,7 +100,7 @@ Evaluation order:
 
 Managed by Better Auth's adapter / migrations. Expected minimum tables:
 `user`, `session`, `account`, `verification`. Use canonical Better Auth
-table names and types &mdash; do not fork.
+table names and types - do not fork.
 
 ### D.2 New GitMesh tables
 
@@ -192,14 +192,14 @@ unique `(invite_id)` to enforce one request per consumed invite.
 
 ### D.3 Existing-table changes
 
-- `issues` &mdash; add `assignee_user_id` text null. Enforce single-assignee invariant: at most one of `assignee_agent_id` and `assignee_user_id` is non-null.
-- `agents` &mdash; keep existing `permissions` JSON for transition only; mark deprecated in code path once principal grants are live.
+- `issues`: add `assignee_user_id` text null. Enforce single-assignee invariant: at most one of `assignee_agent_id` and `assignee_user_id` is non-null.
+- `agents`: keep existing `permissions` JSON for transition only; mark deprecated in code path once principal grants are live.
 
 ### D.4 Migration ordering
 
 1. Add new tables / columns / indexes.
 2. Backfill minimum memberships / grants for existing data:
-   - In local mode, the implicit admin membership context is created at runtime &mdash; **not** persisted as a Better Auth user.
+   - In local mode, the implicit admin membership context is created at runtime - **not** persisted as a Better Auth user.
    - In cloud mode, bootstrap creates the first admin user role on acceptance.
 3. Switch authz reads to the new tables.
 4. Remove legacy operator-only checks.
@@ -335,8 +335,8 @@ Files: `cli/src/index.ts`, `cli/src/commands/onboard.ts`,
 
 Commands:
 
-- `gitmesh-agents auth bootstrap-ceo` &mdash; create a bootstrap invite; print the one-time URL.
-- `gitmesh-agents onboard` &mdash; in cloud mode with `bootstrap_pending`, print bootstrap URL and next steps; in local mode, skip the bootstrap requirement.
+- `gitmesh-agents auth bootstrap-ceo`: create a bootstrap invite; print the one-time URL.
+- `gitmesh-agents onboard`: in cloud mode with `bootstrap_pending`, print bootstrap URL and next steps; in local mode, skip the bootstrap requirement.
 
 Config additions: deployment mode, bind host (validated against mode).
 
@@ -346,8 +346,8 @@ Config additions: deployment mode, bind host (validated against mode).
 
 Files:
 
-- Routing &mdash; `ui/src/App.tsx`.
-- API clients &mdash; `ui/src/api/*`.
+- Routing - `ui/src/App.tsx`.
+- API clients - `ui/src/api/*`.
 - New pages / components:
   - `AuthLogin` / `AuthSignup` (cloud mode)
   - `BootstrapPending` page
@@ -437,11 +437,11 @@ UX requirements:
 
 | Phase | Scope |
 |-------|-------|
-| **A &mdash; Foundations** | Config mode / bind-host support; startup guardrails; Better Auth integration skeleton; actor type expansion |
-| **B &mdash; Schema and authz core** | Membership / grants / invite / join tables; permission service + helpers; project / member / instance-admin checks |
-| **C &mdash; Invite + join backend** | Invite create / revoke; invite accept &rarr; pending request; approve / reject + key claim; activity log + live events |
-| **D &mdash; UI + CLI** | Cloud login / bootstrap screens; invite landing; inbox join-approval actions; instance settings + member permissions; bootstrap CLI command + onboarding updates |
-| **E &mdash; Hardening** | Full integration / e2e coverage; docs updates (`SPEC-implementation`, `DEVELOPING`, `CLI`); cleanup of legacy operator-only codepaths |
+| **A - Foundations** | Config mode / bind-host support; startup guardrails; Better Auth integration skeleton; actor type expansion |
+| **B - Schema and authz core** | Membership / grants / invite / join tables; permission service + helpers; project / member / instance-admin checks |
+| **C - Invite + join backend** | Invite create / revoke; invite accept &rarr; pending request; approve / reject + key claim; activity log + live events |
+| **D - UI + CLI** | Cloud login / bootstrap screens; invite landing; inbox join-approval actions; instance settings + member permissions; bootstrap CLI command + onboarding updates |
+| **E - Hardening** | Full integration / e2e coverage; docs updates (`SPEC-implementation`, `DEVELOPING`, `CLI`); cleanup of legacy operator-only codepaths |
 
 ---
 
@@ -461,7 +461,7 @@ If any command is skipped, record exactly what was skipped and why.
 
 ## N. Done criteria
 
-1. Behaviour matches the locked V1 decisions in this doc and `doc/plan/humans-and-permissions.md`.
+1. Behaviour matches the locked V1 decisions in this doc and `doc/plans/humans-and-permissions.md`.
 2. Cloud mode requires auth; local mode has no login UX.
 3. Unified invite + pending-approval flow works for both humans and agents.
 4. Shared principal membership + permission system is live for both users and agents.

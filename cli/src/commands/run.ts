@@ -1,5 +1,5 @@
 /**
- * `run` — bootstrap setup + doctor + start the gitmesh server.
+ * `run`: bootstrap setup + doctor + start the gitmesh server.
  *
  * Restructured into three phases (`prepareInstanceFs`, `ensureConfigPresent`,
  * `runDoctorOrFail`) and a final server-import. Error formatting helpers were
@@ -82,7 +82,7 @@ async function runDoctorOrFail(configPath: string, opts: RunOptions): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
-// Error helpers — collected into one object so they share a clear namespace.
+// Error helpers - collected into one object so they share a clear namespace.
 // ---------------------------------------------------------------------------
 
 const ServerImportErrors = {
@@ -117,7 +117,7 @@ const ServerImportErrors = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Server import — dev path first, fall through to packaged @gitmesh/server.
+// Server import - dev path first, fall through to packaged @gitmesh/server.
 // ---------------------------------------------------------------------------
 
 function maybeEnableUiDevMiddleware(entrypoint: string): void {

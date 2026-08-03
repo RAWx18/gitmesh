@@ -50,7 +50,7 @@ const NO_TOKEN_MESSAGE =
 export function githubRoutes(_db: Db) {
   const router = Router();
 
-  // GET /api/github/repos — list the authenticated user's GitHub repos
+  // GET /api/github/repos - list the authenticated user's GitHub repos
   router.get("/github/repos", async (req, res) => {
     const userId = req.actor?.userId ?? null;
     const tokenInfo = await resolveGitHubToken(_db, userId);
@@ -87,7 +87,7 @@ export function githubRoutes(_db: Db) {
     }
   });
 
-  // GET /api/github/user — get the authenticated user's GitHub info
+  // GET /api/github/user - get the authenticated user's GitHub info
   router.get("/github/user", async (req, res) => {
     const userId = req.actor?.userId ?? null;
     const tokenInfo = await resolveGitHubToken(_db, userId);

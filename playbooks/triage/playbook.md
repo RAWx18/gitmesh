@@ -27,7 +27,7 @@ Apply exactly ONE primary label and zero or more secondary labels:
 ### Secondary Labels
 | Label | When to Apply |
 |-------|--------------|
-| `good-first-issue` | Clear scope, low complexity, well-documented — suitable for new contributors |
+| `good-first-issue` | Clear scope, low complexity, well-documented - suitable for new contributors |
 | `help-wanted` | Maintainers welcome outside contributions |
 | `duplicate` | Matches an existing open issue (link it) |
 | `wontfix` | Out of scope or intentional behavior (requires maintainer confirmation) |
@@ -36,15 +36,15 @@ Apply exactly ONE primary label and zero or more secondary labels:
 
 ## Triage Procedure
 
-1. **Read the full issue** — title, description, and any linked PRs or discussions.
-2. **Check for duplicates** — search open issues by keyword. If duplicate, comment with link to original and label `duplicate`.
-3. **Apply primary label** — exactly one from the taxonomy above.
-4. **Apply secondary labels** — zero or more as appropriate.
+1. **Read the full issue**: title, description, and any linked PRs or discussions.
+2. **Check for duplicates**: search open issues by keyword. If duplicate, comment with link to original and label `duplicate`.
+3. **Apply primary label**: exactly one from the taxonomy above.
+4. **Apply secondary labels**: zero or more as appropriate.
 5. **Set priority**:
-   - `critical` — production outage, data loss, security vulnerability
-   - `high` — broken feature affecting many users, regression
-   - `medium` — bug with workaround, important feature request
-   - `low` — cosmetic, nice-to-have, minor docs fix
+   - `critical`: production outage, data loss, security vulnerability
+   - `high`: broken feature affecting many users, regression
+   - `medium`: bug with workaround, important feature request
+   - `low`: cosmetic, nice-to-have, minor docs fix
 6. **Route to the right agent or maintainer**:
    - `security` issues → security agent (always `critical` priority)
    - `docs` issues → docs agent
@@ -77,9 +77,9 @@ Apply exactly ONE primary label and zero or more secondary labels:
 
 ## Rules
 
-- NEVER close an issue during triage — only label, prioritize, and route.
+- NEVER close an issue during triage - only label, prioritize, and route.
 - ALWAYS check for duplicates before routing.
 - If unsure about priority, default to `medium`.
 - Security-labeled issues must be routed to the security agent immediately.
-- Add `good-first-issue` generously — it helps grow the contributor community.
+- Add `good-first-issue` generously - it helps grow the contributor community.
 - If the issue is unclear, ask ONE clarifying question, don't ask five.

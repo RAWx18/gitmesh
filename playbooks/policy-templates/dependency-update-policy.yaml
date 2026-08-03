@@ -11,7 +11,7 @@ metadata:
     → allowed by policy `_starter_dependency-update-policy` v1 (lockfile rule)
   videoUrl: null
   defaultEnabled: false
-# This template installs TWO policies — the loader handles `policies` (array) too.
+# This template installs TWO policies - the loader handles `policies` (array) too.
 policies:
   - name: _starter_dependency-manifest-approval
     description: Edits to dependency manifests require approval

@@ -165,7 +165,7 @@ export function IconRail() {
         </button>
       </div>
 
-      {/* Nav — flat list; dividers only (no section labels) */}
+      {/* Nav - flat list; dividers only (no section labels) */}
       <nav className="gitmesh-scrollbar flex flex-col gap-px px-2 py-2 flex-1 overflow-y-auto">
           <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" liveCount={liveRunCount} />
           <NavItem

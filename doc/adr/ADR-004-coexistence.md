@@ -17,9 +17,9 @@ the pivot's stated posture is "interoperate to win migrations" (§4.4).
 ## Decision
 
 - **Detect and respect.** Detectors recognize third-party manager territory
-  — `.ruler/` + ruler.toml, `.rulesync/`, `.agents/agents.json`,
+  `.ruler/` + ruler.toml, `.rulesync/`, `.agents/agents.json`,
   agentsync-family state files, symlink topologies, `skills-lock.json`,
-  mcp-lock records — and `doctor` labels those artifacts "managed by X"
+  mcp-lock records - and `doctor` labels those artifacts "managed by X"
   informationally. Managed-by-another-tool is never itself a finding.
 - **Never write into another manager's territory.** `apply` treats it as
   out of bounds; `doctor` suggests nothing destructive there.
@@ -38,6 +38,6 @@ the pivot's stated posture is "interoperate to win migrations" (§4.4).
   "repo managed by X" cases; the acceptance test is that doctor on a Ruler
   repo or a symlink-managed repo says so and proposes nothing destructive.
 - Importers for competitor sources are maintained indefinitely (pivot
-  §17.5) — migration toward GitMesh must stay free.
+  §17.5) - migration toward GitMesh must stay free.
 - Public communication never frames these tools as targets; the benchmark
   and scanners pages name neighbors accurately (honesty rules, §7).

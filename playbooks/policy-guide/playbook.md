@@ -56,9 +56,9 @@ agents:
 ## How Agents Use Policies
 
 1. **Read policies** at startup or when they change. The server provides the current policy state via `GET /api/projects/{projectId}/policies`.
-2. **Check before acting** — Before performing a gated action (merge, release, publish), check if policy requires human approval.
-3. **Respect defaults** — If a policy key is missing, use the safe default (usually: require human approval, don't auto-merge, don't auto-close).
-4. **Report violations** — If you detect a policy violation, escalate to maintainers. Don't attempt to fix policy files yourself.
+2. **Check before acting**: Before performing a gated action (merge, release, publish), check if policy requires human approval.
+3. **Respect defaults**: If a policy key is missing, use the safe default (usually: require human approval, don't auto-merge, don't auto-close).
+4. **Report violations**: If you detect a policy violation, escalate to maintainers. Don't attempt to fix policy files yourself.
 
 ## Safe Defaults
 
@@ -87,8 +87,8 @@ Agent wants to perform action
 
 ## NEVER
 
-- Never modify policy.yaml yourself — only human maintainers change policies.
-- Never ignore a policy rule — if it blocks your action, escalate.
+- Never modify policy.yaml yourself - only human maintainers change policies.
+- Never ignore a policy rule - if it blocks your action, escalate.
 - Never assume a permissive policy when the policy file is missing or unreadable.
 
 ## Common Policy Checks

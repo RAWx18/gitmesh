@@ -14,8 +14,8 @@ import type { ArtifactScope, DetectedArtifact } from "./types.js";
  * Filesystem plumbing shared by the detectors (extracted from T1.1/T1.2
  * before T1.3 adds a third copy). Everything here upholds the detector
  * guarantees: pure, read-only, deterministic sorted output, symlink-aware
- * (literal targets, never resolved away — pivot.md §10.4), cycle-safe, and
- * filesystem errors contained — an unreadable directory or a broken symlink
+ * (literal targets, never resolved away - pivot.md §10.4), cycle-safe, and
+ * filesystem errors contained - an unreadable directory or a broken symlink
  * skips or flags the entry, never aborts, so a doctor scan survives any
  * repository.
  */
@@ -45,7 +45,7 @@ export function makeArtifact<K extends string>(
 
 /**
  * `stat` (follows symlinks) that never throws: `undefined` for any unreachable
- * path — missing (`ENOENT`), a symlink cycle (`ELOOP`), or one we lack
+ * path - missing (`ENOENT`), a symlink cycle (`ELOOP`), or one we lack
  * permission to resolve (`EACCES`). `throwIfNoEntry` suppresses only `ENOENT`,
  * so the `try` covers the rest; a doctor scan must not abort on one bad entry.
  */
@@ -126,7 +126,7 @@ export function sortedEntries(absDir: string): Dirent[] {
  * Cycle-safe recursive walk. Directories are marked visited by real path, so
  * symlink cycles and aliased trees terminate and each real directory is
  * inventoried exactly once; `recurse` gates descent by directory name;
- * `fileFilter` gates which file names are inspected at all — inspecting a
+ * `fileFilter` gates which file names are inspected at all - inspecting a
  * symlink costs `readlink` + `stat`, so filtering happens before inspection,
  * not in `onFile`; `onFile` receives each matching file (or file symlink)
  * with its POSIX-style path relative to the walk root.

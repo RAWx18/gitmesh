@@ -303,7 +303,7 @@ export function PRDetail() {
               agentMap={agentMap}
               draftKey={`gitmesh-agents:pr-comment-draft:${pr.id}`}
               onAdd={async (_body, _reopen) => {
-                // PR comments not yet wired — agents can post via forge-sync
+                // PR comments not yet wired - agents can post via forge-sync
               }}
             />
           ) : (

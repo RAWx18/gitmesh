@@ -1,7 +1,7 @@
 /**
  * Builds the publishable `gitmesh` binary (pivot T0.6).
  *
- * Bundles cli/src/gitmesh.ts — the same entry the monorepo runs in dev — into
+ * Bundles cli/src/gitmesh.ts - the same entry the monorepo runs in dev - into
  * a single self-contained dist/gitmesh.js, reusing the externals list from
  * cli/esbuild.config.mjs so both CLIs bundle workspace code identically.
  *
@@ -39,7 +39,7 @@ const result = await esbuild.build({
   outfile: "dist/gitmesh.js",
   splitting: false,
   metafile: true,
-  // The published artifact ships no sourcemap — with sourcesContent it
+  // The published artifact ships no sourcemap - with sourcesContent it
   // triples the tarball for no end-user benefit.
   sourcemap: false,
 });

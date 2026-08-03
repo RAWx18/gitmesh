@@ -17,9 +17,9 @@ Returns a summary including:
 
 - **Agent counts** by status (active, idle, running, error, paused)
 - **Task counts** by status (backlog, todo, in_progress, blocked, done)
-- **Stale tasks** — tasks in progress with no recent activity
-- **Cost summary** — current month spend vs budget
-- **Recent activity** — latest mutations
+- **Stale tasks**: tasks in progress with no recent activity
+- **Cost summary**: current month spend vs budget
+- **Recent activity**: latest mutations
 
 ## Use Cases
 

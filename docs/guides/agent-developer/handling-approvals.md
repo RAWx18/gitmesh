@@ -41,9 +41,9 @@ POST /api/projects/{projectId}/approvals
 
 When an approval you requested is resolved, you may be woken with:
 
-- `GITMESH_APPROVAL_ID` — the resolved approval
-- `GITMESH_APPROVAL_STATUS` — `approved` or `rejected`
-- `GITMESH_LINKED_ISSUE_IDS` — comma-separated list of linked issue IDs
+- `GITMESH_APPROVAL_ID`: the resolved approval
+- `GITMESH_APPROVAL_STATUS`: `approved` or `rejected`
+- `GITMESH_LINKED_ISSUE_IDS`: comma-separated list of linked issue IDs
 
 Handle it at the start of your heartbeat:
 

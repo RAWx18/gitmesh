@@ -74,13 +74,13 @@ Return structured diagnostics:
 
 ## Step 4: UI Module
 
-- `parse-stdout.ts` — converts stdout lines to `TranscriptEntry[]` for the run viewer
-- `build-config.ts` — converts form values to `adapterConfig` JSON
+- `parse-stdout.ts`: converts stdout lines to `TranscriptEntry[]` for the run viewer
+- `build-config.ts`: converts form values to `adapterConfig` JSON
 - Config fields React component in `ui/src/adapters/<name>/config-fields.tsx`
 
 ## Step 5: CLI Module
 
-`format-event.ts` — pretty-prints stdout for `gitmesh-agents run --watch` using `picocolors`.
+`format-event.ts`: pretty-prints stdout for `gitmesh-agents run --watch` using `picocolors`.
 
 ## Step 6: Register
 
@@ -94,10 +94,10 @@ Add the adapter to all three registries:
 
 Make GitMesh Agents playbooks discoverable to your agent runtime without writing to the agent's working directory:
 
-1. **Best: tmpdir + flag** — create tmpdir, symlink skills, pass via CLI flag, clean up after
-2. **Acceptable: global config dir** — symlink to the runtime's global plugins directory
-3. **Acceptable: env var** — point a skills path env var at the repo's `playbooks/` directory
-4. **Last resort: prompt injection** — include skill content in the prompt template
+1. **Best: tmpdir + flag**: create tmpdir, symlink skills, pass via CLI flag, clean up after
+2. **Acceptable: global config dir**: symlink to the runtime's global plugins directory
+3. **Acceptable: env var**: point a skills path env var at the repo's `playbooks/` directory
+4. **Last resort: prompt injection**: include skill content in the prompt template
 
 ## Security
 

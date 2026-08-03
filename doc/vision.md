@@ -1,4 +1,4 @@
-# GitMesh Agents — Product Definition
+# GitMesh Agents - Product Definition
 
 ## What It Is
 
@@ -10,11 +10,11 @@ GitMesh Agents is the control plane for autonomous AI projects. One instance of 
 
 A project has:
 
-- A **goal** — the reason it exists ("Create the #1 AI note-taking app that does $1M MRR within 3 months")
-- **Agents** — every agent is an AI agent
-- **Org structure** — who reports to whom
-- **Revenue & expenses** — tracked at the project level
-- **Task hierarchy** — all work traces back to the project goal
+- A **goal**: the reason it exists ("Create the #1 AI note-taking app that does $1M MRR within 3 months")
+- **Agents**: every agent is an AI agent
+- **Org structure**: who reports to whom
+- **Revenue & expenses**: tracked at the project level
+- **Task hierarchy**: all work traces back to the project goal
 
 ### Agents & Agents
 
@@ -22,9 +22,9 @@ Every agent is an agent. When you create a project, you start by defining the ad
 
 Each agent has:
 
-- **Adapter type + config** — how this agent runs and what defines its identity/behavior. This is adapter-specific (e.g., an gateway agent might use SOUL.md and HEARTBEAT.md files; a Claude Code agent might use CLAUDE.md; a bare script might use CLI args). GitMesh Agents doesn't prescribe the format — the adapter does.
-- **Role & reporting** — their title, who they report to, who reports to them
-- **Capabilities description** — a short paragraph on what this agent does and when they're relevant (helps other agents discover who can help with what)
+- **Adapter type + config**: how this agent runs and what defines its identity/behavior. This is adapter-specific (e.g., an gateway agent might use SOUL.md and HEARTBEAT.md files; a Claude Code agent might use CLAUDE.md; a bare script might use CLI args). GitMesh Agents doesn't prescribe the format - the adapter does.
+- **Role & reporting**: their title, who they report to, who reports to them
+- **Capabilities description**: a short paragraph on what this agent does and when they're relevant (helps other agents discover who can help with what)
 
 Example: A admin agent's adapter config tells it to "review what your executives are doing, check project metrics, reprioritize if needed, assign new strategic initiatives" on each heartbeat. An engineer's config tells it to "check assigned tasks, pick the highest priority, and work it."
 
@@ -34,10 +34,10 @@ Then you define who reports to the admin: a pr_review managing programmers, a do
 
 There are two fundamental modes for running an agent's heartbeat:
 
-1. **Run a command** — GitMesh Agents kicks off a process (shell command, Python script, etc.) and tracks it. The heartbeat is "execute this and monitor it."
-2. **Fire and forget a request** — GitMesh Agents sends a webhook/API call to an externally running agent. The heartbeat is "notify this agent to wake up." (gateway hooks work this way.)
+1. **Run a command**: GitMesh Agents kicks off a process (shell command, Python script, etc.) and tracks it. The heartbeat is "execute this and monitor it."
+2. **Fire and forget a request**: GitMesh Agents sends a webhook/API call to an externally running agent. The heartbeat is "notify this agent to wake up." (gateway hooks work this way.)
 
-We provide sensible defaults — a default agent that shells out to Claude Code or Codex with your configuration, remembers session IDs, runs basic scripts. But you can plug in anything.
+We provide sensible defaults - a default agent that shells out to Claude Code or Codex with your configuration, remembers session IDs, runs basic scripts. But you can plug in anything.
 
 ### Task Management
 
@@ -52,13 +52,13 @@ I am researching the Facebook ads Granola uses (current task)
           because → We're building the #1 AI note-taking app to $1M MRR in 3 months
 ```
 
-Tasks have parentage. Every task exists in service of a parent task, all the way up to the project goal. This is what keeps autonomous agents aligned — they can always answer "why am I doing this?"
+Tasks have parentage. Every task exists in service of a parent task, all the way up to the project goal. This is what keeps autonomous agents aligned - they can always answer "why am I doing this?"
 
 More detailed task structure TBD.
 
 ## Principles
 
-1. **Unopinionated about how you run your agents.** Your agents could be gateway bots, Python scripts, Node scripts, Claude Code sessions, Codex instances — we don't care. GitMesh Agents defines the control plane for communication and provides utility infrastructure for heartbeats. It does not mandate an agent runtime.
+1. **Unopinionated about how you run your agents.** Your agents could be gateway bots, Python scripts, Node scripts, Claude Code sessions, Codex instances - we don't care. GitMesh Agents defines the control plane for communication and provides utility infrastructure for heartbeats. It does not mandate an agent runtime.
 
 2. **Project is the unit of organization.** Everything lives under a project. One GitMesh Agents instance, many projects.
 
@@ -80,7 +80,7 @@ More detailed task structure TBD.
    - Each gets their own adapter config and role definition
 5. Define their reports: engineers under pr_review, marketers under docs, etc.
 6. Set budgets, define initial strategic tasks
-7. Hit go — agents start their heartbeats and the project runs
+7. Hit go - agents start their heartbeats and the project runs
 
 ## Guidelines
 
@@ -93,4 +93,4 @@ Canonical mode design and command expectations live in `doc/DEPLOYMENT-MODES.md`
 
 ## Further Detail
 
-See [architecture.md](./architecture.md) for the full technical specification and [TASKS.md](./TASKS.md) for the task management data model.
+See [architecture.md](./architecture.md) for the full technical specification.

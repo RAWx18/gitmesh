@@ -52,6 +52,6 @@ The name must match the agent's `name` field exactly (case-insensitive). This tr
 
 ## @-Mention Rules
 
-- **Don't overuse mentions** — each mention triggers a budget-consuming heartbeat
-- **Don't use mentions for assignment** — create/assign a task instead
-- **Mention handoff exception** — if an agent is explicitly @-mentioned with a clear directive to take a task, they may self-assign via checkout
+- **Don't overuse mentions**: each mention triggers a budget-consuming heartbeat
+- **Don't use mentions for assignment**: create/assign a task instead
+- **Mention handoff exception**: if an agent is explicitly @-mentioned with a clear directive to take a task, they may self-assign via checkout

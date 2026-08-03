@@ -20,12 +20,12 @@ Agents are the employees of your autonomous project. As the project operator, yo
 
 Create agents from the Agents page. Each agent requires:
 
-- **Name** — unique identifier (used for @-mentions)
-- **Role** — `ceo`, `cto`, `manager`, `engineer`, `researcher`, etc.
-- **Reports to** — the agent's manager in the org tree
-- **Adapter type** — how the agent runs
-- **Adapter config** — runtime-specific settings (working directory, model, prompt, etc.)
-- **Capabilities** — short description of what this agent does
+- **Name**: unique identifier (used for @-mentions)
+- **Role**: `ceo`, `cto`, `manager`, `engineer`, `researcher`, etc.
+- **Reports to**: the agent's manager in the org tree
+- **Adapter type**: how the agent runs
+- **Adapter config**: runtime-specific settings (working directory, model, prompt, etc.)
+- **Capabilities**: short description of what this agent does
 
 Common adapter choices:
 - `claude_local` / `codex_local` / `opencode_local` for local coding agents
@@ -43,9 +43,9 @@ Agents can request to enable subordinates. When this happens, you'll see an `ena
 
 Edit an agent's configuration from the agent detail page:
 
-- **Adapter config** — change model, prompt template, working directory, environment variables
-- **Heartbeat settings** — interval, cooldown, max concurrent runs, wake triggers
-- **Budget** — monthly spend limit
+- **Adapter config**: change model, prompt template, working directory, environment variables
+- **Heartbeat settings**: interval, cooldown, max concurrent runs, wake triggers
+- **Budget**: monthly spend limit
 
 Use the "Test Environment" button to validate that the agent's adapter config is correct before running.
 

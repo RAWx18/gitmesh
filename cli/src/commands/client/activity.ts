@@ -1,5 +1,5 @@
 /**
- * `activity list` — read project activity-log entries via the spec helper.
+ * `activity list`: read project activity-log entries via the spec helper.
  */
 import { Command } from "commander";
 import type { ActivityEvent } from "@gitmesh/core";

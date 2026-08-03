@@ -8,7 +8,7 @@
 1. Pick an adapter: `claude_local` or `codex_local`.
 2. Set `cwd` to the workspace you want the agent to work in.
 3. Write a prompt template (the default is fine; see [Prompts](#prompts)).
-4. Decide your wakeup policy &mdash; timer, on-assignment, or both.
+4. Decide your wakeup policy - timer, on-assignment, or both.
 5. Trigger one manual wakeup; confirm the run completes and that token usage / session state were recorded.
 6. Watch the live UI updates and iterate.
 
@@ -39,7 +39,7 @@ is **coalesced** into the existing one rather than launching a duplicate.
 |--------|---------------|
 | `timer` | A scheduled interval (e.g. every 5 minutes) |
 | `assignment` | Work has been assigned or checked out to this agent |
-| `on_demand` | A button click or API ping &mdash; explicitly user-initiated |
+| `on_demand` | A button click or API ping - explicitly user-initiated |
 | `automation` | A system or callback-triggered wake (future automation hooks) |
 
 ---
@@ -62,27 +62,27 @@ read each agent is to look at the three blocks in order.
 
 These knobs control _when_ the agent runs:
 
-- `enabled` &mdash; allow scheduled heartbeats at all
-- `intervalSec` &mdash; timer interval (`0` disables timer wakes)
-- `wakeOnAssignment` &mdash; wake when work is assigned
-- `wakeOnOnDemand` &mdash; allow ping-style on-demand wakes
-- `wakeOnAutomation` &mdash; allow system-automation wakes
+- `enabled`: allow scheduled heartbeats at all
+- `intervalSec`: timer interval (`0` disables timer wakes)
+- `wakeOnAssignment`: wake when work is assigned
+- `wakeOnOnDemand`: allow ping-style on-demand wakes
+- `wakeOnAutomation`: allow system-automation wakes
 
 ### 3. Local-adapter execution settings
 
 These knobs control _how_ the local CLI is invoked:
 
-- `cwd` &mdash; working directory
-- `timeoutSec` &mdash; max runtime per heartbeat
-- `graceSec` &mdash; time before force-kill after timeout/cancel
-- `env` &mdash; optional environment overrides
-- `extraArgs` &mdash; optional CLI args appended to every invocation
+- `cwd`: working directory
+- `timeoutSec`: max runtime per heartbeat
+- `graceSec`: time before force-kill after timeout/cancel
+- `env`: optional environment overrides
+- `extraArgs`: optional CLI args appended to every invocation
 
 ---
 
 ## Prompts
 
-You set one field, `promptTemplate`. It is used for every run &mdash; first
+You set one field, `promptTemplate`. It is used for every run - first
 run and resumed runs alike. Templates support variables such as
 `{{agent.id}}`, `{{agent.name}}`, plus run-context values
 (`{{run.source}}`, `{{heartbeat.reason}}`, `{{project.name}}`, ...).
@@ -97,7 +97,7 @@ inserted from the form. Save-time validation rejects unknown variables.
 Sessions let an agent resume the same conversation across heartbeats.
 GitMesh Agents stores resumable state per
 `(agent, taskKey, adapterType)`. The `taskKey` is derived from wakeup
-context &mdash; explicit `taskKey`, otherwise `taskId`, otherwise `issueId`.
+context - explicit `taskKey`, otherwise `taskId`, otherwise `issueId`.
 
 Behaviour:
 
@@ -118,10 +118,10 @@ Reset sessions when:
 
 Every run gives you:
 
-- run status &mdash; one of `queued`, `running`, `succeeded`, `failed`, `timed_out`, `cancelled`;
+- run status - one of `queued`, `running`, `succeeded`, `failed`, `timed_out`, `cancelled`;
 - error text plus stderr / stdout excerpts;
 - token usage and cost (when the adapter reports it);
-- full logs &mdash; stored outside the core run row, optimised for large output.
+- full logs - stored outside the core run row, optimised for large output.
 
 In local / dev setups, full logs land on disk under the configured run-log
 path.

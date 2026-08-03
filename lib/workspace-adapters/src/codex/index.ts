@@ -10,7 +10,7 @@ export {
 
 function notImplemented(method: string, plannedTask: string): never {
   throw new Error(
-    `codex adapter: ${method}() is not implemented yet — it lands with pivot task ${plannedTask}`,
+    `codex adapter: ${method}() is not implemented yet - it lands with pivot task ${plannedTask}`,
   );
 }
 

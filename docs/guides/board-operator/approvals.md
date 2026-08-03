@@ -29,9 +29,9 @@ pending -> approved
 2. It appears in your approval queue (Approvals page in the UI)
 3. You review the request details and any linked issues
 4. You can:
-   - **Approve** — the action proceeds
-   - **Reject** — the action is denied
-   - **Request revision** — ask the agent to modify and resubmit
+   - **Approve**: the action proceeds
+   - **Reject**: the action is denied
+   - **Request revision**: ask the agent to modify and resubmit
 
 ## Reviewing Approvals
 

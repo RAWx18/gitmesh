@@ -21,9 +21,9 @@ function statusVerdict(status: string): Verdict {
 }
 
 function fmtTargetDate(d: string | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const t = new Date(d).getTime();
-  if (Number.isNaN(t)) return "—";
+  if (Number.isNaN(t)) return "-";
   const diff = t - Date.now();
   const days = Math.round(diff / 86400000);
   if (days === 0) return "today";
@@ -202,8 +202,8 @@ export function Subprojects() {
       ) : filtered.length === 0 ? (
         <div className="py-12 text-center text-xs text-text-tertiary">
           {allProjects.length === 0
-            ? "no subprojects — press n to add"
-            : "no subprojects match — try a different filter"}
+            ? "no subprojects - press n to add"
+            : "no subprojects match - try a different filter"}
         </div>
       ) : (
         <div className="flex flex-col">
@@ -282,7 +282,7 @@ export function Subprojects() {
                 </span>
                 {/* Lead */}
                 <span className="truncate text-[11px] text-text-tertiary">
-                  {p.leadAgentId ? `@${p.leadAgentId.slice(0, 8)}` : "—"}
+                  {p.leadAgentId ? `@${p.leadAgentId.slice(0, 8)}` : "-"}
                 </span>
                 {/* Target */}
                 <span className="text-right text-[11px] tabular-nums text-text-tertiary">

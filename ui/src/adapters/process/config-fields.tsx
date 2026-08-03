@@ -2,7 +2,7 @@ import type { AdapterConfigFieldsProps } from "../types";
 import { renderAdapterSchema, type FieldSchema } from "../_shared/adapter-form";
 
 /**
- * Process adapter — schema-driven. Compare with upstream's hand-rolled JSX:
+ * Process adapter - schema-driven. Compare with upstream's hand-rolled JSX:
  * adding a field here is a single object literal.
  */
 const PROCESS_SCHEMA: FieldSchema[] = [

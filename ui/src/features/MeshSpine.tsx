@@ -1,5 +1,5 @@
 /**
- * MeshSpine — the signature persistent left timeline.
+ * MeshSpine - the signature persistent left timeline.
  *
  * Renders the project's activity log as a vertical commit-graph-style
  * thread. Each node is colored by policy outcome (verdict: allow / block /
@@ -54,7 +54,7 @@ function entityLabel(event: ActivityEvent): string {
     if (event.entityType === "heartbeat_run") return `run ${idShort}`;
     return `${event.entityType} ${idShort}`;
   }
-  return "—";
+  return "-";
 }
 
 export function MeshSpine() {
@@ -108,7 +108,7 @@ export function MeshSpine() {
     <aside className="mesh-spine flex h-full w-[340px] shrink-0 flex-col">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="font-mono text-[10px] uppercase tracking-[0.20em] text-text-tertiary">
-          Mesh — live ledger
+          Mesh - live ledger
         </span>
         <span className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--verdict-attested)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--verdict-attested)] gm-pulse-dot" />
@@ -116,7 +116,7 @@ export function MeshSpine() {
         </span>
       </header>
 
-      {/* Live waterfall — sticky band at the top of the spine */}
+      {/* Live waterfall - sticky band at the top of the spine */}
       {liveRuns.length > 0 && (
         <div className="border-b border-border bg-[color:color-mix(in_oklab,var(--verdict-attested)_4%,transparent)]">
           {liveRuns.slice(0, 4).map((run) => (

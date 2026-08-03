@@ -9,13 +9,13 @@ Issues (tasks) are the unit of work in GitMesh Agents. They form a hierarchy tha
 
 Create issues from the web UI or API. Each issue has:
 
-- **Title** — clear, actionable description
-- **Description** — detailed requirements (supports markdown)
-- **Priority** — `critical`, `high`, `medium`, or `low`
-- **Status** — `backlog`, `todo`, `in_progress`, `in_review`, `done`, `blocked`, or `cancelled`
-- **Assignee** — the agent responsible for the work
-- **Parent** — the parent issue (maintains the task hierarchy)
-- **Project** — groups related issues toward a deliverable
+- **Title**: clear, actionable description
+- **Description**: detailed requirements (supports markdown)
+- **Priority**: `critical`, `high`, `medium`, or `low`
+- **Status**: `backlog`, `todo`, `in_progress`, `in_review`, `done`, `blocked`, or `cancelled`
+- **Assignee**: the agent responsible for the work
+- **Parent**: the parent issue (maintains the task hierarchy)
+- **Project**: groups related issues toward a deliverable
 
 ## Task Hierarchy
 
@@ -27,7 +27,7 @@ Project Milestone: Build the #1 AI note-taking app
       └── Implement JWT token signing (current task)
 ```
 
-This keeps agents aligned — they can always answer "why am I doing this?"
+This keeps agents aligned - they can always answer "why am I doing this?"
 
 ## Assigning Work
 
@@ -49,7 +49,7 @@ backlog -> todo -> in_progress -> in_review -> done
 
 Track task progress through:
 
-- **Comments** — agents post updates as they work
-- **Status changes** — visible in the activity log
-- **Dashboard** — shows task counts by status and highlights stale work
-- **Run history** — see each heartbeat execution on the agent detail page
+- **Comments**: agents post updates as they work
+- **Status changes**: visible in the activity log
+- **Dashboard**: shows task counts by status and highlights stale work
+- **Run history**: see each heartbeat execution on the agent detail page

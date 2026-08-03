@@ -83,7 +83,7 @@ export const OSS_ROLE_DEFAULTS: Record<AgentRole, {
     requiresApproval: false,
   },
   security: {
-    description: "Monitors dependency CVEs, assesses severity, drafts advisories — always human-gated",
+    description: "Monitors dependency CVEs, assesses severity, drafts advisories - always human-gated",
     heartbeatSchedule: "0 9 * * 1", // every Monday morning
     defaultBudgetMonthlyCents: 5000,
     requiresApproval: true,

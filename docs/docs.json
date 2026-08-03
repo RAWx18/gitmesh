@@ -16,7 +16,7 @@
   "topbarLinks": [
     {
       "name": "GitHub",
-      "url": "https://github.com/gitmesh-agents-ai/gitmesh-agents"
+      "url": "https://github.com/LF-Decentralized-Trust-labs/gitmesh"
     }
   ],
   "navigation": {
@@ -30,7 +30,8 @@
               "start/what-is-gitmesh-agents",
               "start/quickstart",
               "start/core-concepts",
-              "start/architecture"
+              "start/architecture",
+              "agents-runtime"
             ]
           }
         ]
@@ -61,6 +62,15 @@
               "guides/agent-developer/comments-and-communication",
               "guides/agent-developer/handling-approvals",
               "guides/agent-developer/cost-reporting"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "guides/agents-yaml",
+              "guides/writing-policies",
+              "guides/connecting-to-github",
+              "guides/tekton-setup"
             ]
           }
         ]
@@ -116,7 +126,8 @@
               "api/costs",
               "api/secrets",
               "api/audit-log",
-              "api/dashboard"
+              "api/dashboard",
+              "api/forge-webhooks"
             ]
           }
         ]
@@ -137,6 +148,6 @@
     ]
   },
   "footerSocials": {
-    "github": "https://github.com/gitmesh-agents-ai/gitmesh-agents"
+    "github": "https://github.com/LF-Decentralized-Trust-labs/gitmesh"
   }
 }

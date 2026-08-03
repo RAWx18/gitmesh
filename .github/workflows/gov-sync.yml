@@ -113,7 +113,7 @@ jobs:
 
           **Automated Governance Sync**
 
-          This PR contains automated updates to the **GitMesh Community Edition** governance registry and history logs.
+          This PR contains automated updates to the **GitMesh** governance registry and history logs.
 
           ### 🔄 Updates Included
           - **Activity Sync**: Updated contributor activity status based on recent GitHub events.

@@ -629,7 +629,7 @@ function ExpandedPayload({
     }
     for (const [k, v] of Object.entries(p as Record<string, unknown>)) {
       let rendered: string;
-      if (v === null || v === undefined) rendered = "—";
+      if (v === null || v === undefined) rendered = "-";
       else if (typeof v === "object") rendered = JSON.stringify(v);
       else rendered = String(v);
       base.push([`payload.${k}`, rendered]);
@@ -693,7 +693,7 @@ function ExpandedPayload({
               </div>
             ))
           ) : (
-            <div className="text-muted-foreground">— no comments —</div>
+            <div className="text-muted-foreground">- no comments -</div>
           )}
         </div>
 

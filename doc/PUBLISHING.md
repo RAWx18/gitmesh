@@ -11,7 +11,7 @@ This document covers how to build and publish the `gitmesh-agents` CLI package t
 
 ## One-Command Publish
 
-The fastest way to publish — bumps version, builds, publishes, restores, commits, and tags in one shot:
+The fastest way to publish - bumps version, builds, publishes, restores, commits, and tags in one shot:
 
 ```bash
 ./scripts/bump-and-publish.sh patch          # 0.1.1 → 0.1.2
@@ -60,8 +60,8 @@ mv cli/package.dev.json cli/package.json
 
 This updates the version in two places:
 
-- `cli/package.json` — the source of truth
-- `cli/src/index.ts` — the Commander `.version()` call
+- `cli/package.json`: the source of truth
+- `cli/src/index.ts`: the Commander `.version()` call
 
 Examples:
 
@@ -80,11 +80,11 @@ Examples:
 
 The build script runs five steps:
 
-1. **Forbidden token check** — scans tracked files for tokens listed in `.git/hooks/forbidden-tokens.txt`. If the file is missing (e.g. on a contributor's machine), the check passes silently. The script never prints which tokens it's searching for.
-2. **TypeScript type-check** — runs `pnpm -r typecheck` across all workspace packages.
-3. **esbuild bundle** — bundles the CLI entry point (`cli/src/index.ts`) and all workspace package code (`@gitmesh/*`) into a single file at `cli/dist/index.js`. External npm dependencies (express, postgres, etc.) are kept as regular imports.
-4. **Generate publishable package.json** — replaces `cli/package.json` with a version that has real npm dependency ranges instead of `workspace:*` references (see [package.dev.json](#packagedevjson) below).
-5. **Summary** — prints the bundle size and next steps.
+1. **Forbidden token check**: scans tracked files for tokens listed in `.git/hooks/forbidden-tokens.txt`. If the file is missing (e.g. on a contributor's machine), the check passes silently. The script never prints which tokens it's searching for.
+2. **TypeScript type-check**: runs `pnpm -r typecheck` across all workspace packages.
+3. **esbuild bundle**: bundles the CLI entry point (`cli/src/index.ts`) and all workspace package code (`@gitmesh/*`) into a single file at `cli/dist/index.js`. External npm dependencies (express, postgres, etc.) are kept as regular imports.
+4. **Generate publishable package.json**: replaces `cli/package.json` with a version that has real npm dependency ranges instead of `workspace:*` references (see [package.dev.json](#packagedevjson) below).
+5. **Summary**: prints the bundle size and next steps.
 
 To skip the forbidden token check (e.g. in CI without the token list):
 
@@ -135,14 +135,14 @@ During development, `cli/package.json` contains `workspace:*` references like:
 }
 ```
 
-These tell pnpm to resolve those packages from the local monorepo. This is great for development but **npm doesn't understand `workspace:*`** — publishing with these references would cause install failures for users.
+These tell pnpm to resolve those packages from the local monorepo. This is great for development but **npm doesn't understand `workspace:*`** - publishing with these references would cause install failures for users.
 
 The build script solves this with a two-file swap:
 
 1. **Before building:** `cli/package.json` has `workspace:*` refs (the dev version).
 2. **During build (`build-npm.sh` step 4):**
    - The dev `package.json` is copied to `package.dev.json` as a backup.
-   - `generate-npm-package-json.mjs` reads every workspace package's `package.json`, collects all their external npm dependencies, and writes a new `cli/package.json` with those real dependency ranges — no `workspace:*` refs.
+   - `generate-npm-package-json.mjs` reads every workspace package's `package.json`, collects all their external npm dependencies, and writes a new `cli/package.json` with those real dependency ranges - no `workspace:*` refs.
 3. **After publishing:** you restore the dev version with `mv package.dev.json package.json`.
 
 The generated publishable `package.json` looks like:
@@ -160,13 +160,13 @@ The generated publishable `package.json` looks like:
 }
 ```
 
-`package.dev.json` is listed in `.gitignore` — it only exists temporarily on disk during the build/publish cycle.
+`package.dev.json` is listed in `.gitignore`: it only exists temporarily on disk during the build/publish cycle.
 
 ## How the bundle works
 
 The CLI is a monorepo package that imports code from `@gitmesh/server`, `@gitmesh/data`, `@gitmesh/core`, and several adapter packages. These workspace packages don't exist on npm.
 
-**esbuild** bundles all workspace TypeScript code into a single `dist/index.js` file (~250kb). External npm packages (express, postgres, zod, etc.) are left as normal `import` statements — they get installed by npm when a user runs `npx gitmesh-agents onboard`.
+**esbuild** bundles all workspace TypeScript code into a single `dist/index.js` file (~250kb). External npm packages (express, postgres, zod, etc.) are left as normal `import` statements - they get installed by npm when a user runs `npx gitmesh-agents onboard`.
 
 The esbuild configuration lives at `cli/esbuild.config.mjs`. It automatically reads every workspace package's `package.json` to determine which dependencies are external (real npm packages) vs. internal (workspace code to bundle).
 
@@ -176,7 +176,7 @@ The build process includes the same forbidden-token check used by the git pre-co
 
 - Token list: `.git/hooks/forbidden-tokens.txt` (one token per line, `#` comments supported)
 - The file lives inside `.git/` and is never committed
-- If the file is missing, the check passes — contributors without the list can still build
+- If the file is missing, the check passes - contributors without the list can still build
 - The script never prints which tokens are being searched for
 - Matches are printed so you know which files to fix, but not which token triggered it
 

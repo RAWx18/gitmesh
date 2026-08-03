@@ -8,7 +8,7 @@ export type CliMode = "gitmesh" | "gitmesh-agents";
  * Attaches the legacy GitMesh Agents command surface onto a parent command.
  * Injected by entry points instead of imported here so the published
  * `gitmesh-cli` bundle (entry src/gitmesh.ts) never reaches the legacy
- * command tree — and therefore ships no server, Drizzle, or Postgres code
+ * command tree - and therefore ships no server, Drizzle, or Postgres code
  * (pivot §10.8, ADR-002). The monorepo dev entry (src/gitmesh-dev.ts) and
  * the gitmesh-agents entry (src/index.ts) inject the real registrar.
  */
@@ -16,7 +16,7 @@ export type LegacyRegistrar = (parent: Command) => void;
 
 // Resolved at runtime relative to the executing entry (src/ in dev, dist/ in
 // a published package), so `--version` always reports the manifest of the
-// package actually installed — changeset bumps never leave it stale.
+// package actually installed - changeset bumps never leave it stale.
 const CLI_VERSION: string = (
   createRequire(import.meta.url)("../package.json") as { version: string }
 ).version;
@@ -33,7 +33,7 @@ const STUB_COMMANDS: ReadonlyArray<[name: string, description: string]> = [
 /**
  * Builds the CLI program for one of the two entry points.
  *
- * `configure` runs on the fresh root before any subcommand is created —
+ * `configure` runs on the fresh root before any subcommand is created -
  * commander copies exitOverride/configureOutput settings to subcommands at
  * `.command()` time, so tests must inject their overrides here.
  */
@@ -60,7 +60,7 @@ export function createProgram(
     }
     program
       .name("gitmesh-agents")
-      .description("GitMesh Agents CLI — setup, diagnose, and configure your instance")
+      .description("GitMesh Agents CLI - setup, diagnose, and configure your instance")
       .version(CLI_VERSION);
     registerLegacy(program);
     return program;
@@ -68,7 +68,7 @@ export function createProgram(
 
   program
     .name("gitmesh")
-    .description("GitMesh — audit and govern every coding agent from your repo")
+    .description("GitMesh - audit and govern every coding agent from your repo")
     .version(CLI_VERSION);
 
   for (const [name, description] of STUB_COMMANDS) {

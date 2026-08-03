@@ -3,7 +3,7 @@ title: Writing Policies
 summary: Define governance rules for your agents using OPA/Rego
 ---
 
-> **Phase 2** — This feature is planned for a future release.
+> **Phase 2**: This feature is planned for a future release.
 
 This guide will cover:
 

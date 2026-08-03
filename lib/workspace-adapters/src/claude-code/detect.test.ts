@@ -210,7 +210,7 @@ describe("claude-code detect()", () => {
     },
   );
 
-  // POSIX-only: Windows ignores chmod bits and root bypasses them — either
+  // POSIX-only: Windows ignores chmod bits and root bypasses them - either
   // would let the "unreadable" directory be read, defeating the test.
   it.skipIf(process.platform === "win32" || (process.getuid?.() ?? 0) === 0)(
     "skips an unreadable directory instead of throwing EACCES",

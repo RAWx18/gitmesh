@@ -76,7 +76,7 @@ Run the adapter environment check via GitMesh UI (yellow "Test now" button):
 ```yaml
 adapter: claude_gateway
 
-# **Required** — Provider configuration
+# **Required**: Provider configuration
 provider: minimax                                    # "anthropic" | "minimax" | or custom name
 apiKey: ${MINIMAX_API_KEY}                          # API key for the provider
 baseUrl: https://api.minimax.io/anthropic           # (optional) Override default endpoint

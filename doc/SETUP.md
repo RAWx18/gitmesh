@@ -63,7 +63,7 @@ Equivalent to skipping the wrappers but matching what CI/script expect on a **fr
 git clone https://github.com/LF-Decentralized-Trust-labs/gitmesh.git
 cd gitmesh
 cp .env.example .env                     # optional; omit if .env exists
-pnpm install --no-frozen-lockfile       # matches scripts/setup.mjs — avoids lockfile churn on first clone
+pnpm install --no-frozen-lockfile       # matches scripts/setup.mjs - avoids lockfile churn on first clone
 pnpm build
 pnpm dev
 ```
@@ -134,7 +134,7 @@ pnpm dev
 
 **Change HTTP port locally**
 
-Set **`PORT`** in **`.env`** (default **`3100`**) — used by **`pnpm dev`**. **`pnpm dev:ui`** expects the API reachable at that **`PORT`** for **`/api` proxy**.
+Set **`PORT`** in **`.env`** (default **`3100`**) - used by **`pnpm dev`**. **`pnpm dev:ui`** expects the API reachable at that **`PORT`** for **`/api` proxy**.
 
 ---
 
@@ -316,7 +316,7 @@ docker run ... -e ANTHROPIC_API_KEY=... -e OPENAI_API_KEY=... ...
 
 Create and manage agents from the **operator UI** at **`http://localhost:3100`** once a project exists, or use the **HTTP API**.
 
-**CLI:** the `agent` namespace today supports **`list`**, **`get`**, and **`local-cli`** — not `create`. Inspect help:
+**CLI:** the `agent` namespace today supports **`list`**, **`get`**, and **`local-cli`**: not `create`. Inspect help:
 
 ```bash
 pnpm gitmesh-agents agent --help
@@ -346,7 +346,7 @@ Expected response (shape may include extra fields):
 **Projects / other API:**
 
 - In **`local_trusted`** (default local dev), listing projects may succeed without credentials depending on middleware.
-- In **`authenticated`** / **`GITMESH_DEPLOYMENT_MODE=authenticated`** (Docker quickstart builds this pattern), **`/api/projects`** expects a session or bearer token — use the UI or **`pnpm gitmesh-agents project --help`** for client flows rather than naive `curl` alone.
+- In **`authenticated`** / **`GITMESH_DEPLOYMENT_MODE=authenticated`** (Docker quickstart builds this pattern), **`/api/projects`** expects a session or bearer token - use the UI or **`pnpm gitmesh-agents project --help`** for client flows rather than naive `curl` alone.
 
 **Quickstart compose smoke check:**
 ```bash
@@ -442,17 +442,17 @@ docker build --no-cache -t gitmesh-agents-local .
 
 ## Next Steps
 
-1. **Read the documentation:** [doc/GOAL.md](doc/GOAL.md) and [doc/v1-spec.md](doc/v1-spec.md)
-2. **Explore the playbooks:** [playbooks/](playbooks/) directory
+1. **Read the documentation:** [GOAL.md](GOAL.md) and [v1-spec.md](v1-spec.md)
+2. **Explore the playbooks:** [playbooks/](../playbooks/) directory
 3. **Set up your first agent:** See Post-Setup Configuration above
-4. **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md)
+4. **Contributing:** See [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md)
 
 ---
 
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/LF-Decentralized-Trust-labs/gitmesh/issues)
-- **Docs:** [doc/](doc/) directory (engineering) and **`docs/`** ([Mintlify](https://mintlify.com/) site via `pnpm docs:dev`)
-- **Developing:** [doc/DEVELOPING.md](doc/DEVELOPING.md)
-- **Database:** [doc/DATABASE.md](doc/DATABASE.md)
+- **Docs:** [doc/](.) directory (engineering) and **`docs/`** ([Mintlify](https://mintlify.com/) site via `pnpm docs:dev`)
+- **Developing:** [DEVELOPING.md](DEVELOPING.md)
+- **Database:** [DATABASE.md](DATABASE.md)
 

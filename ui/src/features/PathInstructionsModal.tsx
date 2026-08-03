@@ -39,7 +39,7 @@ const PLATFORM_REGISTRY: Record<PlatformId, PlatformEntry> = {
     steps: [
       "Open Finder and navigate to the folder.",
       "Right-click (or Control-click) the folder.",
-      'Hold the Option (⌥) key — "Copy" changes to "Copy as Pathname".',
+      'Hold the Option (⌥) key - "Copy" changes to "Copy as Pathname".',
       'Click "Copy as Pathname", then paste here.',
     ],
     tip: "You can also open Terminal, type cd, drag the folder into the terminal window, and press Enter. Then type pwd to see the full path.",
@@ -51,7 +51,7 @@ const PLATFORM_REGISTRY: Record<PlatformId, PlatformEntry> = {
     matches: (ua) => ua.includes("win"),
     steps: [
       "Open File Explorer and navigate to the folder.",
-      "Click in the address bar at the top — the full path will appear.",
+      "Click in the address bar at the top - the full path will appear.",
       "Copy the path, then paste here.",
     ],
     tip: 'Alternatively, hold Shift and right-click the folder, then select "Copy as path".',
@@ -165,7 +165,7 @@ function PlatformSteps({ steps }: { steps: string[] }): ReactNode {
 }
 
 /**
- * Small "Choose" button — opens the modal. Public API kept stable.
+ * Small "Choose" button - opens the modal. Public API kept stable.
  */
 export function ChoosePathButton({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);

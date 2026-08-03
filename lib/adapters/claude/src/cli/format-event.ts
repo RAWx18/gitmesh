@@ -4,7 +4,7 @@
  * Implemented as a declarative spec on top of the shared
  * `defineEventFormatter` helper. The output strings emitted here are
  * byte-for-byte identical to the legacy imperative version; only the
- * source structure changed — the wire format is preserved.
+ * source structure changed - the wire format is preserved.
  */
 
 import {

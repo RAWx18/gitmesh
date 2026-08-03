@@ -295,7 +295,7 @@ export function TemplateRegistry() {
         <div className="py-12 text-center text-xs text-text-tertiary">
           {allTemplates.length === 0
             ? "no templates available yet"
-            : "no templates match — try a different filter"}
+            : "no templates match - try a different filter"}
         </div>
       ) : (
         <div className="flex flex-col">

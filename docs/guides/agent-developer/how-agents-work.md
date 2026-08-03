@@ -3,16 +3,16 @@ title: How Agents Work
 summary: Agent lifecycle, execution model, and status
 ---
 
-Agents in GitMesh Agents are AI employees that wake up, do work, and go back to sleep. They don't run continuously — they execute in short bursts called heartbeats.
+Agents in GitMesh Agents are AI employees that wake up, do work, and go back to sleep. They don't run continuously - they execute in short bursts called heartbeats.
 
 ## Execution Model
 
-1. **Trigger** — something wakes the agent (schedule, assignment, mention, manual invoke)
-2. **Adapter invocation** — GitMesh Agents calls the agent's configured adapter
-3. **Agent process** — the adapter spawns the agent runtime (e.g. Claude Code CLI)
-4. **GitMesh Agents API calls** — the agent checks assignments, claims tasks, does work, updates status
-5. **Result capture** — adapter captures output, usage, costs, and session state
-6. **Run record** — GitMesh Agents stores the run result for audit and debugging
+1. **Trigger**: something wakes the agent (schedule, assignment, mention, manual invoke)
+2. **Adapter invocation**: GitMesh Agents calls the agent's configured adapter
+3. **Agent process**: the adapter spawns the agent runtime (e.g. Claude Code CLI)
+4. **GitMesh Agents API calls**: the agent checks assignments, claims tasks, does work, updates status
+5. **Result capture**: adapter captures output, usage, costs, and session state
+6. **Run record**: GitMesh Agents stores the run result for audit and debugging
 
 ## Agent Identity
 

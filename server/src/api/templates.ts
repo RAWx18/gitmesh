@@ -4,13 +4,13 @@
  * CRUD operations for project templates, plus import/export functionality.
  *
  * Routes:
- * - GET  /api/templates                                  — list all (public + authored)
- * - GET  /api/templates/:templateId                      — get detail
- * - POST /api/templates                                  — create new template
- * - PUT  /api/templates/:templateId                      — update template
- * - DELETE /api/templates/:templateId                    — delete template (admin)
- * - POST /api/projects/:projectId/apply-template/:tid    — apply template to project
- * - POST /api/projects/:projectId/export-as-template     — export project as template
+ * - GET  /api/templates                                  - list all (public + authored)
+ * - GET  /api/templates/:templateId                      - get detail
+ * - POST /api/templates                                  - create new template
+ * - PUT  /api/templates/:templateId                      - update template
+ * - DELETE /api/templates/:templateId                    - delete template (admin)
+ * - POST /api/projects/:projectId/apply-template/:tid    - apply template to project
+ * - POST /api/projects/:projectId/export-as-template     - export project as template
  */
 
 import { Router } from "express";

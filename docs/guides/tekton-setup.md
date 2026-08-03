@@ -197,12 +197,12 @@ spec:
 
         if [ "$EFFECT" = "block" ]; then
           REASON=$(echo "$RESPONSE" | grep -o '"reason":"[^"]*"' | cut -d'"' -f4)
-          echo "ERROR: Policy blocked — $REASON"
+          echo "ERROR: Policy blocked - $REASON"
           exit 1
         fi
 
         if [ "$EFFECT" = "require_approval" ]; then
-          echo "WARNING: Policy requires approval — proceeding with caution"
+          echo "WARNING: Policy requires approval - proceeding with caution"
         fi
 
         echo "Policy evaluation passed: $EFFECT"

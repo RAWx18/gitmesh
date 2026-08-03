@@ -61,7 +61,7 @@ export function AuthPage() {
     (mode === "sign_in" || name.trim().length > 0);
 
   const githubConfigured = session === null
-    // Not authed yet — we still need this flag, so query unauthenticated session
+    // Not authed yet - we still need this flag, so query unauthenticated session
     ? true
     : (session?.githubOAuthConfigured ?? false);
 
@@ -103,7 +103,7 @@ export function AuthPage() {
 
   return (
     <div className="fixed inset-0 flex bg-background text-foreground">
-      {/* Left — atmospheric column */}
+      {/* Left - atmospheric column */}
       <aside className="relative hidden md:flex md:w-[46%] flex-col justify-between overflow-hidden border-r border-border bg-surface-2">
         <div className="absolute inset-0 opacity-50">
           <AsciiArtAnimation />
@@ -138,7 +138,7 @@ export function AuthPage() {
             <em className="text-primary not-italic" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>delivery.</em>
           </h2>
           <p className="mt-6 max-w-md text-sm leading-relaxed text-text-secondary">
-            Webhooks, policies, approvals, and budget — every agent action audited,
+            Webhooks, policies, approvals, and budget - every agent action audited,
             every dollar accounted for. One control plane for the entire mesh.
           </p>
 
@@ -159,7 +159,7 @@ export function AuthPage() {
         </div>
       </aside>
 
-      {/* Right — form */}
+      {/* Right - form */}
       <main className="relative flex w-full flex-col md:w-[54%]">
         {/* Top status bar */}
         <header className="flex items-center justify-between border-b border-border px-6 py-4 md:px-10">

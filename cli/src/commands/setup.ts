@@ -55,7 +55,7 @@ interface SetupState extends SetupDefaults {
 }
 
 // ---------------------------------------------------------------------------
-// Env-derived defaults — same surface as before, factored into typed helpers.
+// Env-derived defaults - same surface as before, factored into typed helpers.
 // ---------------------------------------------------------------------------
 
 const SETUP_ENV_KEYS = [
@@ -278,7 +278,7 @@ async function maybeTestDatabaseConnection(database: GitmeshConfig["database"]):
   } catch {
     spinner.stop(
       pc.yellow(
-        "Could not connect to database — you can fix this later with `gitmesh-agents doctor`",
+        "Could not connect to database - you can fix this later with `gitmesh-agents doctor`",
       ),
     );
   }
@@ -305,19 +305,19 @@ async function maybeValidateLlmKey(llm: GitmeshConfig["llm"] | undefined): Promi
       });
       if (res.ok || res.status === 400) spinner.stop("API key is valid");
       else if (res.status === 401)
-        spinner.stop(pc.yellow("API key appears invalid — you can update it later"));
-      else spinner.stop(pc.yellow("Could not validate API key — continuing anyway"));
+        spinner.stop(pc.yellow("API key appears invalid - you can update it later"));
+      else spinner.stop(pc.yellow("Could not validate API key - continuing anyway"));
     } else {
       const res = await fetch("https://api.openai.com/v1/models", {
         headers: { Authorization: `Bearer ${llm.apiKey}` },
       });
       if (res.ok) spinner.stop("API key is valid");
       else if (res.status === 401)
-        spinner.stop(pc.yellow("API key appears invalid — you can update it later"));
-      else spinner.stop(pc.yellow("Could not validate API key — continuing anyway"));
+        spinner.stop(pc.yellow("API key appears invalid - you can update it later"));
+      else spinner.stop(pc.yellow("Could not validate API key - continuing anyway"));
     }
   } catch {
-    spinner.stop(pc.yellow("Could not reach API — continuing anyway"));
+    spinner.stop(pc.yellow("Could not reach API - continuing anyway"));
   }
 }
 

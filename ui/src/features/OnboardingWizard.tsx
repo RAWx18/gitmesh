@@ -63,10 +63,10 @@ type AdapterType =
 
 const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the Triage agent. The triage pack ships in this repository (no external download):
 
-- agents/triage/AGENTS.md — main operating instructions
-- agents/triage/HEARTBEAT.md — per-heartbeat checklist
-- agents/triage/SOUL.md — persona and boundaries
-- agents/triage/TOOLS.md — comment templates and API notes
+- agents/triage/AGENTS.md - main operating instructions
+- agents/triage/HEARTBEAT.md - per-heartbeat checklist
+- agents/triage/SOUL.md - persona and boundaries
+- agents/triage/TOOLS.md - comment templates and API notes
 
 In Enable Agent, set the agent instructions file to the absolute path of agents/triage/AGENTS.md on your machine (e.g. <repo-root>/agents/triage/AGENTS.md). Set working directory to your checkout or repo root as your adapter requires.
 
@@ -74,7 +74,7 @@ Reference: playbooks/triage/playbook.md for the shared triage skill; playbooks/c
 
 Then create your first agent from Enable Agent.`;
 
-/** Shared field styles — flat, minimal focus ring */
+/** Shared field styles - flat, minimal focus ring */
 const onboardLabelClass = "mb-2 block text-xs font-medium text-muted-foreground";
 const onboardControlClass =
   "w-full rounded-xl border border-border/50 bg-muted/20 px-4 py-3 text-[15px] leading-snug text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-border focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25";
@@ -120,7 +120,7 @@ export function OnboardingWizard() {
     DEFAULT_TASK_DESCRIPTION
   );
 
-  // Step 1.5 — GitHub repo picker
+  // Step 1.5 - GitHub repo picker
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
   const [reposError, setReposError] = useState<string | null>(null);
@@ -137,7 +137,7 @@ export function OnboardingWizard() {
     el.style.height = el.scrollHeight + "px";
   }, []);
 
-  // Created entity IDs — pre-populate from existing project when skipping step 1
+  // Created entity IDs - pre-populate from existing project when skipping step 1
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(
     existingProjectId ?? null
   );
@@ -149,7 +149,7 @@ export function OnboardingWizard() {
 
   // Sync step and project when onboarding opens or explicit options change.
   // Do NOT depend on `projects`: after step 1 creates a project, the list refresh
-  // would re-run this effect and reset step/createdProjectId — causing duplicate projects.
+  // would re-run this effect and reset step/createdProjectId - causing duplicate projects.
   useEffect(() => {
     if (!onboardingOpen) return;
     const cId = onboardingOptions.projectId ?? null;
@@ -394,7 +394,7 @@ export function OnboardingWizard() {
     try {
       let project;
       if (createdProjectId) {
-        // Re-use existing project — fetch it to check forgeOwner
+        // Re-use existing project - fetch it to check forgeOwner
         project = (await projectsApi.get(createdProjectId)) ?? null;
         if (project) setCreatedProjectPrefix(project.issuePrefix);
       } else {
@@ -640,7 +640,7 @@ export function OnboardingWizard() {
       }}
     >
       <DialogPortal>
-        {/* Plain div instead of DialogOverlay — Radix's overlay wraps in
+        {/* Plain div instead of DialogOverlay - Radix's overlay wraps in
             RemoveScroll which blocks wheel events on our custom (non-DialogContent)
             scroll container. A plain div preserves the background without scroll-locking. */}
         <div className="fixed inset-0 z-50 bg-background" />
@@ -656,10 +656,10 @@ export function OnboardingWizard() {
             <span className="sr-only">Close</span>
           </button>
 
-          {/* Single-column onboarding — centered, minimal chrome */}
+          {/* Single-column onboarding - centered, minimal chrome */}
           <div className="flex w-full max-w-md flex-col px-6 pt-20 pb-28 md:px-8 shrink-0">
             <div className="w-full shrink-0">
-              {/* Progress — single bar, no icon cluster */}
+              {/* Progress - single bar, no icon cluster */}
               <div className="mb-12 space-y-3">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="font-medium text-foreground/80">GitMesh</span>

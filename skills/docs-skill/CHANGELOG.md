@@ -1,3 +1,0 @@
-# @gitmesh/docs-skill
-
-## 0.3.0

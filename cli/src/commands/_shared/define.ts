@@ -60,7 +60,7 @@ export interface ClientCommandSpec<O extends BaseClientOptions>
    * one.
    */
   requireProject?: boolean;
-  /** Run handler — receives a typed gitmesh client context. */
+  /** Run handler - receives a typed gitmesh client context. */
   run: (
     ctx: ResolvedClientContext,
     args: { positional: string[]; options: O },

@@ -10,7 +10,7 @@ export {
 
 function notImplemented(method: string, plannedTask: string): never {
   throw new Error(
-    `claude-code adapter: ${method}() is not implemented yet — it lands with pivot task ${plannedTask}`,
+    `claude-code adapter: ${method}() is not implemented yet - it lands with pivot task ${plannedTask}`,
   );
 }
 

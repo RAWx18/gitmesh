@@ -1,14 +1,14 @@
 /**
- * Layout — main application shell.
+ * Layout - main application shell.
  *
  * Structure (left → right):
  *   [GlyphRail 48px]
- *   [MeshSpine 340px — persistent live ledger]
+ *   [MeshSpine 340px - persistent live ledger]
  *   [Main: top context bar + outlet + status footer]
  *
  * The "wide sidebar" pattern is intentionally absent. Sub-navigation lives
  * in the command palette (⌘K) or in-page tabs. The signature is the
- * always-visible event spine — runs, policy verdicts, and attestations
+ * always-visible event spine - runs, policy verdicts, and attestations
  * stream as a single dense thread.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -172,7 +172,7 @@ export function Layout() {
 
         {!isMobile && spineVisible && <MeshSpine />}
 
-        {/* Mobile drawer keeps the legacy Sidebar — phones are too narrow for
+        {/* Mobile drawer keeps the legacy Sidebar - phones are too narrow for
             the three-column desktop shell. */}
         {isMobile && sidebarOpen && (
           <button
@@ -194,7 +194,7 @@ export function Layout() {
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Top bar — minimal, mono context */}
+          {/* Top bar - minimal, mono context */}
           <header className="gitmesh-topnav relative shrink-0 border-b border-border bg-background/85 backdrop-blur-sm">
             <div className="flex items-center gap-3 px-4 py-2.5 md:px-5">
               <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -276,7 +276,7 @@ export function Layout() {
             </div>
           </main>
 
-          {/* Status footer — terminal-style, mono */}
+          {/* Status footer - terminal-style, mono */}
           {!isMobile && (
             <footer className="shrink-0 border-t border-border bg-background/80 px-4 py-1.5 md:px-5">
               <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary">

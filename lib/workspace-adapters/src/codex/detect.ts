@@ -14,7 +14,7 @@ import {
 import type { DetectedArtifact, RepoContext } from "../types.js";
 
 /**
- * `codex` detector (pivot T1.2) — inventories the Codex CLI config surface
+ * `codex` detector (pivot T1.2) - inventories the Codex CLI config surface
  * per the §4.3 row: AGENTS.md at any depth, `.codex/config.toml`,
  * `.agents/skills/`, `.codex/agents/*.toml` subagents, execpolicy `.rules`
  * files, a presence-only `CODEX_HOME` hint, and a presence-only probe for
@@ -22,7 +22,7 @@ import type { DetectedArtifact, RepoContext } from "../types.js";
  *
  * Same guarantees as the claude-code detector: pure, read-only,
  * deterministic sorted output, symlink-aware (literal targets, never
- * resolved away), cycle-safe, and fs errors contained — never fatal.
+ * resolved away), cycle-safe, and fs errors contained - never fatal.
  */
 
 export type CodexArtifactKind =
@@ -99,7 +99,7 @@ export function detect(repo: RepoContext): CodexArtifact[] {
     }
   }
 
-  // Execpolicy `.rules`: §4.3 fixes no location, so scan `.codex/` only —
+  // Execpolicy `.rules`: §4.3 fixes no location, so scan `.codex/` only -
   // a repo-wide sweep would false-positive on unrelated `.rules` files.
   walk(
     join(root, ".codex"),
@@ -124,7 +124,7 @@ export function detect(repo: RepoContext): CodexArtifact[] {
     }
   }
 
-  // CODEX_HOME hint: presence only — the value is a machine-specific path.
+  // CODEX_HOME hint: presence only - the value is a machine-specific path.
   const codexHomeEnv = env["CODEX_HOME"];
   if (codexHomeEnv) {
     out.push(makeArtifact("CODEX_HOME", "env-hint", "user"));
@@ -141,7 +141,7 @@ export function detect(repo: RepoContext): CodexArtifact[] {
     }
   }
 
-  // Managed requirements.toml: presence only — never location or content.
+  // Managed requirements.toml: presence only - never location or content.
   const seen = new Set<string>();
   for (const probe of repo.requirementsTomlPaths ??
     defaultRequirementsTomlPaths(process.platform, env)) {

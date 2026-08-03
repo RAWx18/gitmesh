@@ -9,7 +9,7 @@
 # until the doctor launch (E2); switch to `latest` per release afterwards.
 # Provenance: NPM_CONFIG_PROVENANCE on the publish step + the id-token
 # permission below give npm provenance attestations. Provenance lives here,
-# not in publishConfig — it only works inside a supported CI, and setting it
+# not in publishConfig - it only works inside a supported CI, and setting it
 # in the manifest breaks deliberate manual publishes (e.g. the first
 # name-claiming release). Requires the NPM_TOKEN secret (granular access
 # token for an npm account that owns the `gitmesh-cli` name).

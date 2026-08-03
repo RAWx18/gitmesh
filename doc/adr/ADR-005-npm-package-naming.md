@@ -9,7 +9,7 @@
 Pivot §7 planned to publish the CLI as the npm package **`gitmesh`**, with
 `gitmesh-agents` continuing as the legacy alias. Registry reality on
 2026-07-22 (T0.6): the unscoped npm name `gitmesh` is owned by an unrelated,
-actively maintained project (neil-ji/git-mesh — git-worktree orchestration;
+actively maintained project (neil-ji/git-mesh - git-worktree orchestration;
 eleven releases since 2026-07-12, latest 2026-07-18). `gitmesh-agents` has
 never actually been published (npm 404), and nothing under a `@gitmesh`
 scope exists.
@@ -31,7 +31,7 @@ scope exists.
 
 ## Consequences
 
-- Launch copy (E2) must consistently say `npx gitmesh-cli doctor` — never
+- Launch copy (E2) must consistently say `npx gitmesh-cli doctor`: never
   `npx gitmesh`, which runs a stranger's package. This substitution applies
   wherever pivot documents say "npm `gitmesh`".
 - The name-collision risk cuts both ways: docs should note the distinction

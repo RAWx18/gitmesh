@@ -1,5 +1,5 @@
 /**
- * `auth bootstrap-admin` — mint a single-use bootstrap-admin invite for an
+ * `auth bootstrap-admin`: mint a single-use bootstrap-admin invite for an
  * authenticated-mode deployment.
  *
  * Restructured into focused helpers (URL resolver / token mint / invite

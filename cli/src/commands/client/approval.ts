@@ -176,7 +176,7 @@ export function registerApprovalCommands(program: Command): void {
     },
   });
 
-  // Register approve/reject/request-revision in a loop — see DECISION_ROUTES.
+  // Register approve/reject/request-revision in a loop - see DECISION_ROUTES.
   for (const route of DECISION_ROUTES) {
     defineClientCommand<ApprovalDecisionOpts>(approval, {
       name: route.name,

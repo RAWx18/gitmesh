@@ -4,12 +4,12 @@
 > the Agent Workspace Compiler is under construction. Subcommands currently
 > print "not implemented"; the first real release is `gitmesh doctor`.
 
-GitMesh audits and governs every coding agent from your repo — Claude Code,
+GitMesh audits and governs every coding agent from your repo - Claude Code,
 Codex, Cursor, Copilot, Gemini/Antigravity, OpenCode, and more. One
 git-versioned source of truth for instructions, tools, and guardrails:
 audited (`doctor`), compiled to each agent's native config files (`apply`),
 drift-checked in CI (`check`), and enforced through each agent's own
-mechanisms (`policy`). No server, no login, no telemetry — pure file
+mechanisms (`policy`). No server, no login, no telemetry - pure file
 operations.
 
 ```console
@@ -26,7 +26,7 @@ Installs a `gitmesh` binary:
 | `gitmesh apply` | Compile canonical config to each agent's native files |
 | `gitmesh check` | Verify generated configs are in sync (CI drift gate) |
 | `gitmesh policy` | Manage policy packs and permission rules |
-| `gitmesh legacy …` | Points to the legacy GitMesh Agents CLI — not bundled here, so this package stays dependency-light (run legacy commands from a GitMesh repo checkout) |
+| `gitmesh legacy …` | Points to the legacy GitMesh Agents CLI - not bundled here, so this package stays dependency-light (run legacy commands from a GitMesh repo checkout) |
 
 The npm package name is `gitmesh-cli` (the unscoped name `gitmesh` belongs to
 an unrelated project); the installed binary is `gitmesh`.
