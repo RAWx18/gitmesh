@@ -19,7 +19,7 @@
   "files": [
     "dist",
     "ui-dist",
-    "skills"
+    "playbooks"
   ],
   "scripts": {
     "dev": "tsx src/index.ts",

@@ -33,7 +33,7 @@
   },
   "files": [
     "dist",
-    "skills"
+    "playbooks"
   ],
   "scripts": {
     "build": "tsc",
@@ -42,8 +42,7 @@
   },
   "dependencies": {
     "@gitmesh/adapter-sdk": "workspace:*",
-    "@gitmesh/adapter-shared": "workspace:*",
-    "picocolors": "^1.1.1"
+    "@gitmesh/adapter-shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

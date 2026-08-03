@@ -33,7 +33,6 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@gitmesh/core": "workspace:*",
     "drizzle-orm": "0.45.2",
     "postgres": "^3.4.5"
   },

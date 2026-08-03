@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# release.sh — One-command version bump, build, and publish via Changesets.
+# release.sh - One-command version bump, build, and publish via Changesets.
 #
 # Usage:
 #   ./scripts/release.sh patch                  # 0.2.0 → 0.2.1
@@ -28,6 +28,47 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI_DIR="$REPO_ROOT/cli"
 
+# Packages whose execute.ts resolves <package>/playbooks at runtime, plus the
+# server. Each lists `playbooks` in its `files` array, so the copy below is what
+# actually ships. Keep this list as the single source of truth - it is used for
+# both the copy and the post-publish cleanup.
+PLAYBOOK_PACKAGES=(
+  server
+  lib/adapters/claude
+  lib/adapters/claude-gateway
+  lib/adapters/codex
+  lib/adapters/cursor
+  lib/adapters/opencode
+  lib/adapters/pi
+)
+
+# ── Helper: remove transient publish-only artifacts ──────────────────────────
+remove_publish_artifacts() {
+  rm -rf "$REPO_ROOT/server/ui-dist"
+  for pkg_dir in "${PLAYBOOK_PACKAGES[@]}"; do
+    rm -rf "$REPO_ROOT/$pkg_dir/playbooks"
+  done
+}
+
+# ── Helper: enumerate publishable workspace packages ─────────────────────────
+# Derived from the workspace itself rather than a hand-written list, which had
+# drifted and silently skipped newer packages. Pass `dir` for paths relative to
+# the repo root, anything else for package names.
+publishable_packages() {
+  local field="${1:-name}"
+  pnpm -C "$REPO_ROOT" ls -r --depth -1 --json | node -e "
+let raw = '';
+process.stdin.on('data', (chunk) => (raw += chunk)).on('end', () => {
+  const root = process.argv[1];
+  const field = process.argv[2];
+  for (const pkg of JSON.parse(raw)) {
+    if (pkg.private === true) continue;
+    console.log(field === 'dir' ? pkg.path.slice(root.length + 1) : pkg.name);
+  }
+});
+" "$REPO_ROOT" "$field"
+}
+
 # ── Helper: create GitHub Release ────────────────────────────────────────────
 create_github_release() {
   local version="$1"
@@ -40,7 +81,7 @@ create_github_release() {
   fi
 
   if ! command -v gh &>/dev/null; then
-    echo "  ⚠ gh CLI not found — skipping GitHub Release"
+    echo "  ⚠ gh CLI not found - skipping GitHub Release"
     return
   fi
 
@@ -110,22 +151,7 @@ if [ "$promote" = true ]; then
   echo "==> Promote mode: promoting v$NEW_VERSION from canary to latest..."
 
   # Get all publishable package names
-  PACKAGES=$(node -e "
-const { readFileSync } = require('fs');
-const { resolve } = require('path');
-const root = '$REPO_ROOT';
-const dirs = ['lib/core', 'lib/adapter-sdk', 'lib/data',
-  'lib/adapters/claude', 'lib/adapters/codex', 'lib/adapters/opencode', 'lib/adapters/gateway',
-  'server', 'cli'];
-const names = [];
-for (const d of dirs) {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(root, d, 'package.json'), 'utf8'));
-    if (!pkg.private) names.push(pkg.name);
-  } catch {}
-}
-console.log(names.join('\n'));
-")
+  PACKAGES=$(publishable_packages)
 
   echo ""
   echo "  Promoting packages to @latest:"
@@ -150,10 +176,7 @@ console.log(names.join('\n'));
   fi
 
   # Remove temporary build artifacts
-  rm -rf "$REPO_ROOT/server/ui-dist"
-  for pkg_dir in server lib/adapters/claude lib/adapters/codex; do
-    rm -rf "$REPO_ROOT/$pkg_dir/playbooks"
-  done
+  remove_publish_artifacts
 
   # Stage release files, commit, and tag
   echo ""
@@ -215,23 +238,7 @@ echo ""
 echo "==> Step 2/7: Creating changeset ($bump_type bump for all packages)..."
 
 # Get all publishable (non-private) package names
-PACKAGES=$(node -e "
-const { readdirSync, readFileSync } = require('fs');
-const { resolve } = require('path');
-const root = '$REPO_ROOT';
-const wsYaml = readFileSync(resolve(root, 'pnpm-workspace.yaml'), 'utf8');
-const dirs = ['lib/core', 'lib/adapter-sdk', 'lib/data',
-  'lib/adapters/claude', 'lib/adapters/codex', 'lib/adapters/opencode', 'lib/adapters/gateway',
-  'server', 'cli'];
-const names = [];
-for (const d of dirs) {
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(root, d, 'package.json'), 'utf8'));
-    if (!pkg.private) names.push(pkg.name);
-  } catch {}
-}
-console.log(names.join('\n'));
-")
+PACKAGES=$(publishable_packages)
 
 # Write a changeset file
 CHANGESET_FILE="$REPO_ROOT/.changeset/release-bump.md"
@@ -281,8 +288,10 @@ pnpm -r build
 rm -rf "$REPO_ROOT/server/ui-dist"
 cp -r "$REPO_ROOT/ui/dist" "$REPO_ROOT/server/ui-dist"
 
-# Bundle skills into packages that need them (adapters + server)
-for pkg_dir in server lib/adapters/claude lib/adapters/codex; do
+# Bundle playbooks into every package that resolves them at runtime, plus the
+# server. These directories are listed in each package's `files` array, so they
+# ship in the published tarball.
+for pkg_dir in "${PLAYBOOK_PACKAGES[@]}"; do
   rm -rf "$REPO_ROOT/$pkg_dir/playbooks"
   cp -r "$REPO_ROOT/playbooks" "$REPO_ROOT/$pkg_dir/playbooks"
 done
@@ -307,13 +316,11 @@ if [ "$dry_run" = true ]; then
   fi
   echo ""
   echo "  Preview what would be published:"
-  for dir in lib/core lib/adapter-sdk lib/data \
-             lib/adapters/claude lib/adapters/codex lib/adapters/opencode lib/adapters/gateway \
-             server cli; do
+  while IFS= read -r dir; do
     echo "  --- $dir ---"
     cd "$REPO_ROOT/$dir"
     npm pack --dry-run 2>&1 | tail -3
-  done
+  done <<< "$(publishable_packages dir)"
   cd "$REPO_ROOT"
   if [ "$canary" = true ]; then
     echo ""
@@ -338,7 +345,7 @@ fi
 
 echo ""
 if [ "$canary" = true ]; then
-  echo "==> Step 7/7: Skipping commit and tag (canary mode — promote later)..."
+  echo "==> Step 7/7: Skipping commit and tag (canary mode - promote later)..."
 else
   echo "==> Step 7/7: Restoring dev package.json, committing, and tagging..."
 fi
@@ -356,10 +363,7 @@ if [ -f "$CLI_DIR/README.md" ]; then
 fi
 
 # Remove temporary build artifacts before committing (these are only needed during publish)
-rm -rf "$REPO_ROOT/server/ui-dist"
-for pkg_dir in server lib/adapters/claude lib/adapters/codex; do
-  rm -rf "$REPO_ROOT/$pkg_dir/playbooks"
-done
+remove_publish_artifacts
 
 if [ "$canary" = false ]; then
   # Stage only release-related files (avoid sweeping unrelated changes with -A)
