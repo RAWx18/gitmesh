@@ -272,18 +272,12 @@ echo ""
 echo "==> Step 4/7: Building all packages..."
 cd "$REPO_ROOT"
 
-# Build packages in dependency order (excluding CLI)
-pnpm --filter @gitmesh/core build
-pnpm --filter @gitmesh/adapter-sdk build
-pnpm --filter @gitmesh/data build
-pnpm --filter @gitmesh/adapter-claude-local build
-pnpm --filter @gitmesh/adapter-codex-local build
-pnpm --filter @gitmesh/adapter-opencode-local build
-pnpm --filter @gitmesh/adapter-gateway build
-pnpm --filter @gitmesh/agents-server build
+# Build every workspace package in dependency order. `pnpm -r` is the same
+# command CI runs; a hand-maintained list here silently skipped newer packages
+# and published their stale dist/.
+pnpm -r build
 
-# Build UI and bundle into server package for static serving
-pnpm --filter @gitmesh/agents-ui build
+# Bundle the UI into the server package for static serving
 rm -rf "$REPO_ROOT/server/ui-dist"
 cp -r "$REPO_ROOT/ui/dist" "$REPO_ROOT/server/ui-dist"
 
