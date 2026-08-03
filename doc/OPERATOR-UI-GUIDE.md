@@ -2,14 +2,14 @@
 
 This document describes the maintainer-facing **GitMesh Agents** web interface: navigation, routes, onboarding, day-to-day usage, and how the UI relates to the server. It reflects the **implemented** UI in `ui/` and API in `server/` as of the document’s authoring; where behavior is stubbed or incomplete, that is called out explicitly.
 
-**Audience:** Human operators maintaining projects, agents, and governance—not authors of embedded agent adapters (see `doc/v1-spec.md` and adapter packages under `lib/adapters/`).
+**Audience:** Human operators maintaining projects, agents, and governance-not authors of embedded agent adapters (see `doc/v1-spec.md` and adapter packages under `lib/adapters/`).
 
 **Related docs:**
 
-- [`doc/v1-spec.md`](v1-spec.md) — V1 product and data model contract  
-- [`doc/DEVELOPING.md`](DEVELOPING.md) — Developer setup and commands  
-- [`doc/DEPLOYMENT-MODES.md`](DEPLOYMENT-MODES.md) — `local_trusted`, `authenticated`, exposure  
-- [`docs/guides/connecting-to-github.md`](../docs/guides/connecting-to-github.md) — Forge/GitHub connectivity (guide may be partial while the feature evolves)
+- [`doc/v1-spec.md`](v1-spec.md) - V1 product and data model contract  
+- [`doc/DEVELOPING.md`](DEVELOPING.md) - Developer setup and commands  
+- [`doc/DEPLOYMENT-MODES.md`](DEPLOYMENT-MODES.md) - `local_trusted`, `authenticated`, exposure  
+- [`docs/guides/connecting-to-github.md`](../docs/guides/connecting-to-github.md) - Forge/GitHub connectivity (guide may be partial while the feature evolves)
 
 ---
 
@@ -44,9 +44,9 @@ flowchart TB
 
 ### Project prefixes and URLs
 
-Every **business** screen is scoped to one **GitMesh project**. URLs encode that project via a path prefix—the project’s **`issuePrefix`** field (shown in the header as uppercase, for example `GITAAA`):
+Every **business** screen is scoped to one **GitMesh project**. URLs encode that project via a path prefix-the project’s **`issuePrefix`** field (shown in the header as uppercase, for example `GITAAA`):
 
-- Pattern: `/{issuePrefix}/...` — e.g. `/GITAAA/dashboard`, `/GITAAA/issues`.
+- Pattern: `/{issuePrefix}/...`: e.g. `/GITAAA/dashboard`, `/GITAAA/issues`.
 - Components use [`ProjectContext`](../ui/src/context/ProjectContext.tsx) (`selectedProjectId`) for API calls.
 - Links and redirects use helpers in [`ui/src/lib/router.tsx`](../ui/src/lib/router.tsx) so paths stay prefix-correct.
 
@@ -81,12 +81,12 @@ The collapsible-section sidebar is **`IconRail`** in [`ui/src/components/IconRai
 
 Badges use:
 
-- [`sidebarBadgesApi`](../ui/src/api/sidebarBadges.ts) — inbox and approval counts, failed runs, etc.
-- [`heartbeatsApi.liveRunsForProject`](../ui/src/api/heartbeats.ts) — **live run** count (polled every 10s).
+- [`sidebarBadgesApi`](../ui/src/api/sidebarBadges.ts) - inbox and approval counts, failed runs, etc.
+- [`heartbeatsApi.liveRunsForProject`](../ui/src/api/heartbeats.ts) - **live run** count (polled every 10s).
 
 ### Mobile: drawer and bottom tabs
 
-On small viewports [`Sidebar.tsx`](../ui/src/components/Sidebar.tsx) exposes a **reduced** set: Dashboard, Issues, Agents, Inbox, optional Approvals, Settings—not the full Deliver/Configure taxonomy.
+On small viewports [`Sidebar.tsx`](../ui/src/components/Sidebar.tsx) exposes a **reduced** set: Dashboard, Issues, Agents, Inbox, optional Approvals, Settings-not the full Deliver/Configure taxonomy.
 
 [`MobileBottomNav.tsx`](../ui/src/components/MobileBottomNav.tsx) pins **Home**, **Issues**, **Agents**, **Inbox**, plus a floating **New Issue** button.
 
@@ -98,9 +98,9 @@ Keyboard shortcuts behave the same where applicable (unless focus is inside an i
 
 Chrome at the top of the rail:
 
-- **GitMesh Control Plane** — branding only  
-- [**ProjectSwitcher**](../ui/src/components/ProjectSwitcher.tsx) — switch active project (synced with URL prefix in [`Layout.tsx`](../ui/src/components/Layout.tsx))  
-- **New Issue** — opens modal; **`C`** keyboard shortcut from [`useKeyboardShortcuts`](../ui/src/hooks/useKeyboardShortcuts.ts)
+- **GitMesh Control Plane**: branding only  
+- [**ProjectSwitcher**](../ui/src/components/ProjectSwitcher.tsx) - switch active project (synced with URL prefix in [`Layout.tsx`](../ui/src/components/Layout.tsx))  
+- **New Issue**: opens modal; **`C`** keyboard shortcut from [`useKeyboardShortcuts`](../ui/src/hooks/useKeyboardShortcuts.ts)
 
 ### Signal
 
@@ -115,7 +115,7 @@ Chrome at the top of the rail:
 | Item | Route | Primary UI | Purpose |
 |------|-------|-------------|---------|
 | Issues | `/issues`, `/issues/:issueId` | [`Issues.tsx`](../ui/src/views/board/Issues.tsx), [`IssueDetail.tsx`](../ui/src/views/board/IssueDetail.tsx) | Tasks/work units; comments; assignee; ties to forge when linked |
-| Pull Requests | `/prs`, `/prs/:prId` | [`PRs.tsx`](../ui/src/views/board/PRs.tsx), [`PRDetail.tsx`](../ui/src/views/board/PRDetail.tsx) | PR records synced or created in GitMesh [`pull-requests` API](../server/src/api/pull-requests.js) |
+| Pull Requests | `/prs`, `/prs/:prId` | [`PRs.tsx`](../ui/src/views/board/PRs.tsx), [`PRDetail.tsx`](../ui/src/views/board/PRDetail.tsx) | PR records synced or created in GitMesh [`pull-requests` API](../server/src/api/pull-requests.ts) |
 | Milestones | `/milestones`, `/milestones/:milestoneId` | [`Milestones.tsx`](../ui/src/views/board/Milestones.tsx), [`MilestoneDetail.tsx`](../ui/src/views/board/MilestoneDetail.tsx) | Group issues by milestone |
 | Subprojects | `/subprojects`, nested | [`Subprojects.tsx`](../ui/src/views/board/Subprojects.tsx), [`SubprojectDetail.tsx`](../ui/src/views/board/SubprojectDetail.tsx) | Sub-scope within a project |
 
@@ -129,7 +129,7 @@ Chrome at the top of the rail:
 | Error | `/agents/error` | same `Agents` | Filter; badge from `sidebarBadges.failedRuns` |
 | Agent detail | `/agents/:agentId`, run deep links | [`AgentDetail.tsx`](../ui/src/views/agents/AgentDetail.tsx) | Runs, config, telemetry per agent |
 
-**Creating agents:** Dedicated flow at **`/agents/enable`** — [`EnableAgent.tsx`](../ui/src/views/agents/EnableAgent.tsx) (adapter-specific forms).
+**Creating agents:** Dedicated flow at **`/agents/enable`**: [`EnableAgent.tsx`](../ui/src/views/agents/EnableAgent.tsx) (adapter-specific forms).
 
 ### Configure (sections start collapsed)
 
@@ -138,9 +138,9 @@ Chrome at the top of the rail:
 | Policies | `/policies` | [`Policies.tsx`](../ui/src/views/settings/Policies.tsx) | Effects: allow, block, **`require_approval`**; `/projects/:id/policies` |
 | Templates | `/templates` | [`TemplateRegistry.tsx`](../ui/src/views/general/TemplateRegistry.tsx) | Template registry UX |
 | Secrets | `/secrets` | [`Secrets.tsx`](../ui/src/views/settings/Secrets.tsx) | Project-scoped secrets (tokens, refs) |
-| Assets | `/assets` | [`Assets.tsx`](../ui/src/views/settings/Assets.tsx) | Attachments/storage via [`assetRoutes`](../server/src/api/assets.js) |
-| Audit Log | `/audit` | [`AuditLog.tsx`](../ui/src/views/settings/AuditLog.tsx) | Mutations audit [`activityRoutes`](../server/src/api/activity.js) |
-| Costs | `/costs` | [`Costs.tsx`](../ui/src/views/settings/Costs.tsx) | Spend and budget UI [`costRoutes`](../server/src/api/costs.js) |
+| Assets | `/assets` | [`Assets.tsx`](../ui/src/views/settings/Assets.tsx) | Attachments/storage via [`assetRoutes`](../server/src/api/assets.ts) |
+| Audit Log | `/audit` | [`AuditLog.tsx`](../ui/src/views/settings/AuditLog.tsx) | Mutations audit [`activityRoutes`](../server/src/api/activity.ts) |
+| Costs | `/costs` | [`Costs.tsx`](../ui/src/views/settings/Costs.tsx) | Spend and budget UI [`costRoutes`](../server/src/api/costs.ts) |
 
 ### Project (sections start collapsed)
 
@@ -160,27 +160,27 @@ Implemented in [`Layout.tsx`](../ui/src/components/Layout.tsx):
 
 - Prefix and project title  
 - **WorkspaceTabs** breadcrumbs from [`BreadcrumbContext`](../ui/src/context/BreadcrumbContext.tsx)  
-- **Search ⌘K** — dispatches shortcut consumed by [`CommandPalette.tsx`](../ui/src/features/CommandPalette.tsx)  
-- **`/docs` link** (Book icon) — only useful if docs are hosted at that path on your deployment  
+- **Search ⌘K**: dispatches shortcut consumed by [`CommandPalette.tsx`](../ui/src/features/CommandPalette.tsx)  
+- **`/docs` link** (Book icon) - only useful if docs are hosted at that path on your deployment  
 - **Theme toggle** (sun/moon)
 
 **Footer (desktop)**
 
-- **API operational** — success if health query succeeded  
+- **API operational**: success if health query succeeded  
 - **Self-managed** vs **Authenticated** label from deployment mode  
-- **Forge hint** — `owner/repo`, `repoUrl`, or **`no forge linked`**
+- **Forge hint**: `owner/repo`, `repoUrl`, or **`no forge linked`**
 
 **Global modals and panels**
 
 - `NewIssueDialog`, `NewSubprojectDialog`, `NewMilestoneDialog`, `NewAgentDialog`  
-- `PropertiesPanel` — toggle with **`]`**  
-- **`OnboardingWizard`** — mounted globally in `App.tsx`  
+- `PropertiesPanel`: toggle with **`]`**  
+- **`OnboardingWizard`**: mounted globally in `App.tsx`  
 - **`ToastViewport`**
 
 Additional routes declared in **`boardRoutes`** but **not** in IconRail:
 
-- **`/projects`** — [`Projects.tsx`](../ui/src/views/general/Projects.tsx) (project list UX)
-- **`/design-guide`** — internal design reference [`DesignGuide.tsx`](../ui/src/views/general/DesignGuide.tsx)
+- **`/projects`**: [`Projects.tsx`](../ui/src/views/general/Projects.tsx) (project list UX)
+- **`/design-guide`**: internal design reference [`DesignGuide.tsx`](../ui/src/views/general/DesignGuide.tsx)
 
 ---
 
@@ -242,11 +242,11 @@ sequenceDiagram
 
 **Wizard steps** (see [`OnboardingWizard.tsx`](../ui/src/features/OnboardingWizard.tsx)):
 
-1. **Project** — name and mission; creates the project and `issuePrefix`  
-2. **Optional GitHub (step 1.5)** — list repos, connect; may call `githubApi.connectProject` which clones and starts periodic sync on the server  
-3. **Agent** — role, adapter, command/config; creates agent record  
-4. **First task** — title/body for first issue  
-5. **Launch** — finishes wizard; user continues on dashboard or agent views  
+1. **Project**: name and mission; creates the project and `issuePrefix`  
+2. **Optional GitHub (step 1.5)**: list repos, connect; may call `githubApi.connectProject` which clones and starts periodic sync on the server  
+3. **Agent**: role, adapter, command/config; creates agent record  
+4. **First task**: title/body for first issue  
+5. **Launch**: finishes wizard; user continues on dashboard or agent views  
 
 **Parallel path:** add more agents later via **`/agents/enable`**.
 
@@ -281,13 +281,13 @@ flowchart LR
   daily --> config
 ```
 
-1. **Dashboard** — confirm live runs (green pulse), open work counts, forge connected, budget state  
-2. **Inbox** — sort failed runs, pending approvals, stale issues, join requests; dismiss noise  
-3. **Issues / PRs** — drive work, link to forge context when connected  
-4. **Agents** — inspect status, open **Agent detail** for run history; enable new agents as needed  
-5. **Approvals** — approve or reject governed actions; detail view shows payload  
-6. **Costs / Audit** — verify spend against cap; trace sensitive changes  
-7. **Configure** — rotate **secrets**, adjust **policies**, register **forge webhooks** from project settings when using a public base URL  
+1. **Dashboard**: confirm live runs (green pulse), open work counts, forge connected, budget state  
+2. **Inbox**: sort failed runs, pending approvals, stale issues, join requests; dismiss noise  
+3. **Issues / PRs**: drive work, link to forge context when connected  
+4. **Agents**: inspect status, open **Agent detail** for run history; enable new agents as needed  
+5. **Approvals**: approve or reject governed actions; detail view shows payload  
+6. **Costs / Audit**: verify spend against cap; trace sensitive changes  
+7. **Configure**: rotate **secrets**, adjust **policies**, register **forge webhooks** from project settings when using a public base URL  
 
 ---
 
@@ -319,13 +319,13 @@ From [`useKeyboardShortcuts.ts`](../ui/src/hooks/useKeyboardShortcuts.ts) (ignor
 
 Mounted under **`/api`** in [`server/src/app.ts`](../server/src/app.ts):
 
-- **`/health`** — deployment/bootstrap flags for the gate UI  
-- **`/projects`** and nested **forge**, **policy**, webhook routes — projects and governance  
+- **`/health`**: deployment/bootstrap flags for the gate UI  
+- **`/projects`** and nested **forge**, **policy**, webhook routes - projects and governance  
 - **Agents**, **issues**, **goals**, **subprojects**, **approvals**, **secrets**, **pull-requests**, **costs**, **activity**, **dashboard**, **heartbeats**, **templates**, **access**, assets, MCP/ACP adapters, Tekton webhooks  
 
 Forge webhooks arrive at routes registered with **`forge-webhooks`** (for example **`/api/forge/webhook/github`**) alongside project management paths.
 
-Operators do not hand-craft HTTP calls for routine work—the UI wrappers under `ui/src/api/` cover most interactions.
+Operators do not hand-craft HTTP calls for routine work-the UI wrappers under `ui/src/api/` cover most interactions.
 
 ---
 

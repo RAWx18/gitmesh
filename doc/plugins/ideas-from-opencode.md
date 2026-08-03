@@ -58,10 +58,10 @@ Relevant GitMesh Agents files reviewed for current extension seams:
 
 - [server/src/adapters/registry.ts](../../server/src/adapters/registry.ts)
 - [ui/src/adapters/registry.ts](../../ui/src/adapters/registry.ts)
-- [server/src/storage/provider-registry.ts](../../server/src/storage/provider-registry.ts)
-- [server/src/secrets/provider-registry.ts](../../server/src/secrets/provider-registry.ts)
-- [server/src/services/run-log-store.ts](../../server/src/services/run-log-store.ts)
-- [server/src/services/activity-log.ts](../../server/src/services/activity-log.ts)
+- [server/src/storage/provider-registry.ts](../../server/src/infra/storage/provider-registry.ts)
+- [server/src/secrets/provider-registry.ts](../../server/src/infra/secrets/provider-registry.ts)
+- [server/src/services/run-log-store.ts](../../server/src/core/run-log-store.ts)
+- [server/src/services/activity-log.ts](../../server/src/core/activity-log.ts)
 - [doc/architecture.md](../architecture.md)
 - [doc/v1-spec.md](../v1-spec.md)
 
@@ -194,7 +194,7 @@ The most aggressive part of the design:
 That is very powerful for a local coding assistant.
 It is too dangerous for GitMesh Agents core actions.
 
-However, the concept of plugins contributing agent-usable tools is very valuable for GitMesh Agents — as long as plugin tools are namespaced (cannot shadow core tools) and capability-gated.
+However, the concept of plugins contributing agent-usable tools is very valuable for GitMesh Agents - as long as plugin tools are namespaced (cannot shadow core tools) and capability-gated.
 
 ## 7. Auth is also a plugin surface
 
@@ -382,10 +382,10 @@ GitMesh Agents has several extension-like seams already:
 
 - server adapter registry: [server/src/adapters/registry.ts](../../server/src/adapters/registry.ts)
 - UI adapter registry: [ui/src/adapters/registry.ts](../../ui/src/adapters/registry.ts)
-- storage provider registry: [server/src/storage/provider-registry.ts](../../server/src/storage/provider-registry.ts)
-- secret provider registry: [server/src/secrets/provider-registry.ts](../../server/src/secrets/provider-registry.ts)
-- pluggable run-log store seam: [server/src/services/run-log-store.ts](../../server/src/services/run-log-store.ts)
-- activity log and live event emission: [server/src/services/activity-log.ts](../../server/src/services/activity-log.ts)
+- storage provider registry: [server/src/storage/provider-registry.ts](../../server/src/infra/storage/provider-registry.ts)
+- secret provider registry: [server/src/secrets/provider-registry.ts](../../server/src/infra/secrets/provider-registry.ts)
+- pluggable run-log store seam: [server/src/services/run-log-store.ts](../../server/src/core/run-log-store.ts)
+- activity log and live event emission: [server/src/services/activity-log.ts](../../server/src/core/activity-log.ts)
 
 This is good news.
 GitMesh Agents does not need to invent extensibility from scratch.
@@ -458,7 +458,7 @@ Plugins ship their own React UI as a bundled module inside `dist/ui/`. The host 
 1. The plugin's UI exports named components for each slot it fills (e.g. `DashboardWidget`, `IssueDetailTab`, `SettingsPage`).
 2. The host mounts the plugin component into the correct slot, passing a bridge object with hooks like `usePluginData(key, params)` and `usePluginAction(key)`.
 3. The plugin component fetches data from its own worker via the bridge and renders it however it wants.
-4. The host enforces capability gates through the bridge — if the worker doesn't have a capability, the bridge rejects the call.
+4. The host enforces capability gates through the bridge - if the worker doesn't have a capability, the bridge rejects the call.
 
 **What the host controls:** where plugin components appear, the bridge API, capability enforcement, and shared UI primitives (`@gitmesh/plugin-sdk/ui`) with design tokens and common components.
 
@@ -525,7 +525,7 @@ The key constraints:
 - tool execution goes through the same worker RPC boundary as everything else
 - tool results appear in run logs
 
-This is a natural fit — the plugin already has the SDK context, the external API credentials, and the domain logic. Wrapping that in a tool definition is minimal additional work for the plugin author.
+This is a natural fit - the plugin already has the SDK context, the external API credentials, and the domain logic. Wrapping that in a tool definition is minimal additional work for the plugin author.
 
 ## 8. Support plugin-to-plugin events
 
@@ -545,7 +545,7 @@ This matters because settings forms are boilerplate that every plugin needs. Aut
 
 ## 10. Design for graceful shutdown and upgrade
 
-The spec should be explicit about what happens when a plugin worker stops — during upgrades, uninstalls, or instance restarts.
+The spec should be explicit about what happens when a plugin worker stops - during upgrades, uninstalls, or instance restarts.
 
 The recommended policy:
 
@@ -591,7 +591,7 @@ The out-of-process worker architecture makes this natural:
 
 Frontend cache invalidation uses versioned or content-hashed bundle URLs and a `plugin.ui.updated` event that triggers re-import without a full page reload.
 
-Each worker process is independent — starting, stopping, or replacing one worker never affects any other plugin or the host itself.
+Each worker process is independent - starting, stopping, or replacing one worker never affects any other plugin or the host itself.
 
 ## 15. Define SDK versioning and compatibility
 
@@ -599,7 +599,7 @@ Each worker process is independent — starting, stopping, or replacing one work
 
 Recommended approach:
 
-- **Single SDK package**: `@gitmesh/plugin-sdk` with subpath exports — root for worker code, `/ui` for frontend code. One dependency, one version, one changelog.
+- **Single SDK package**: `@gitmesh/plugin-sdk` with subpath exports - root for worker code, `/ui` for frontend code. One dependency, one version, one changelog.
 - **SDK major version = API version**: `@gitmesh/plugin-sdk@2.x` targets `apiVersion: 2`. Plugins built with SDK 1.x declare `apiVersion: 1` and continue to work.
 - **Host multi-version support**: The host supports at least the current and one previous `apiVersion` simultaneously with separate IPC protocol handlers per version.
 - **`sdkVersion` in manifest**: Plugins declare a semver range (e.g. `">=1.4.0 <2.0.0"`). The host validates this at install time.
@@ -758,7 +758,7 @@ Workspace plugins handle local tooling directly:
 
 Plugins resolve workspace paths through host APIs (`ctx.projects` provides workspace metadata including `cwd`, `repoUrl`, etc.) and then operate on the filesystem, spawn processes, shell out to `git`, or open PTY sessions using standard Node APIs or any libraries they choose.
 
-The host does not wrap or proxy these operations. This keeps the core lean — no need to maintain a parallel API surface for every OS-level operation a plugin might need. Plugins own their own implementations.
+The host does not wrap or proxy these operations. This keeps the core lean - no need to maintain a parallel API surface for every OS-level operation a plugin might need. Plugins own their own implementations.
 
 ## Governance And Safety Requirements
 
@@ -1401,7 +1401,7 @@ Recommended capabilities and extension points:
 
 Important constraint:
 
-- keep "local git state" and "remote GitHub issue state" in separate plugins even if they work together — cross-plugin events handle coordination
+- keep "local git state" and "remote GitHub issue state" in separate plugins even if they work together - cross-plugin events handle coordination
 
 ## Grafana Metrics
 
@@ -1692,7 +1692,7 @@ This phase would immediately cover:
 - git workflow
 - child process/server tracking
 
-Workspace plugins do not require additional host APIs — they resolve workspace paths through `ctx.projects` and handle filesystem, git, PTY, and process operations directly.
+Workspace plugins do not require additional host APIs - they resolve workspace paths through `ctx.projects` and handle filesystem, git, PTY, and process operations directly.
 
 ## Phase 2: Consider richer UI and plugin packaging
 
@@ -1718,7 +1718,7 @@ GitMesh Agents should implement "a plugin platform with multiple trust tiers":
 - auto-generated settings UI from config schema
 - core-owned invariants that plugins can observe and act around, but not replace
 - plugin observability, graceful lifecycle management, and a test harness for low authoring friction
-- hot plugin lifecycle — no server restart for install, uninstall, upgrade, or config changes
+- hot plugin lifecycle - no server restart for install, uninstall, upgrade, or config changes
 - SDK versioning with multi-version host support and clear deprecation policy
 
 That gets the upside of `opencode`'s extensibility without importing the wrong threat model.
@@ -1729,10 +1729,10 @@ That gets the upside of `opencode`'s extensibility without importing the wrong t
 2. Introduce a small plugin manifest type in `lib/core` and a `plugins` install/config section in the instance config.
 3. Build a typed domain event bus around existing activity/live-event patterns, with server-side event filtering and a `plugin.*` namespace for cross-plugin events. Keep core invariants non-hookable.
 4. Implement plugin MVP: global install/config, secret refs, jobs, webhooks, plugin UI bundles, extension slots, auto-generated settings forms, bridge error propagation.
-5. Add agent tool contributions — plugins register namespaced tools that agents can call during runs.
+5. Add agent tool contributions - plugins register namespaced tools that agents can call during runs.
 6. Add plugin observability: structured logging via `ctx.logger`, health dashboard, internal health events.
 7. Add graceful shutdown policy and uninstall data lifecycle with retention grace period.
 8. Ship `@gitmesh/plugin-test-harness` and `create-gitmesh-agents-plugin` starter template.
-9. Implement hot plugin lifecycle — install, uninstall, upgrade, and config changes without server restart.
-10. Define SDK versioning policy — semver, multi-version host support, deprecation timeline, migration guides, published compatibility matrix.
+9. Implement hot plugin lifecycle - install, uninstall, upgrade, and config changes without server restart.
+10. Define SDK versioning policy - semver, multi-version host support, deprecation timeline, migration guides, published compatibility matrix.
 11. Build workspace plugins (file browser, terminal, git, process tracking) that resolve workspace paths from the host and handle OS-level operations directly.
