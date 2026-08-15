@@ -217,3 +217,110 @@ export function compareArtifacts(a: DetectedArtifact, b: DetectedArtifact): numb
   }
   return a.scope < b.scope ? -1 : a.scope > b.scope ? 1 : 0;
 }
+
+// ---------------------------------------------------------------------------
+// Lightweight YAML primitives shared by the frontmatter parsers (cursor
+// `.mdc`, copilot `.instructions.md`). No YAML dependency - the project
+// convention for pure file inspection.
+// ---------------------------------------------------------------------------
+
+/**
+ * The raw lines of a `---`-delimited frontmatter block, exclusive of the
+ * delimiters. `null` when the content does not open with `---` or the block
+ * is never closed.
+ */
+export function parseFrontmatterBlock(content: string): string[] | null {
+  const lines = content.split(/\r?\n/);
+  if (lines.length === 0 || lines[0]!.trim() !== "---") {
+    return null;
+  }
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i]!.trim() === "---") {
+      return lines.slice(1, i);
+    }
+  }
+  return null;
+}
+
+/**
+ * Reads consecutive `- item` lines from `lines[start]`, stopping at the first
+ * line that is not one; items are trimmed, unquoted, and empties dropped.
+ * `end` is the index of the stopping line.
+ */
+export function readBlockList(
+  lines: string[],
+  start: number,
+): { items: string[]; end: number } {
+  const items: string[] = [];
+  let i = start;
+  for (; i < lines.length; i++) {
+    const match = /^\s*-\s*(.*)$/.exec(lines[i]!);
+    if (!match) {
+      break;
+    }
+    const item = yamlUnquote(match[1]!.trim());
+    if (item !== "") {
+      items.push(item);
+    }
+  }
+  return { items, end: i };
+}
+
+/**
+ * Splits the inner text of a YAML flow sequence (`"a", "b"`) on commas
+ * outside quotes, so brace globs like `{ts,tsx}` survive; items are trimmed,
+ * unquoted, and empties dropped.
+ */
+export function splitFlowItems(inner: string): string[] {
+  const items: string[] = [];
+  let current = "";
+  let quote: '"' | "'" | undefined;
+  for (const ch of inner) {
+    if (quote !== undefined) {
+      if (ch === quote) {
+        quote = undefined;
+      }
+      current += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      current += ch;
+    } else if (ch === ",") {
+      items.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  items.push(current);
+  return items.map((item) => yamlUnquote(item.trim())).filter((item) => item !== "");
+}
+
+/** Strips a trailing `# …` comment that starts outside a quoted region. */
+export function stripYamlComment(value: string): string {
+  let quote: '"' | "'" | undefined;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i]!;
+    if (quote !== undefined) {
+      if (ch === quote) {
+        quote = undefined;
+      }
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === "#") {
+      return value.slice(0, i).trimEnd();
+    }
+  }
+  return value;
+}
+
+/** Strips surrounding single or double quotes from a YAML scalar. */
+export function yamlUnquote(s: string): string {
+  if (s.length >= 2) {
+    const first = s[0];
+    const last = s[s.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return s.slice(1, -1);
+    }
+  }
+  return s;
+}
